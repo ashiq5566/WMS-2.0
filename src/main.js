@@ -23,6 +23,8 @@ import Button from 'primevue/button';
 import InputText from "primevue/inputtext";
 import Card from 'primevue/card';
 import Sidebar from 'primevue/sidebar';
+import Dialog from 'primevue/dialog';
+
 
 const app = createApp(App)
 
@@ -34,6 +36,6 @@ app.component('Button', Button);
 app.component('InputText', InputText);
 app.component('Card', Card);
 app.component('Sidebar', Sidebar);
-
+app.component('Dialog', Dialog);
 
 app.mount('#app')

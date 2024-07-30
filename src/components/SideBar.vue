@@ -1,5 +1,5 @@
 <script setup>
-import { ref, watch } from "vue";
+import { ref, watch, defineEmits } from "vue";
 import { RouterLink, RouterView, useRouter } from 'vue-router'
 import Sidebar from "primevue/sidebar";
 import store from "../stores/stores.js"
@@ -18,30 +18,33 @@ const handleLogout = async () => {
     store.methods.logout();
     router.push('/login');
 };
+
+const routes = [
+    { path: '/', name: 'Home' },
+    { path: '/stakeholders', name: 'Stakeholders' }
+]
+
 </script>
 
 <template>
     <div class="flex">
         <div class="lg:block hidden p-4 w-64 h-full fixed top-0 left-0 shadow-lg">
-            <div class="text-lg font-semibold mb-4">Sidebar</div>
-            <RouterLink to="/" class="block mb-2 p-2 rounded">Home</RouterLink>
-            <RouterLink to="/about" class="block mb-2 p-2 rounded">About
-            </RouterLink>
+            <div class="mb-4">
+                <img src="../assets/logo.webp" alt="">
+            </div>
+            <div v-for="route in routes" :key="route.path">
+                <RouterLink :to="route.path" class="block mb-2 p-2 rounded">{{ route.name }}</RouterLink>
+            </div>
             <Button @click="handleLogout" icon="pi pi-sign-out" />
         </div>
 
         <div>
             <Sidebar v-model:visible="internalVisible" header="Sidebar">
-                <RouterLink to="/" class="block mb-2 p-2 rounded">Home
-                </RouterLink>
-                <RouterLink to="/about" class="block mb-2 p-2 rounded">About
-                </RouterLink>
+                <div v-for="route in routes" :key="route.path">
+                    <RouterLink :to="route.path" class="block mb-2 p-2 rounded">{{ route.name }}</RouterLink>
+                </div>
                 <Button @click="handleLogout" icon="pi pi-sign-out" />
             </Sidebar>
         </div>
-
-        <!-- <div class="lg:hidden absolute top-0 left-0 m-4">
-            <Button icon="pi pi-arrow-right" @click="visible = true" />
-        </div> -->
     </div>
 </template>
