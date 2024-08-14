@@ -21,7 +21,8 @@ const handleLogout = async () => {
 
 const routes = [
     { path: '/', name: 'Home' },
-    { path: '/stakeholders', name: 'Stakeholders' }
+    { path: '/stakeholders', name: 'Stakeholders' },
+    { path: '/users', name: 'Users' }
 ]
 
 </script>

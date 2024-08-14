@@ -1,10 +1,9 @@
 <script setup>
-// import SideBar from './components/SideBar.vue'
-import Layout from './layouts/Layout.vue'
 </script>
 
 <template>
-  <Layout />
+  <router-view />
+
 </template>
 
 <style scoped>
