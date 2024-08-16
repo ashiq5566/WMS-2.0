@@ -15,7 +15,9 @@ const handleSubmit = async () => {
 
     try {
         const response = await axios.post('/api/accounts/login/', formData);
-        router.push('/')
+        console.log(response);
+
+        router.push('/stakeholders')
     } catch (error) {
         console.error('Login failed:', error);
     }

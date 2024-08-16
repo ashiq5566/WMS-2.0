@@ -1,12 +1,15 @@
 <script setup lang="ts">
 import { ref } from "vue";
+import AddStakeHolderModal from "@/components/stakeholders/AddStakeHolderModal.vue";
 
 const visible = ref(false);
+
 </script>
 
 <template>
-    <div class="card flex justify-center">
-        <Button label="Show" @click="visible = true" />
+    <div class="">
+        <AddStakeHolderModal />
+        <!-- <Button label="Show" @click="visible = true" />
         <Dialog v-model:visible="visible" modal header="Edit Profile" :style="{ width: '25rem' }">
             <span class="text-surface-500 dark:text-surface-400 block mb-8">Update your information.</span>
             <div class="flex items-center gap-4 mb-4">
@@ -21,7 +24,7 @@ const visible = ref(false);
                 <Button type="button" label="Cancel" severity="secondary" @click="visible = false"></Button>
                 <Button type="button" label="Save" @click="visible = false"></Button>
             </div>
-        </Dialog>
+        </Dialog> -->
     </div>
 </template>
 
