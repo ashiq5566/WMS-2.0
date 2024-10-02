@@ -2,7 +2,7 @@
 import './style.css';
 
 // Import PrimeVue theme CSS
-import "primevue/resources/themes/aura-dark-green/theme.css"; // theme
+import "primevue/resources/themes/aura-light-green/theme.css"; // theme
 
 // Import PrimeVue core CSS
 import "primevue/resources/primevue.min.css"; // core CSS
@@ -10,8 +10,6 @@ import "primevue/resources/primevue.min.css"; // core CSS
 // Import PrimeIcons CSS
 import "primeicons/primeicons.css"; // icons
 
-// Import your custom CSS files
-// import './assets/main.css';
 
 import { createApp } from 'vue';
 import { createPinia } from 'pinia';

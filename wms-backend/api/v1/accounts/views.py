@@ -1,8 +1,9 @@
 from django.shortcuts import render
+from rest_framework import viewsets
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
-from rest_framework.permissions import AllowAny
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from django.contrib.auth import authenticate, login
 from django.conf import settings
 from importlib import import_module
@@ -45,29 +46,9 @@ class LoginView(APIView):
             )
             
 
-class StakeholderView(APIView):
-    permission_classes = [AllowAny]
-    def post(self, request):
-        name = request.data.get('name')
-        address = request.data.get('address')
-        phone = request.data.get('phone')
-        email = request.data.get('email')
-        type = request.data.get('type')
-        
-        stakeholder = Stakeholder.objects.create(
-            stakeholder_name=name,
-            stakeholder_address=address,
-            stakeholder_mobile=phone,
-            stakeholder_email=email,
-            stakeholder_type=type
-        )
-        return Response(
-            {
-                'message': 'Created successfully',
-                'data': StakeHolderSerializer(stakeholder).data
-            },
-            status=status.HTTP_200_OK
-            )
+class StakeholderView(viewsets.ModelViewSet):
+    queryset = Stakeholder.objects.all()  # Full queryset for the viewset
+    serializer_class = StakeHolderSerializer
     
     
         

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref } from "vue";
-import axios from '@/plugins/axios'
+import axios from '@/plugins/axios.js';
 
 const visible = ref(false);
 
@@ -27,11 +27,11 @@ const handleSubmit = async () => {
         data.append('company_name', formData.value.company_name);
         data.append('type', formData.value.type);
 
-        const response = await axios.post('/api/inventory/stakeholders/', data);
+        const response = await axios.post('/api/accounts/stakeholders/', data);
         console.log(response);
         visible.value = false;
     } catch (error) {
-        console.error('Login failed:', error);
+        console.error('Creation failed:', error);
     }
 };
 

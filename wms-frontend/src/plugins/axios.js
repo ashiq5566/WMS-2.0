@@ -11,17 +11,6 @@ const axiosInstance = axios.create({
   }
 });
 
-// Optionally, you can set up interceptors for requests and responses
-// axiosInstance.interceptors.request.use(config => {
-//   const token = localStorage.getItem('token');
-//   if (token) {
-//     config.headers.Authorization = `Bearer ${token}`;
-//   }
-//   return config;
-// }, error => {
-//   return Promise.reject(error);
-// });
-
 // Response interceptor for successful responses
 axiosInstance.interceptors.response.use(response => {
   // If the response is from a login request
