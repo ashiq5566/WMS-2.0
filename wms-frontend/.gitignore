@@ -44,6 +44,9 @@ staticfiles/
 # If using Django settings file for local development
 settings_local.py
 
+# Django migrations
+**/migrations/**
+
 # If you are using a virtual environment
 venv/   
 env/

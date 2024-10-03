@@ -47,8 +47,9 @@ class LoginView(APIView):
             
 
 class StakeholderView(viewsets.ModelViewSet):
-    queryset = Stakeholder.objects.all()  # Full queryset for the viewset
+    queryset = Stakeholder.objects.all()
     serializer_class = StakeHolderSerializer
+    permission_classes = (IsAuthenticated, )
     
     
         

@@ -1,31 +1,53 @@
 <script setup lang="ts">
-import { ref } from "vue";
+import { onMounted, ref } from "vue";
+import axios from '@/plugins/axios';
 import AddStakeHolderModal from "@/components/stakeholders/AddStakeHolderModal.vue";
 
-const visible = ref(false);
+const stakeholders = ref();
+
+const columns = [
+	{ field: 'name', header: 'Name' },
+	{ field: 'address', header: 'Address' },
+	{ field: 'mobile', header: 'Phone' },
+	{ field: 'email', header: 'Email' },
+	{ field: 'type', header: 'Type' }
+];
+
+const fetchStakeholders = async () => {
+	try {
+		const response = await axios.get('/api/accounts/stakeholders');
+		console.log("Stakeholders", response);
+
+		stakeholders.value = response.data;
+	} catch (error) {
+		console.error('Error fetching stakeholders:', error);
+	}
+}
+const reloadTable = () => {
+	fetchStakeholders();
+};
+
+onMounted(() => {
+	fetchStakeholders();
+})
+
 
 </script>
 
 <template>
-    <div class="">
-        <AddStakeHolderModal />
-        <!-- <Button label="Show" @click="visible = true" />
-        <Dialog v-model:visible="visible" modal header="Edit Profile" :style="{ width: '25rem' }">
-            <span class="text-surface-500 dark:text-surface-400 block mb-8">Update your information.</span>
-            <div class="flex items-center gap-4 mb-4">
-                <label for="username" class="font-semibold w-24">Username</label>
-                <InputText id="username" class="flex-auto" autocomplete="off" />
-            </div>
-            <div class="flex items-center gap-4 mb-8">
-                <label for="email" class="font-semibold w-24">Email</label>
-                <InputText id="email" class="flex-auto" autocomplete="off" />
-            </div>
-            <div class="flex justify-end gap-2">
-                <Button type="button" label="Cancel" severity="secondary" @click="visible = false"></Button>
-                <Button type="button" label="Save" @click="visible = false"></Button>
-            </div>
-        </Dialog> -->
-    </div>
+	<div class="">
+		<AddStakeHolderModal @instance-added="reloadTable" />
+		<Card class="mt-4">
+			<template #content>
+				<DataTable :value="stakeholders" tableStyle="min-width: 50rem">
+					<Column v-for="col of columns" :key="col.field" :field="col.field" :header="col.header"></Column>
+					<template #empty>
+						<span class="flex justify-center">No stakeholders found.</span>
+					</template>
+				</DataTable>
+			</template>
+		</Card>
+	</div>
 </template>
 
 <style></style>

@@ -23,14 +23,14 @@ console.log(isAuthenticated.value);
 
 <template>
     <div class="flex flex-col lg:relative">
-        <div v-if="isAuthenticated" class="sticky top-0 ml-0 mt-1 z-10 lg:ml-72 lg:mt-4">
+        <div v-if="isAuthenticated" class="sticky top-0 ml-0 mt-1 z-10 lg:ml-72 lg:mt-4 mr-2">
             <Header @buttonClicked="handleClick" />
         </div>
         <div class="flex">
             <div v-if="isAuthenticated">
                 <SideBar :visible="visible" />
             </div>
-            <div :class="isAuthenticated ? 'ml-2 pt-12 w-full lg:ml-72' : 'w-full'">
+            <div :class="isAuthenticated ? 'ml-2 pt-12 w-full mr-2 lg:ml-72' : 'w-full'">
                 <RouterView />
             </div>
         </div>

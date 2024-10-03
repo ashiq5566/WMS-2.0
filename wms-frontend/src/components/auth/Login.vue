@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import axios from '@/plugins/axios'; // Adjust the path as per your project structure
 import { ref } from 'vue';
 import { useRouter } from 'vue-router';
+import axios from '@/plugins/axios';
 
 const router = useRouter();
 
@@ -17,7 +17,7 @@ const handleSubmit = async () => {
         const response = await axios.post('/api/accounts/login/', formData);
         console.log(response);
 
-        router.push('/stakeholders')
+        router.push('/dashboard')
     } catch (error) {
         console.error('Login failed:', error);
     }

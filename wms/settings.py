@@ -15,21 +15,26 @@ SECRET_KEY = 'django-insecure-z6)4jj0l-liq((ry0358lkztn#_v7keyxx$m5kbyv5d#qg41%)
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['*']
+
+CSRF_TRUSTED_ORIGINS = [
+    'http://localhost:5173',  # Your Vue.js development URL
+    'http://127.0.0.1:5173',  # Add if you also access via IP
+]
 
 
 # Application definition
 
-INSTALLED_APPS = [
-    'rest_framework',
-    'corsheaders',
-    
+INSTALLED_APPS = [    
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    
+    'rest_framework',
+    'corsheaders',
     
     'accounts',
     'inventory',
@@ -100,14 +105,9 @@ AUTH_PASSWORD_VALIDATORS = [
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": [
         # "oauth2_provider.contrib.rest_framework.OAuth2Authentication",
-        'rest_framework.authentication.TokenAuthentication',
-    ],
-    "DEFAULT_RENDERER_CLASSES": [
-        "rest_framework.renderers.JSONRenderer",
-    ],
-    "DEFAULT_PERMISSION_CLASSES": [
-        "rest_framework.permissions.IsAuthenticated",
-    ],
+        # 'rest_framework.authentication.TokenAuthentication',
+        'rest_framework.authentication.SessionAuthentication',
+    ]
 }
 
 

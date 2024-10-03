@@ -2,12 +2,13 @@
 import { ref } from "vue";
 import axios from '@/plugins/axios.js';
 
+const emit = defineEmits(['instance-added']);
 const visible = ref(false);
 
 const formData = ref({
     name: '',
     address: '',
-    phone: '',
+    mobile: '',
     email: '',
     company_name: '',
     type: '',
@@ -22,7 +23,7 @@ const handleSubmit = async () => {
         const data = new FormData();
         data.append('name', formData.value.name);
         data.append('address', formData.value.address);
-        data.append('phone', formData.value.phone);
+        data.append('mobile', formData.value.mobile);
         data.append('email', formData.value.email);
         data.append('company_name', formData.value.company_name);
         data.append('type', formData.value.type);
@@ -30,6 +31,7 @@ const handleSubmit = async () => {
         const response = await axios.post('/api/accounts/stakeholders/', data);
         console.log(response);
         visible.value = false;
+        emit('instance-added');
     } catch (error) {
         console.error('Creation failed:', error);
     }
@@ -40,12 +42,12 @@ const handleSubmit = async () => {
 <template>
     <div class="">
         <div class="flex justify-end">
-            <Button label="Show" @click="visible = true" />
+            <Button label="Add" @click="visible = true" />
         </div>
-        <Dialog v-model:visible="visible" modal header="Edit Profile" :style="{ width: '25rem' }">
+        <Dialog v-model:visible="visible" modal header="Edit Profile" :style="{ width: '40rem' }">
             <span class="text-surface-500 dark:text-surface-400 block mb-8">Update your information.</span>
             <div class="flex items-center gap-4 mb-4">
-                <label for="name" class="font-semibold w-24">name</label>
+                <label for="name" class="font-semibold w-24">Name</label>
                 <InputText id="name" v-model=formData.name class="flex-auto" autocomplete="off" />
             </div>
             <div class="flex items-center gap-4 mb-4">
@@ -53,8 +55,8 @@ const handleSubmit = async () => {
                 <InputText id="address" v-model=formData.address class="flex-auto" autocomplete="off" />
             </div>
             <div class="flex items-center gap-4 mb-4">
-                <label for="phone" class="font-semibold w-24">Phone</label>
-                <InputText id="phone" v-model=formData.phone class="flex-auto" autocomplete="off" />
+                <label for="mobile" class="font-semibold w-24">Phone</label>
+                <InputText id="mobile" v-model=formData.mobile class="flex-auto" autocomplete="off" />
             </div>
             <div class="flex items-center gap-4 mb-8">
                 <label for="email" class="font-semibold w-24">Email</label>
