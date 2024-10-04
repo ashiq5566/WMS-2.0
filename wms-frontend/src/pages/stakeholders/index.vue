@@ -40,7 +40,19 @@ onMounted(() => {
 		<Card class="mt-4">
 			<template #content>
 				<DataTable :value="stakeholders" tableStyle="min-width: 50rem">
-					<Column v-for="col of columns" :key="col.field" :field="col.field" :header="col.header"></Column>
+					<Column field="name" header="Name">
+						<template #body="slotProps">
+							<router-link :to="{ name: 'stakeholders-id', params: { id: slotProps.data.id } }">
+								<span class="font-bold">
+									{{ slotProps.data.name }}
+								</span>
+							</router-link>
+						</template>
+					</Column>
+					<Column field="address" header="Address"></Column>
+					<Column field="mobile" header="Phone"></Column>
+					<Column field="email" header="Email"></Column>
+					<Column field="type" header="Type"></Column>
 					<template #empty>
 						<span class="flex justify-center">No stakeholders found.</span>
 					</template>
