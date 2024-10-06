@@ -2,6 +2,8 @@ from django.db import models
 
 from general.models import WebBaseModel
 
+from accounts.models import Stakeholder
+
 class Product(WebBaseModel):
     product_id = models.CharField(max_length=10,null=True)
     name = models.CharField(max_length=100, null=True, blank=False,unique=True)
@@ -27,7 +29,7 @@ class Order(WebBaseModel):
     net_amount = models.PositiveIntegerField(null=True)
     status = models.BooleanField(default=False,null=True)
     total_amount = models.DecimalField(max_digits=12, decimal_places=2, blank=True, null=True)
-
+    pending_amount = models.DecimalField(max_digits=12, decimal_places=2, blank=True, null=True)
     
     def __str__(self):
             return f'{self.order_number}'
