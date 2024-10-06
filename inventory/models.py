@@ -13,3 +13,79 @@ class Product(WebBaseModel):
     
     def __str__(self):
         return  self.name
+    
+class Order(WebBaseModel):
+    ORDER_TYPE_CHOICES = [
+        ('PO', 'Purchase Order'),
+        ('SO', 'Sales Order'),
+    ]
+    order_type = models.CharField(max_length=2, choices=ORDER_TYPE_CHOICES)
+    order_number = models.CharField(max_length=100, null=True, unique=True)
+    stakeholder = models.ForeignKey(Stakeholder, on_delete=models.CASCADE,null=True)
+    gross_amount = models.PositiveIntegerField(null=True)
+    discount = models.PositiveIntegerField(null=True)
+    net_amount = models.PositiveIntegerField(null=True)
+    status = models.BooleanField(default=False,null=True)
+    total_amount = models.DecimalField(max_digits=12, decimal_places=2, blank=True, null=True)
+
+    
+    def __str__(self):
+            return f'{self.order_number}'
+        
+    @property
+    def total_paid(self):
+        return sum(payment.amount for payment in self.payments.all())
+
+    @property
+    def balance_due(self):
+        return self.total_amount - self.total_paid
+        
+class OrderItem(models.Model):
+    order = models.ForeignKey(Order, on_delete=models.CASCADE, related_name='items')
+    product = models.ForeignKey(Product, on_delete=models.CASCADE)
+    quantity = models.PositiveIntegerField()
+    price_at_time_of_order = models.DecimalField(max_digits=10, decimal_places=2)
+
+    def __str__(self):
+        return f"{self.quantity} of {self.product.name} for {self.order}"
+    
+class Return(WebBaseModel):
+    RETURN_TYPE_CHOICES = [
+        ('PR', 'Purchase Return'),
+        ('SR', 'Sales Return'),
+    ]
+
+    return_type = models.CharField(max_length=2, choices=RETURN_TYPE_CHOICES)
+    original_order = models.ForeignKey('Order', on_delete=models.CASCADE, related_name='returns')
+    date = models.DateField(auto_now_add=True)
+    total_amount = models.DecimalField(max_digits=12, decimal_places=2, blank=True, null=True)
+    
+    def __str__(self):
+        return f" return for Order {self.original_order.id} on {self.date}"
+
+class ReturnItem(models.Model):
+    return_order = models.ForeignKey(Return, on_delete=models.CASCADE, related_name='items')
+    product = models.ForeignKey(Product, on_delete=models.CASCADE)
+    quantity = models.PositiveIntegerField()
+    price_at_return = models.DecimalField(max_digits=10, decimal_places=2)
+    
+    def __str__(self):
+        return f"Return of {self.quantity} of {self.product.name} for Return {self.return_order.id}"
+    
+    
+class Payment(models.Model):
+    PAYMENT_METHOD_CHOICES = [
+        ('CASH', 'Cash'),
+        ('CARD', 'Card'),
+        ('BANK', 'Bank Transfer'),
+        ('OTHER', 'Other'),
+    ]
+
+    order = models.ForeignKey(Order, on_delete=models.CASCADE, related_name='payments')
+    amount = models.DecimalField(max_digits=12, decimal_places=2)
+    payment_date = models.DateField(auto_now_add=True)
+    payment_method = models.CharField(max_length=10, choices=PAYMENT_METHOD_CHOICES, default='CASH')
+    
+    def __str__(self):
+        return f"Payment of {self.amount} for Order {self.order.id} on {self.payment_date}"
+
