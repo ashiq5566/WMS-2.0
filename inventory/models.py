@@ -1,7 +1,6 @@
 from django.db import models
 
 from general.models import WebBaseModel
-
 from accounts.models import Stakeholder
 
 class Product(WebBaseModel):
@@ -21,13 +20,19 @@ class Order(WebBaseModel):
         ('PO', 'Purchase Order'),
         ('SO', 'Sales Order'),
     ]
+    STATUS_CHOICES = [
+        ('Delivered', 'Delivered'),
+        ('Recieved', 'Recieved'),
+        ('Cancelled', 'Cancelled'),
+        ('Closed', 'Closed'),
+    ]
     order_type = models.CharField(max_length=2, choices=ORDER_TYPE_CHOICES)
     order_number = models.CharField(max_length=100, null=True, unique=True)
     stakeholder = models.ForeignKey(Stakeholder, on_delete=models.CASCADE,null=True)
     gross_amount = models.PositiveIntegerField(null=True)
     discount = models.PositiveIntegerField(null=True)
     net_amount = models.PositiveIntegerField(null=True)
-    status = models.BooleanField(default=False,null=True)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES)
     total_amount = models.DecimalField(max_digits=12, decimal_places=2, blank=True, null=True)
     pending_amount = models.DecimalField(max_digits=12, decimal_places=2, blank=True, null=True)
     
