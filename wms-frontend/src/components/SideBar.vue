@@ -22,7 +22,7 @@ const handleLogout = async () => {
 const routes = [
     { path: '/dashborad', name: 'Dashboard' },
     { path: '/stakeholders', name: 'Stakeholders' },
-    { path: '/users', name: 'Users' }
+    { path: '/orders', name: 'Orders' }
 ]
 
 </script>
