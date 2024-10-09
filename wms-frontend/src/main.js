@@ -2,10 +2,7 @@
 import './style.css'
 
 // Import PrimeVue theme CSS
-import 'primevue/resources/themes/aura-light-green/theme.css' // theme
-
-// Import PrimeVue core CSS
-import 'primevue/resources/primevue.min.css' // core CSS
+import Aura from '@primevue/themes/aura'
 
 // Import PrimeIcons CSS
 import 'primeicons/primeicons.css' // icons
@@ -19,23 +16,27 @@ import PrimeVue from 'primevue/config'
 import Button from 'primevue/button'
 import InputText from 'primevue/inputtext'
 import Card from 'primevue/card'
-import Sidebar from 'primevue/sidebar'
 import Dialog from 'primevue/dialog'
-import Dropdown from 'primevue/dropdown'
+import Select from 'primevue/select'
 import DataTable from 'primevue/datatable'
 import Column from 'primevue/column'
+import Drawer from 'primevue/drawer'
 
 const app = createApp(App)
 
 app.use(createPinia())
 app.use(router)
-app.use(PrimeVue)
+app.use(PrimeVue, {
+  theme: {
+    preset: Aura
+  }
+})
 app.component('Button', Button)
 app.component('InputText', InputText)
 app.component('Card', Card)
-app.component('Sidebar', Sidebar)
+app.component('Drawer', Drawer)
 app.component('Dialog', Dialog)
-app.component('Dropdown', Dropdown)
+app.component('Select', Select)
 app.component('DataTable', DataTable)
 app.component('Column', Column)
 

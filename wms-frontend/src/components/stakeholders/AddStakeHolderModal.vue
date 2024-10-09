@@ -64,7 +64,7 @@ const handleSubmit = async () => {
             </div>
             <div class="flex items-center gap-4 mb-8">
                 <label for="type" class="font-semibold w-24">Type</label>
-                <Dropdown v-model=formData.type :options="typeOptions" optionLabel="name" optionValue="value"
+                <Select v-model=formData.type :options="typeOptions" optionLabel="name" optionValue="value"
                     placeholder="Select a Type" class="w-full md:w-14rem" />
 
             </div>
