@@ -12,10 +12,11 @@
     "format": "prettier --write src/"
   },
   "dependencies": {
+    "@primevue/themes": "^4.1.0",
     "axios": "^1.7.1",
     "pinia": "^2.1.7",
     "primeicons": "^7.0.0",
-    "primevue": "3.53",
+    "primevue": "^4.1.0",
     "vue": "^3.4.21",
     "vue-router": "^4.3.0"
   },
