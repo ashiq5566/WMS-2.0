@@ -48,7 +48,7 @@ class Order(WebBaseModel):
         return self.total_amount - self.total_paid
         
 class OrderItem(models.Model):
-    order = models.ForeignKey(Order, on_delete=models.CASCADE, related_name='items')
+    order = models.ForeignKey(Order, on_delete=models.CASCADE, related_name='items', null=True, blank=True)
     product = models.ForeignKey(Product, on_delete=models.CASCADE)
     quantity = models.PositiveIntegerField()
     price_at_time_of_order = models.DecimalField(max_digits=10, decimal_places=2)
