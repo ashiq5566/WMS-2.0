@@ -25,6 +25,7 @@ class Order(WebBaseModel):
         ('Recieved', 'Recieved'),
         ('Cancelled', 'Cancelled'),
         ('Closed', 'Closed'),
+        ('Issued', 'Issued'),
     ]
     order_type = models.CharField(max_length=2, choices=ORDER_TYPE_CHOICES)
     order_number = models.CharField(max_length=100, null=True, unique=True)
@@ -32,7 +33,7 @@ class Order(WebBaseModel):
     gross_amount = models.PositiveIntegerField(null=True)
     discount = models.PositiveIntegerField(null=True)
     net_amount = models.PositiveIntegerField(null=True)
-    order_status = models.CharField(max_length=20, choices=STATUS_CHOICES)
+    order_status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='Issued')
     total_amount = models.DecimalField(max_digits=12, decimal_places=2, blank=True, null=True)
     pending_amount = models.DecimalField(max_digits=12, decimal_places=2, blank=True, null=True)
     

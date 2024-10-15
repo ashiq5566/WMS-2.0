@@ -1,30 +1,63 @@
 <script setup>
-import { onMounted, ref } from 'vue';
+import { onMounted, ref, watch } from 'vue';
 import axios from '@/plugins/axios';
 
-const selectedProduct = ref();
+
 const orderItems = ref();
 const products = ref();
+const selectedProduct = ref();
+const selectedType = ref(null);
+const selectedStakeholder = ref('');
+const stakeholderOptions = ref([]);
 
 const blankData =
-	{ order: '', product: '', quantity: '', price_at_time_of_order: '', };
+	{ product: '', quantity: '', price_at_time_of_order: '', };
 const formData = ref(JSON.parse(JSON.stringify(blankData)));
 
 const orderBlankData = {
-	order_number: 'jsdfsdfj12133',
-	order_type: 'PO',
-	order_status: 'Closed'
+	stakeholder: '',
+	order_number: '',
+	order_type: '',
 }
 const orderData = ref(JSON.parse(JSON.stringify(orderBlankData)));
-
 const itemsData = ref([])
-
+const order_types = [
+	{ value: 'PO', name: 'Purhase Order' },
+	{ value: 'SO', name: 'Sales Order' },
+]
 
 const fetchOrderItems = async () => {
 	try {
 		const response = await axios.get('/api/inventory/order-items');
 
 		orderItems.value = response.data;
+	} catch (error) {
+		console.error('Error fetching orders:', error);
+	}
+}
+
+const fetchStakeholders = async (stakeholder_type) => {
+	try {
+		const response = await axios.get('/api/accounts/stakeholders', {
+			params: { type: stakeholder_type },
+		});
+
+		stakeholderOptions.value = response.data;
+	} catch (error) {
+		console.error('Error fetching stakeholders:', error);
+	}
+}
+
+const fetchOrders = async () => {
+	try {
+		const response = await axios.get('/api/inventory/orders');
+		if (response.data.length >= 0) {
+			if (selectedType.value === 'PO') {
+				orderData.value.order_number = 'PO' + (response.data.length + 1);
+			} else if (selectedType.value === 'SO') {
+				orderData.value.order_number = 'SO' + (response.data.length + 1);
+			}
+		}
 	} catch (error) {
 		console.error('Error fetching orders:', error);
 	}
@@ -54,6 +87,9 @@ const addItem = async () => {
 
 const onSubmit = async () => {
 	try {
+		fetchOrders()
+		orderData.value.order_type = selectedType.value;
+		orderData.value.stakeholder = selectedStakeholder.value;
 		const response = await axios.post('/api/inventory/orders/', {
 			order: orderData.value,
 			items: itemsData.value
@@ -64,6 +100,15 @@ const onSubmit = async () => {
 	}
 }
 
+watch(selectedType, (newValue) => {
+	fetchOrders();
+	if (newValue == 'PO') {
+		fetchStakeholders('Supplier');
+	} else if (newValue == 'SO') {
+		fetchStakeholders('Customer');
+	}
+})
+
 onMounted(() => {
 	fetchOrderItems();
 	fetchProducts();
@@ -71,6 +116,13 @@ onMounted(() => {
 </script>
 <template>
 	<div>
+		<div class="flex justify-end mb-4">
+			<Select v-model="selectedType" :options="order_types" optionLabel="name" option-value="value"
+				placeholder="Select type" class="mr-4" />
+			<Select v-model="selectedStakeholder" :options="stakeholderOptions" optionLabel="name" option-value="id"
+				placeholder="Select Company" class="mr-4" />
+			<InputText class="mr-4" type="text" v-model="orderData.order_number" placehoder="Order Number" disabled />
+		</div>
 		<div class="mb-4">
 			<Select v-model="selectedProduct" :options="products" optionLabel="name" option-value="id"
 				placeholder="Select product" class="mr-4" />
@@ -89,8 +141,9 @@ onMounted(() => {
 						<span class="flex justify-center">No Orders found.</span>
 					</template>
 				</DataTable>
-				<Button label="add" @click="onSubmit" />
-
+				<div class="flex justify-end mt-4">
+					<Button label="Confirm Order" @click="onSubmit" />
+				</div>
 			</template>
 		</Card>
 	</div>

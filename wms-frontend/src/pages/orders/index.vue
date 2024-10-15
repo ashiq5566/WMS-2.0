@@ -14,9 +14,6 @@ const fetchOrders = async () => {
 		console.error('Error fetching orders:', error);
 	}
 }
-// const reloadTable = () => {
-//     fetchStakeholders();
-// };
 
 onMounted(() => {
 	fetchOrders();
@@ -27,7 +24,6 @@ onMounted(() => {
 
 <template>
 	<div class="">
-		<!-- <AddStakeHolderModal @instance-added="reloadTable" /> -->
 		<div class="flex justify-end">
 			<router-link :to="{ name: 'orders-create' }">
 				<Button label="Create Order" />
