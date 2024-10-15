@@ -32,7 +32,7 @@ class Order(WebBaseModel):
     gross_amount = models.PositiveIntegerField(null=True)
     discount = models.PositiveIntegerField(null=True)
     net_amount = models.PositiveIntegerField(null=True)
-    status = models.CharField(max_length=20, choices=STATUS_CHOICES)
+    order_status = models.CharField(max_length=20, choices=STATUS_CHOICES)
     total_amount = models.DecimalField(max_digits=12, decimal_places=2, blank=True, null=True)
     pending_amount = models.DecimalField(max_digits=12, decimal_places=2, blank=True, null=True)
     

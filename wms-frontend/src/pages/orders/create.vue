@@ -7,8 +7,18 @@ const orderItems = ref();
 const products = ref();
 
 const blankData =
-	{ product: '', quantity: '', price_at_time_of_order: '', };
+	{ order: '', product: '', quantity: '', price_at_time_of_order: '', };
 const formData = ref(JSON.parse(JSON.stringify(blankData)));
+
+const orderBlankData = {
+	order_number: 'jsdfsdfj12133',
+	order_type: 'PO',
+	order_status: 'Closed'
+}
+const orderData = ref(JSON.parse(JSON.stringify(orderBlankData)));
+
+const itemsData = ref([])
+
 
 const fetchOrderItems = async () => {
 	try {
@@ -33,15 +43,26 @@ const fetchProducts = async () => {
 // function addItem to add order items
 const addItem = async () => {
 	try {
-		formData.value.product = selectedProduct.value;
+		formData.value.product = selectedProduct.value
+		itemsData.value.push(JSON.parse(JSON.stringify(formData.value)));
+		console.log("Added order items", itemsData.value);
 
-		const response = await axios.post('/api/inventory/order-items/', formData.value);
-		console.log('Item added successfully:', response.data);
-		fetchOrderItems();
 	} catch (error) {
 		console.error('Error adding item:', error);
 	}
 };
+
+const onSubmit = async () => {
+	try {
+		const response = await axios.post('/api/inventory/orders/', {
+			order: orderData.value,
+			items: itemsData.value
+		})
+		console.log('Order created:', response.data)
+	} catch (error) {
+		console.error('Error creating order:', error.response?.data)
+	}
+}
 
 onMounted(() => {
 	fetchOrderItems();
@@ -59,15 +80,17 @@ onMounted(() => {
 		</div>
 		<Card>
 			<template #content>
-				<DataTable :value="orderItems" tableStyle="min-width: 50rem">
+				<DataTable :value="itemsData" tableStyle="min-width: 50rem">
 					<Column field="product" header="Product"></Column>
 					<Column field="quantity" header="Quantity"></Column>
 					<Column field="price_at_time_of_order" header="Unit Price"></Column>
-					<Column field="totak" header="Total"></Column>
+					<Column field="total" header="Total"></Column>
 					<template #empty>
 						<span class="flex justify-center">No Orders found.</span>
 					</template>
 				</DataTable>
+				<Button label="add" @click="onSubmit" />
+
 			</template>
 		</Card>
 	</div>
