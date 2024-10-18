@@ -1,7 +1,9 @@
 <script setup>
 import { onMounted, ref, watch } from 'vue';
 import axios from '@/plugins/axios';
+import { useToast } from 'primevue/usetoast';
 
+const toast = useToast();
 
 const orderItems = ref();
 const products = ref();
@@ -63,6 +65,7 @@ const fetchOrders = async () => {
 	}
 }
 
+
 const fetchProducts = async () => {
 	try {
 		const response = await axios.get('/api/inventory/products');
@@ -95,8 +98,11 @@ const onSubmit = async () => {
 			items: itemsData.value
 		})
 		console.log('Order created:', response.data)
+		toast.add({ severity: 'info', summary: 'Info', detail: 'Order Created SuccessFully', life: 3000 });
 	} catch (error) {
 		console.error('Error creating order:', error.response?.data)
+		const errorMessage = error.response?.data?.detail || error.response?.data?.message || error.message || 'An error occurred';
+		toast.add({ severity: 'error', summary: 'Error Message', detail: errorMessage, life: 3000 });
 	}
 }
 
