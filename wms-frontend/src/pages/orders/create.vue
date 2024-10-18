@@ -2,6 +2,7 @@
 import { onMounted, ref, watch } from 'vue';
 import axios from '@/plugins/axios';
 import { useToast } from 'primevue/usetoast';
+import OrderConfirmModal from '@/components/orders/OrderConfirmModal.vue';
 
 const toast = useToast();
 
@@ -139,7 +140,11 @@ onMounted(() => {
 		<Card>
 			<template #content>
 				<DataTable :value="itemsData" tableStyle="min-width: 50rem">
-					<Column field="product" header="Product"></Column>
+					<Column field="product" header="Product">
+						<template #body="slotProps">
+							<span>{{ slotProps.data }}</span>
+						</template>
+					</Column>
 					<Column field="quantity" header="Quantity"></Column>
 					<Column field="price_at_time_of_order" header="Unit Price"></Column>
 					<Column field="total" header="Total"></Column>
@@ -148,7 +153,7 @@ onMounted(() => {
 					</template>
 				</DataTable>
 				<div class="flex justify-end mt-4">
-					<Button label="Confirm Order" @click="onSubmit" />
+					<OrderConfirmModal @order-confirmed="onSubmit" :items="itemsData" />
 				</div>
 			</template>
 		</Card>
