@@ -8,6 +8,7 @@ const toast = useToast();
 
 const products = ref();
 const selectedProduct = ref();
+const grossAmount = ref(0);
 const selectedType = ref(null);
 const selectedStakeholder = ref('');
 const stakeholderOptions = ref([]);
@@ -18,6 +19,7 @@ const blankData =
 	product_name: '',
 	quantity: '',
 	price_at_time_of_order: '',
+	total: '',
 };
 const formData = ref(JSON.parse(JSON.stringify(blankData)));
 
@@ -25,6 +27,8 @@ const orderBlankData = {
 	stakeholder: '',
 	order_number: '',
 	order_type: '',
+	gross_amount: '',
+
 }
 const orderData = ref(JSON.parse(JSON.stringify(orderBlankData)));
 const itemsData = ref([])
@@ -50,15 +54,21 @@ const fetchOrders = async () => {
 		const response = await axios.get('/api/inventory/orders');
 		if (response.data.length >= 0) {
 			if (selectedType.value === 'PO') {
-				orderData.value.order_number = 'PO' + (response.data.length + 1);
+				orderData.value.order_number = 'PO' + (response.data.filter(order => order.order_type == 'PO').length + 1);
 			} else if (selectedType.value === 'SO') {
-				orderData.value.order_number = 'SO' + (response.data.length + 1);
+				orderData.value.order_number = 'SO' + (response.data.filter(order => order.order_type == 'SO').length + 1);
 			}
 		}
 	} catch (error) {
 		console.error('Error fetching orders:', error);
 	}
 }
+
+const selectRow = (data) => {
+	const removedProduct = data.product_name
+	itemsData.value = itemsData.value.filter(item => item.product !== data.product);
+	toast.add({ severity: 'info', summary: 'Info', detail: `${removedProduct} is Removed Succesfully`, life: 3000 });
+};
 
 
 const fetchProducts = async () => {
@@ -75,10 +85,21 @@ const fetchProducts = async () => {
 const addItem = async () => {
 	try {
 		const product = products.value.find(p => p.id === selectedProduct.value);
+		if (!product || !formData.value.quantity || !formData.value.price_at_time_of_order) {
+			toast.add({ severity: 'error', summary: 'Error', detail: 'Please fill in all fields', life: 3000 });
+			return;
+		}
 		formData.value.product = product.id
 		formData.value.product_name = product.name
+		if (formData.value.quantity > 0 && formData.value.price_at_time_of_order > 0) {
+			// calculate total price of each and save it in variable
+			formData.value.total = formData.value.quantity * formData.value.price_at_time_of_order;
+		}
+		grossAmount.value = grossAmount.value + formData.value.total;
 		itemsData.value.push(JSON.parse(JSON.stringify(formData.value)));
-		console.log("Added order items", itemsData.value);
+		formData.value = JSON.parse(JSON.stringify(blankData));
+		selectedProduct.value = '';
+		console.log("================================", grossAmount.value);
 
 	} catch (error) {
 		console.error('Error adding item:', error);
@@ -90,6 +111,7 @@ const onSubmit = async () => {
 		fetchOrders()
 		orderData.value.order_type = selectedType.value;
 		orderData.value.stakeholder = selectedStakeholder.value;
+		orderData.value.gross_amount = grossAmount.value;
 		const response = await axios.post('/api/inventory/orders/', {
 			order: orderData.value,
 			items: itemsData.value
@@ -125,7 +147,7 @@ onMounted(() => {
 				placeholder="Select Company" class="mr-4" />
 			<InputText class="mr-4" type="text" v-model="orderData.order_number" placehoder="Order Number" disabled />
 		</div>
-		<div class="mb-4">
+		<div v-if="selectedType" class="mb-4">
 			<Select v-model="selectedProduct" :options="products" optionLabel="name" option-value="id"
 				placeholder="Select product" class="mr-4" />
 			<InputText class="mr-4" type="text" v-model="formData.quantity" placeholder="Quantity" />
@@ -143,12 +165,17 @@ onMounted(() => {
 					<Column field="quantity" header="Quantity"></Column>
 					<Column field="price_at_time_of_order" header="Unit Price"></Column>
 					<Column field="total" header="Total"></Column>
+					<Column class="w-24 !text-end">
+						<template #body="{ data }">
+							<Button icon="pi pi-times" @click="selectRow(data)" severity="secondary" rounded></Button>
+						</template>
+					</Column>
 					<template #empty>
 						<span class="flex justify-center">No Orders found.</span>
 					</template>
 				</DataTable>
-				<div class="flex justify-end mt-4">
-					<OrderConfirmModal @order-confirmed="onSubmit" :items="itemsData" />
+				<div v-if="itemsData.length" class="flex justify-end mt-4">
+					<OrderConfirmModal @order-confirmed="onSubmit" :items="itemsData" :gross-amount="grossAmount" />
 				</div>
 			</template>
 		</Card>

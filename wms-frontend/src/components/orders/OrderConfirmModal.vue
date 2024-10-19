@@ -11,8 +11,12 @@ const handleSubmit = () => {
 }
 const props = defineProps({
     items: {
-        type: Array, // Array type
-        required: true, // Make it required
+        type: Array,
+        required: true,
+    },
+    grossAmount: {
+        type: Number,
+        required: true,
     }
 });
 
@@ -24,7 +28,7 @@ const props = defineProps({
             <Button label="Confirm" @click="visible = true" />
         </div>
         <Dialog v-model:visible="visible" modal header="Edit Profile" :style="{ width: '40rem' }">
-            <DataTable :value="props.items" tableStyle="min-width: 50rem">
+            <DataTable :value="props.items" tableStyle="min-width: 20rem">
                 <Column field="product_name" header="Product"></Column>
                 <Column field="quantity" header="Quantity"></Column>
                 <Column field="price_at_time_of_order" header="Unit Price"></Column>
@@ -33,7 +37,10 @@ const props = defineProps({
                     <span class="flex justify-center">No Orders found.</span>
                 </template>
             </DataTable>
-            <div class="flex justify-end">
+            <div class="flex justify-between mt-4">
+                <span>Total Gross Amount: {{ props.grossAmount }}</span>
+            </div>
+            <div class="flex justify-end mt-4">
                 <Button type="submit" label="Confirm" @click="handleSubmit()"></Button>
             </div>
         </Dialog>
