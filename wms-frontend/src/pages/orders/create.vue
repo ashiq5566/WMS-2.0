@@ -6,7 +6,6 @@ import OrderConfirmModal from '@/components/orders/OrderConfirmModal.vue';
 
 const toast = useToast();
 
-const orderItems = ref();
 const products = ref();
 const selectedProduct = ref();
 const selectedType = ref(null);
@@ -14,7 +13,12 @@ const selectedStakeholder = ref('');
 const stakeholderOptions = ref([]);
 
 const blankData =
-	{ product: '', quantity: '', price_at_time_of_order: '', };
+{
+	product: '',
+	product_name: '',
+	quantity: '',
+	price_at_time_of_order: '',
+};
 const formData = ref(JSON.parse(JSON.stringify(blankData)));
 
 const orderBlankData = {
@@ -28,16 +32,6 @@ const order_types = [
 	{ value: 'PO', name: 'Purhase Order' },
 	{ value: 'SO', name: 'Sales Order' },
 ]
-
-const fetchOrderItems = async () => {
-	try {
-		const response = await axios.get('/api/inventory/order-items');
-
-		orderItems.value = response.data;
-	} catch (error) {
-		console.error('Error fetching orders:', error);
-	}
-}
 
 const fetchStakeholders = async (stakeholder_type) => {
 	try {
@@ -80,7 +74,9 @@ const fetchProducts = async () => {
 // function addItem to add order items
 const addItem = async () => {
 	try {
-		formData.value.product = selectedProduct.value
+		const product = products.value.find(p => p.id === selectedProduct.value);
+		formData.value.product = product.id
+		formData.value.product_name = product.name
 		itemsData.value.push(JSON.parse(JSON.stringify(formData.value)));
 		console.log("Added order items", itemsData.value);
 
@@ -117,7 +113,6 @@ watch(selectedType, (newValue) => {
 })
 
 onMounted(() => {
-	fetchOrderItems();
 	fetchProducts();
 })
 </script>
@@ -142,7 +137,7 @@ onMounted(() => {
 				<DataTable :value="itemsData" tableStyle="min-width: 50rem">
 					<Column field="product" header="Product">
 						<template #body="slotProps">
-							<span>{{ slotProps.data }}</span>
+							<span>{{ slotProps.data.product_name }}</span>
 						</template>
 					</Column>
 					<Column field="quantity" header="Quantity"></Column>
