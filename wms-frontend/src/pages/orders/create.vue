@@ -28,6 +28,8 @@ const orderBlankData = {
 	order_number: '',
 	order_type: '',
 	gross_amount: '',
+	discount: '',
+	net_amount: '',
 
 }
 const orderData = ref(JSON.parse(JSON.stringify(orderBlankData)));
@@ -99,19 +101,21 @@ const addItem = async () => {
 		itemsData.value.push(JSON.parse(JSON.stringify(formData.value)));
 		formData.value = JSON.parse(JSON.stringify(blankData));
 		selectedProduct.value = '';
-		console.log("================================", grossAmount.value);
 
 	} catch (error) {
 		console.error('Error adding item:', error);
 	}
 };
 
-const onSubmit = async () => {
+const onSubmit = async (discountAmount, updatedGrossAmount) => {
 	try {
 		fetchOrders()
+		console.log('Order confirmed with discount amount:', discountAmount);
 		orderData.value.order_type = selectedType.value;
 		orderData.value.stakeholder = selectedStakeholder.value;
 		orderData.value.gross_amount = grossAmount.value;
+		orderData.value.discount = discountAmount;
+		orderData.value.net_amount = updatedGrossAmount;
 		const response = await axios.post('/api/inventory/orders/', {
 			order: orderData.value,
 			items: itemsData.value
@@ -125,6 +129,7 @@ const onSubmit = async () => {
 	}
 }
 
+
 watch(selectedType, (newValue) => {
 	fetchOrders();
 	if (newValue == 'PO') {
@@ -133,6 +138,13 @@ watch(selectedType, (newValue) => {
 		fetchStakeholders('Customer');
 	}
 })
+
+watch(itemsData, (newValue) => {
+	const totalAmount = newValue.reduce((acc, item) => acc + (item.total || 0), 0);
+	grossAmount.value = totalAmount;
+
+	console.log("Updated Gross Amount:", grossAmount.value);
+}, { deep: true });
 
 onMounted(() => {
 	fetchProducts();
