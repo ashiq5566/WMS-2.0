@@ -5,14 +5,6 @@ import AddStakeHolderModal from "@/components/stakeholders/AddStakeHolderModal.v
 
 const stakeholders = ref();
 
-const columns = [
-	{ field: 'name', header: 'Name' },
-	{ field: 'address', header: 'Address' },
-	{ field: 'mobile', header: 'Phone' },
-	{ field: 'email', header: 'Email' },
-	{ field: 'type', header: 'Type' }
-];
-
 const fetchStakeholders = async () => {
 	try {
 		const response = await axios.get('/api/accounts/stakeholders');

@@ -1,0 +1,122 @@
+[
+  {
+    "model": "inventory.Product",
+    "pk": 3,
+    "fields": {
+      "name": "Stainless Steel Pan",
+      "product_id": "PR1",
+      "selling_price": 25.99,
+      "price_at_time_of_purchase": 30.0,
+      "date_added": "2024-10-19T10:00:00Z",
+      "date_updated": "2024-10-19T10:00:00Z"
+    }
+  },
+  {
+    "model": "inventory.Product",
+    "pk": 4,
+    "fields": {
+      "name": "Steel Cooking Pot",
+      "product_id": "PR2",
+      "selling_price": 30.5,
+      "price_at_time_of_purchase": 35.0,
+      "date_added": "2024-10-19T10:00:00Z",
+      "date_updated": "2024-10-19T10:00:00Z"
+    }
+  },
+  {
+    "model": "inventory.Product",
+    "pk": 5,
+    "fields": {
+      "name": "Steel Knife Set",
+      "product_id": "PR3",
+      "selling_price": 40.0,
+      "price_at_time_of_purchase": 50.0,
+      "date_added": "2024-10-19T10:00:00Z",
+      "date_updated": "2024-10-19T10:00:00Z"
+    }
+  },
+  {
+    "model": "inventory.Product",
+    "pk": 6,
+    "fields": {
+      "name": "Stainless Steel Spoon Set",
+      "product_id": "PR4",
+      "selling_price": 15.99,
+      "price_at_time_of_purchase": 18.0,
+      "date_added": "2024-10-19T10:00:00Z",
+      "date_updated": "2024-10-19T10:00:00Z"
+    }
+  },
+  {
+    "model": "inventory.Product",
+    "pk": 7,
+    "fields": {
+      "name": "Steel Fork Set",
+      "product_id": "PR5",
+      "selling_price": 12.99,
+      "price_at_time_of_purchase": 16.0,
+      "date_added": "2024-10-19T10:00:00Z",
+      "date_updated": "2024-10-19T10:00:00Z"
+    }
+  },
+  {
+    "model": "inventory.Product",
+    "pk": 8,
+    "fields": {
+      "name": "Steel Serving Tray",
+      "product_id": "PR6",
+      "selling_price": 20.5,
+      "price_at_time_of_purchase": 22.0,
+      "date_added": "2024-10-19T10:00:00Z",
+      "date_updated": "2024-10-19T10:00:00Z"
+    }
+  },
+  {
+    "model": "inventory.Product",
+    "pk": 9,
+    "fields": {
+      "name": "Steel Water Jug",
+      "product_id": "PR7",
+      "selling_price": 35.0,
+      "price_at_time_of_purchase": 40.0,
+      "date_added": "2024-10-19T10:00:00Z",
+      "date_updated": "2024-10-19T10:00:00Z"
+    }
+  },
+  {
+    "model": "inventory.Product",
+    "pk": 10,
+    "fields": {
+      "name": "Steel Cup Set",
+      "product_id": "PR8",
+      "selling_price": 18.0,
+      "price_at_time_of_purchase": 20.0,
+      "date_added": "2024-10-19T10:00:00Z",
+      "date_updated": "2024-10-19T10:00:00Z"
+    }
+  },
+  {
+    "model": "inventory.Product",
+    "pk": 11,
+    "fields": {
+      "name": "Steel Tiffin Box",
+      "product_id": "PR9",
+      "selling_price": 22.5,
+      "price_at_time_of_purchase": 25.0,
+      "date_added": "2024-10-19T10:00:00Z",
+      "date_updated": "2024-10-19T10:00:00Z"
+    }
+  },
+  {
+    "model": "inventory.Product",
+    "pk": 12,
+    "fields": {
+      "name": "Steel Kettle",
+      "product_id": "PR10",
+      "selling_price": 28.0,
+      "price_at_time_of_purchase": 32.0,
+      "date_added": "2024-10-19T10:00:00Z",
+      "date_updated": "2024-10-19T10:00:00Z"
+    }
+  }
+]

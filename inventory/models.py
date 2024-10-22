@@ -6,7 +6,8 @@ from accounts.models import Stakeholder
 class Product(WebBaseModel):
     product_id = models.CharField(max_length=10,null=True)
     name = models.CharField(max_length=100, null=True, blank=False,unique=True)
-    unit_price = models.PositiveBigIntegerField(null=True,blank=True)
+    selling_price = models.PositiveBigIntegerField(null=True,blank=True)
+    price_at_time_of_purchase = models.PositiveBigIntegerField(null=True,blank=True)
     qty_available = models.PositiveIntegerField(null=True, default=0)
     qty_sold = models.PositiveIntegerField(null=True, default=0)
     qty_purchased = models.PositiveIntegerField(null=True, default=0)
@@ -25,6 +26,7 @@ class Order(WebBaseModel):
         ('Recieved', 'Recieved'),
         ('Cancelled', 'Cancelled'),
         ('Closed', 'Closed'),
+        ('Issued', 'Issued'),
     ]
     order_type = models.CharField(max_length=2, choices=ORDER_TYPE_CHOICES)
     order_number = models.CharField(max_length=100, null=True, unique=True)
@@ -32,7 +34,7 @@ class Order(WebBaseModel):
     gross_amount = models.PositiveIntegerField(null=True)
     discount = models.PositiveIntegerField(null=True)
     net_amount = models.PositiveIntegerField(null=True)
-    status = models.CharField(max_length=20, choices=STATUS_CHOICES)
+    order_status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='Issued')
     total_amount = models.DecimalField(max_digits=12, decimal_places=2, blank=True, null=True)
     pending_amount = models.DecimalField(max_digits=12, decimal_places=2, blank=True, null=True)
     
@@ -48,10 +50,11 @@ class Order(WebBaseModel):
         return self.total_amount - self.total_paid
         
 class OrderItem(models.Model):
-    order = models.ForeignKey(Order, on_delete=models.CASCADE, related_name='items')
+    order = models.ForeignKey(Order, on_delete=models.CASCADE, related_name='items', null=True, blank=True)
     product = models.ForeignKey(Product, on_delete=models.CASCADE)
     quantity = models.PositiveIntegerField()
     price_at_time_of_order = models.DecimalField(max_digits=10, decimal_places=2)
+    total = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
 
     def __str__(self):
         return f"{self.quantity} of {self.product.name} for {self.order}"

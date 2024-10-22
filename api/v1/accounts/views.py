@@ -1,5 +1,7 @@
 from django.shortcuts import render
 from rest_framework import viewsets
+from django_filters.rest_framework import DjangoFilterBackend
+from rest_framework.filters import OrderingFilter
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
@@ -50,6 +52,11 @@ class StakeholderView(viewsets.ModelViewSet):
     queryset = Stakeholder.objects.all()
     serializer_class = StakeHolderSerializer
     permission_classes = (IsAuthenticated, )
-    
+    filter_backends = (DjangoFilterBackend, OrderingFilter)
+    filterset_fields = {
+        'type': ['exact', 'icontains'],
+    }
+    ordering_fields = ['name', 'created_at']
+    ordering = ['name'] 
     
         

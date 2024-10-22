@@ -21,6 +21,8 @@ import Select from 'primevue/select'
 import DataTable from 'primevue/datatable'
 import Column from 'primevue/column'
 import Drawer from 'primevue/drawer'
+import Toast from 'primevue/toast'
+import ToastService from 'primevue/toastservice'
 
 const app = createApp(App)
 
@@ -31,6 +33,7 @@ app.use(PrimeVue, {
     preset: Aura
   }
 })
+app.use(ToastService)
 app.component('Button', Button)
 app.component('InputText', InputText)
 app.component('Card', Card)
@@ -39,5 +42,6 @@ app.component('Dialog', Dialog)
 app.component('Select', Select)
 app.component('DataTable', DataTable)
 app.component('Column', Column)
+app.component('Toast', Toast)
 
 app.mount('#app')
