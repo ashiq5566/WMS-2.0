@@ -4,6 +4,24 @@ import axios from '@/plugins/axios';
 
 const orders = ref();
 
+const getSeverity = (status) => {
+	switch (status) {
+		case 'Issued':
+			return 'warn';
+
+		case 'Delivered':
+			return 'success';
+
+		case 'Recieved':
+			return 'info';
+
+		case 'Cancelled':
+			return 'warn';
+
+		case 'Closed':
+			return 'danger';
+	}
+}
 
 const fetchOrders = async () => {
 	try {
@@ -43,9 +61,17 @@ onMounted(() => {
 					</Column>
 					<Column field="order_type" header="Order Type"></Column>
 					<Column field="order_number" header="Order Number"></Column>
-					<Column field="stakeholder" header="Stakeholder"></Column>
+					<Column field="stakeholder" header="Stakeholder">
+						<template #body="slotProps">
+							{{ slotProps.data.stakeholder_obj.name }}
+						</template>
+					</Column>
 					<Column field="net_amount" header="Net Amount"></Column>
-					<Column field="status" header="Status"></Column>
+					<Column field="order_status" header="Status">
+						<template #body="slotProps">
+							<Tag :value="slotProps.data.order_status" :severity="getSeverity(slotProps.data.order_status)" />
+						</template>
+					</Column>
 					<template #empty>
 						<span class="flex justify-center">No Orders found.</span>
 					</template>

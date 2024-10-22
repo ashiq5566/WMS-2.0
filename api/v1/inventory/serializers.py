@@ -1,7 +1,10 @@
 from rest_framework import serializers
 from inventory.models import Order, OrderItem, Product
+from api.v1.accounts.serializers import StakeHolderSerializer
         
 class OrderSerializer(serializers.ModelSerializer):
+    stakeholder_obj = StakeHolderSerializer(source='stakeholder', read_only=True)
+
     class Meta:
         model = Order
         fields = '__all__'
