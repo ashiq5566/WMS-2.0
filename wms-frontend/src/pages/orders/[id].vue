@@ -8,6 +8,25 @@ const route = useRoute()
 const order = ref({})
 const orderItems = ref([])
 
+const getSeverity = (status) => {
+	switch (status) {
+		case 'Issued':
+			return 'warn';
+
+		case 'Delivered':
+			return 'success';
+
+		case 'Recieved':
+			return 'info';
+
+		case 'Cancelled':
+			return 'warn';
+
+		case 'Closed':
+			return 'danger';
+	}
+}
+
 const fetchOrder = async () => {
 	try {
 		const response = await axios.get(`/api/inventory/orders/${route.params.id}`)
@@ -65,7 +84,7 @@ onMounted(() => {
 						</div>
 						<div class="flex justify-between w-3/4">
 							<label class="font-bold">Order Status:</label>
-							<span>{{ order.order_status }}</span>
+							<Tag :value="order.order_status" :severity="getSeverity(order.order_status)" />
 						</div>
 					</div>
 					<div class="grid grid-cols-2 gap-4 border-t mt-8 pt-8">
