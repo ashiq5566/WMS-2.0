@@ -12,6 +12,7 @@ const grossAmount = ref(0);
 const selectedType = ref(null);
 const selectedStakeholder = ref('');
 const stakeholderOptions = ref([]);
+const selectedProductUnit = ref('');
 
 const blankData =
 {
@@ -20,6 +21,7 @@ const blankData =
 	quantity: '',
 	price_at_time_of_order: '',
 	total: '',
+	unit: '',
 };
 const formData = ref(JSON.parse(JSON.stringify(blankData)));
 
@@ -139,6 +141,12 @@ watch(selectedType, (newValue) => {
 	}
 })
 
+watch(selectedProduct, (newValue) => {
+	if (products.value.length > 0) {
+		selectedProductUnit.value = products.value.find(p => p.id === newValue).unit;
+	}
+})
+
 watch(itemsData, (newValue) => {
 	const totalAmount = newValue.reduce((acc, item) => acc + (item.total || 0), 0);
 	grossAmount.value = totalAmount;
@@ -162,7 +170,7 @@ onMounted(() => {
 		<div v-if="selectedType" class="mb-4">
 			<Select v-model="selectedProduct" :options="products" optionLabel="name" option-value="id"
 				placeholder="Select product" class="mr-4" />
-			<InputText class="mr-4" type="text" v-model="formData.quantity" placeholder="Quantity" />
+			<InputText class="mr-4" type="text" v-model="formData.quantity" :placeholder="selectedProductUnit" />
 			<InputText class="mr-4" type="text" v-model="formData.price_at_time_of_order" placeholder="Unit Price" />
 			<Button icon="pi pi-plus" aria-label="Save" @click="addItem" />
 		</div>
