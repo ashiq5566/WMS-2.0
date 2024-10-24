@@ -4,6 +4,11 @@ from general.models import WebBaseModel
 from accounts.models import Stakeholder
 
 class Product(WebBaseModel):
+    UNIT_CHOICES = [
+        ('Pieces', 'Pieces'),
+        ('Kilograms', 'Kilograms'),
+        ('Sets', 'Sets'),
+    ]
     product_id = models.CharField(max_length=10,null=True)
     name = models.CharField(max_length=100, null=True, blank=False,unique=True)
     selling_price = models.PositiveBigIntegerField(null=True,blank=True)
@@ -12,6 +17,7 @@ class Product(WebBaseModel):
     qty_sold = models.PositiveIntegerField(null=True, default=0)
     qty_purchased = models.PositiveIntegerField(null=True, default=0)
     status = models.BooleanField(default=False)
+    unit = models.CharField(choices=UNIT_CHOICES, null=True, blank=True, max_length=100)
     
     def __str__(self):
         return  self.name
@@ -58,6 +64,15 @@ class OrderItem(models.Model):
 
     def __str__(self):
         return f"{self.quantity} of {self.product.name} for {self.order}"
+    
+    def save(self, *args, **kwargs):
+        # Update product quantity if the order type is 'PO' (Purchase Order)
+        if self.order and self.order.order_type == 'PO':
+            self.product.qty_purchased += self.quantity
+            self.product.qty_available += self.quantity
+            self.product.save()
+            
+        super().save(*args, **kwargs)
     
 class Return(WebBaseModel):
     RETURN_TYPE_CHOICES = [
