@@ -23,6 +23,7 @@ import Column from 'primevue/column'
 import Drawer from 'primevue/drawer'
 import Toast from 'primevue/toast'
 import ToastService from 'primevue/toastservice'
+import Tag from 'primevue/tag'
 
 const app = createApp(App)
 
@@ -43,5 +44,6 @@ app.component('Select', Select)
 app.component('DataTable', DataTable)
 app.component('Column', Column)
 app.component('Toast', Toast)
+app.component('Tag', Tag)
 
 app.mount('#app')

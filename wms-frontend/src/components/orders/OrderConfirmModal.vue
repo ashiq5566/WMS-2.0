@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, watch, computed } from "vue";
 import axios from '@/plugins/axios.js';
+import { useRouter } from 'vue-router';
 
 
 const props = defineProps({
@@ -14,6 +15,8 @@ const props = defineProps({
 	}
 });
 
+const router = useRouter();
+
 const emit = defineEmits(['order-confirmed']);
 const visible = ref(false);
 const discountAmount = ref(0);
@@ -23,6 +26,7 @@ const updatedGrossAmount = ref(props.grossAmount);
 const handleSubmit = () => {
 	emit('order-confirmed', discountAmount.value, updatedGrossAmount.value);
 	visible.value = false;
+	router.push('/orders');
 }
 
 watch(() => props.grossAmount, (newValue) => {
