@@ -1,0 +1,177 @@
+<script setup>
+import { onMounted, ref, watch } from 'vue';
+import axios from '@/plugins/axios';
+import { useToast } from 'primevue/usetoast';
+
+const toast = useToast();
+
+const orders = ref([]);
+const selectedProduct = ref();
+const returnAmount = ref(0);
+const selectedOrder = ref(null);
+const orderItems = ref([]);
+const productTotal = ref('');
+const orderPrice = ref('');
+const orderQuantity = ref('');
+
+
+const blankData =
+{
+	product: '',
+	quantity: '',
+	total: '',
+	order_price: '',
+};
+const formData = ref(JSON.parse(JSON.stringify(blankData)));
+
+const orderlankData = {
+	return_type: "PR",
+	original_order: '',
+	total_amount: '',
+}
+const returnData = ref(JSON.parse(JSON.stringify(orderlankData)));
+const itemsData = ref([])
+
+
+const fetchOrders = async () => {
+	try {
+		const response = await axios.get('/api/inventory/orders');
+		orders.value = response.data;
+
+	} catch (error) {
+		console.error('Error fetching orders:', error);
+	}
+}
+
+const fetchOrderItems = async (order) => {
+	try {
+		const response = await axios.get('/api/inventory/order-items/', {
+			params: { order__id: order },
+		});
+		const alteredData = response.data.map(item => (
+			{
+				id: item.id,
+				price_at_time_of_order: item.price_at_time_of_order,
+				quantity: item.quantity,
+				total: item.total,
+				unit: item.product_obj.unit,
+				product_id: item.product_obj.id,
+				product_name: item.product_obj.name
+			}
+		));
+		orderItems.value = alteredData;
+	} catch (error) {
+		console.error('Error fetching order items:', error);
+	}
+}
+const selectRow = (data) => {
+	const removedProduct = data.product_name
+	itemsData.value = itemsData.value.filter(item => item.product !== data.product);
+	toast.add({ severity: 'info', summary: 'Info', detail: `${removedProduct} is Removed Succesfully`, life: 3000 });
+};
+
+
+// function addItem to add order items
+const addItem = async () => {
+	try {
+		const product = orderItems.value.find(p => p.product_id === selectedProduct.value);
+		if (!formData.value.quantity) {
+			toast.add({ severity: 'error', summary: 'Error', detail: 'Please fill in all fields', life: 3000 });
+			return;
+		}
+		formData.value.product = product.product_id
+		formData.value.product_name = product.product_name
+		formData.value.order_price = orderPrice.value;
+		if (formData.value.quantity > 0 && formData.value.order_price > 0) {
+			// calculate total price of each and save it in variable
+			formData.value.total = formData.value.quantity * orderPrice.value;
+		}
+		returnAmount.value = returnAmount.value + formData.value.total;
+		itemsData.value.push(JSON.parse(JSON.stringify(formData.value)));
+		formData.value = JSON.parse(JSON.stringify(blankData));
+		selectedProduct.value = '';
+
+	} catch (error) {
+		console.error('Error adding item:', error);
+	}
+};
+
+const onSubmit = async () => {
+	try {
+		returnData.value.original_order = selectedOrder.value;
+		// returnData.value.return_type = selectedStakeholder.value;
+		returnData.value.total_amount = returnAmount.value;
+		const response = await axios.post('/api/inventory/returns/', {
+			return: returnData.value,
+			items: itemsData.value
+		});
+		console.log('Return created:', response.data)
+		toast.add({ severity: 'info', summary: 'Info', detail: 'Return Created SuccessFully', life: 3000 });
+	} catch (error) {
+		console.error('Error creating return:', error.response?.data)
+		const errorMessage = error.response?.data?.detail || error.response?.data?.message || error.message || 'An error occurred';
+		toast.add({ severity: 'error', summary: 'Error Message', detail: errorMessage, life: 3000 });
+	}
+}
+
+
+watch(selectedOrder, (newValue) => {
+	fetchOrderItems(newValue);
+})
+
+watch(selectedProduct, (newValue) => {
+	orderPrice.value = orderItems.value.find(p => p.product_id === newValue)?.price_at_time_of_order;
+	productTotal.value = orderItems.value.find(p => p.product_id === newValue)?.total;
+	orderQuantity.value = orderItems.value.find(p => p.product_id === newValue)?.quantity;
+})
+
+watch(itemsData, (newValue) => {
+	const amount = newValue.reduce((acc, item) => acc + (item.total || 0), 0);
+	returnAmount.value = amount;
+}, { deep: true });
+
+onMounted(() => {
+	fetchOrders();
+})
+</script>
+<template>
+	<div>
+		<div class="flex justify-end mb-4">
+			<Select v-model="selectedOrder" :options="orders" optionLabel="order_number" option-value="id"
+				placeholder="Select Order" class="mr-4" />
+		</div>
+		<div v-if="selectedOrder" class="mb-4">
+			<Select v-model="selectedProduct" :options="orderItems" optionLabel="product_name" option-value="product_id"
+				placeholder="Select product" class="mr-4" />
+			<InputText class="mr-4" type="text" v-model="orderQuantity" disabled />
+			<InputText class="mr-4" type="text" v-model="orderPrice" disabled />
+			<InputText class="mr-4" type="text" v-model="formData.quantity" placeholder="Return Quantity" />
+			<Button icon="pi pi-plus" aria-label="Save" @click="addItem" />
+		</div>
+		<Card>
+			<template #content>
+				<DataTable :value="itemsData" tableStyle="min-width: 50rem">
+					<Column field="product" header="Product">
+						<template #body="slotProps">
+							<span>{{ slotProps.data.product_name }}</span>
+						</template>
+					</Column>
+					<Column field="quantity" header="Return Quantity"></Column>
+					<Column field="order_price" header="Unit Price"></Column>
+					<Column field="total" header="Total"></Column>
+					<Column class="w-24 !text-end">
+						<template #body="{ data }">
+							<Button icon="pi pi-times" @click="selectRow(data)" severity="secondary" rounded></Button>
+						</template>
+					</Column>
+					<template #empty>
+						<span class="flex justify-center">No Orders found.</span>
+					</template>
+				</DataTable>
+				<div v-if="itemsData.length" class="flex justify-end mt-4">
+					<Button label="Confirm" @click="onSubmit" />
+				</div>
+			</template>
+		</Card>
+	</div>
+</template>

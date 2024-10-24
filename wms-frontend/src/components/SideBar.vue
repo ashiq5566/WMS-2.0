@@ -23,7 +23,8 @@ const routes = [
     { path: '/', name: 'Dashboard' },
     { path: '/stakeholders', name: 'Stakeholders' },
     { path: '/orders', name: 'Orders' },
-    { path: '/stocks', name: 'Stock' }
+    { path: '/stocks', name: 'Stock' },
+    { path: '/returns', name: 'Returns' },
 ]
 
 </script>

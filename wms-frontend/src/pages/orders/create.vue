@@ -102,7 +102,7 @@ const addItem = async () => {
 		grossAmount.value = grossAmount.value + formData.value.total;
 		itemsData.value.push(JSON.parse(JSON.stringify(formData.value)));
 		formData.value = JSON.parse(JSON.stringify(blankData));
-		selectedProduct.value = '';
+		// selectedProduct.value = '';
 
 	} catch (error) {
 		console.error('Error adding item:', error);

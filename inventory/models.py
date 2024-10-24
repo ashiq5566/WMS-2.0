@@ -92,7 +92,8 @@ class ReturnItem(models.Model):
     return_order = models.ForeignKey(Return, on_delete=models.CASCADE, related_name='items')
     product = models.ForeignKey(Product, on_delete=models.CASCADE)
     quantity = models.PositiveIntegerField()
-    price_at_return = models.DecimalField(max_digits=10, decimal_places=2)
+    price_at_return = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    total = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
     
     def __str__(self):
         return f"Return of {self.quantity} of {self.product.name} for Return {self.return_order.id}"
