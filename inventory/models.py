@@ -70,7 +70,10 @@ class OrderItem(models.Model):
         if self.order and self.order.order_type == 'PO':
             self.product.qty_purchased += self.quantity
             self.product.qty_available += self.quantity
-            self.product.save()
+        elif self.order and self.order.order_type == 'SO':
+            self.product.qty_purchased -= self.quantity
+            self.product.qty_available -= self.quantity
+        self.product.save()
             
         super().save(*args, **kwargs)
     
@@ -97,6 +100,18 @@ class ReturnItem(models.Model):
     
     def __str__(self):
         return f"Return of {self.quantity} of {self.product.name} for Return {self.return_order.id}"
+    
+    def save(self, *args, **kwargs):
+        # Update product quantity based on return order
+        if self.return_order and self.return_order.return_type == 'PR':
+            self.product.qty_purchased -= self.quantity
+            self.product.qty_available -= self.quantity
+        elif self.return_order and self.return_order.return_type == 'SR':
+            self.product.qty_purchased += self.quantity
+            self.product.qty_available += self.quantity
+        self.product.save()
+        
+        super().save(*args, **kwargs)
     
     
 class Payment(models.Model):

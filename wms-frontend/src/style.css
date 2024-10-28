@@ -8,3 +8,7 @@
   @tailwind components;
   @tailwind utilities;
 }
+
+/* label {
+  font-size: 12px;
+} */

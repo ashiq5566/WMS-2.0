@@ -2,9 +2,10 @@
 import { onMounted, ref, watch } from 'vue';
 import axios from '@/plugins/axios';
 import { useToast } from 'primevue/usetoast';
+import { useRouter } from 'vue-router';
 
 const toast = useToast();
-
+const router = useRouter();
 const orders = ref([]);
 const selectedProduct = ref();
 const returnAmount = ref(0);
@@ -25,7 +26,7 @@ const blankData =
 const formData = ref(JSON.parse(JSON.stringify(blankData)));
 
 const orderlankData = {
-	return_type: "PR",
+	return_type: '',
 	original_order: '',
 	total_amount: '',
 }
@@ -56,10 +57,12 @@ const fetchOrderItems = async (order) => {
 				total: item.total,
 				unit: item.product_obj.unit,
 				product_id: item.product_obj.id,
-				product_name: item.product_obj.name
+				product_name: item.product_obj.name,
+				order_type: item.order_obj.order_type
 			}
 		));
 		orderItems.value = alteredData;
+
 	} catch (error) {
 		console.error('Error fetching order items:', error);
 	}
@@ -99,7 +102,13 @@ const addItem = async () => {
 const onSubmit = async () => {
 	try {
 		returnData.value.original_order = selectedOrder.value;
-		// returnData.value.return_type = selectedStakeholder.value;
+
+		if (orderItems.value.length > 0 && orderItems.value[0].order_type == 'PO') {
+			returnData.value.return_type = 'PR';
+		} else if (orderItems.value.length > 0 && orderItems.value[0].order_type == 'SO') {
+			returnData.value.return_type = 'SR';
+		}
+
 		returnData.value.total_amount = returnAmount.value;
 		const response = await axios.post('/api/inventory/returns/', {
 			return: returnData.value,
@@ -107,6 +116,7 @@ const onSubmit = async () => {
 		});
 		console.log('Return created:', response.data)
 		toast.add({ severity: 'info', summary: 'Info', detail: 'Return Created SuccessFully', life: 3000 });
+		router.push('/returns');
 	} catch (error) {
 		console.error('Error creating return:', error.response?.data)
 		const errorMessage = error.response?.data?.detail || error.response?.data?.message || error.message || 'An error occurred';
@@ -140,13 +150,28 @@ onMounted(() => {
 			<Select v-model="selectedOrder" :options="orders" optionLabel="order_number" option-value="id"
 				placeholder="Select Order" class="mr-4" />
 		</div>
-		<div v-if="selectedOrder" class="mb-4">
-			<Select v-model="selectedProduct" :options="orderItems" optionLabel="product_name" option-value="product_id"
-				placeholder="Select product" class="mr-4" />
-			<InputText class="mr-4" type="text" v-model="orderQuantity" disabled />
-			<InputText class="mr-4" type="text" v-model="orderPrice" disabled />
-			<InputText class="mr-4" type="text" v-model="formData.quantity" placeholder="Return Quantity" />
-			<Button icon="pi pi-plus" aria-label="Save" @click="addItem" />
+		<div v-if="selectedOrder" class="mb-4 flex">
+			<div class="flex flex-col">
+				<label for="product-select" class="mb-1">Product</label>
+				<Select id="product-select" v-model="selectedProduct" :options="orderItems" optionLabel="product_name"
+					option-value="product_id" placeholder="Select product" class="mr-4" />
+			</div>
+			<div class="flex flex-col">
+				<label for="order-quantity" class="mb-1">Order Quantity</label>
+				<InputText id="order-quantity" class="mr-4" type="text" v-model="orderQuantity" disabled />
+			</div>
+			<div class="flex flex-col">
+				<label for="order-price" class="mb-1">Order Price</label>
+				<InputText id="order-price" class="mr-4" type="text" v-model="orderPrice" disabled />
+			</div>
+			<div class="flex flex-col">
+				<label for="return-quantity" class="mb-1">Return Quantity</label>
+				<InputText id="return-quantity" class="mr-4" type="text" v-model="formData.quantity"
+					placeholder="Return Quantity" />
+			</div>
+			<div class="flex items-end">
+				<Button icon="pi pi-plus" aria-label="Save" @click="addItem" />
+			</div>
 		</div>
 		<Card>
 			<template #content>
@@ -156,7 +181,8 @@ onMounted(() => {
 							<span>{{ slotProps.data.product_name }}</span>
 						</template>
 					</Column>
-					<Column field="quantity" header="Return Quantity"></Column>
+					<Column field="quantity" header="Return Quantity">
+					</Column>
 					<Column field="order_price" header="Unit Price"></Column>
 					<Column field="total" header="Total"></Column>
 					<Column class="w-24 !text-end">

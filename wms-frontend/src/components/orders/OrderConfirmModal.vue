@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { ref, watch, computed } from "vue";
-import axios from '@/plugins/axios.js';
 import { useRouter } from 'vue-router';
 
 
