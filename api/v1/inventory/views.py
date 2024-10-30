@@ -63,12 +63,16 @@ class ReturnViewSet(viewsets.ModelViewSet):
 	queryset = Return.objects.all()
 	serializer_class = ReturnSerializer
 	permission_classes = (IsAuthenticated, )
-
+	filter_backends = (DjangoFilterBackend, OrderingFilter)
+	filterset_fields = {
+			'original_order': ['exact'],
+	}
+	
+	
 	def create(self, request, *args, **kwargs):
 		return_data = request.data.get('return')
 		items_data = request.data.get('items', [])
 		
-		print(return_data, items_data)
 		try:
 			with transaction.atomic():
 				print(return_data, items_data)
@@ -97,7 +101,10 @@ class ReturnViewSet(viewsets.ModelViewSet):
     
     
 class ReturnItemViewSet(viewsets.ModelViewSet):
-    queryset = ReturnItem.objects.all()
-    serializer_class = ReturnItemSerializer
-    permission_classes = (IsAuthenticated, )
-   
+		queryset = ReturnItem.objects.all()
+		serializer_class = ReturnItemSerializer
+		permission_classes = (IsAuthenticated, )
+		filter_backends = (DjangoFilterBackend, OrderingFilter)
+		filterset_fields = {
+			'return_order': ['exact'],
+		}

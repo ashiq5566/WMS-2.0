@@ -14,6 +14,8 @@ const orderItems = ref([]);
 const productTotal = ref('');
 const orderPrice = ref('');
 const orderQuantity = ref('');
+const returnOrders = ref([]);
+const readyToCreate = ref(false);
 
 
 const blankData =
@@ -76,6 +78,16 @@ const selectRow = (data) => {
 
 // function addItem to add order items
 const addItem = async () => {
+	//check if product going to add is already exist in itemsData
+	if (itemsData.value.some(item => item.product === selectedProduct.value)) {
+		toast.add({ severity: 'error', summary: 'Error', detail: 'Product already added', life: 3000 });
+		return;
+	}
+	// check if product selected is not blank
+	if (!selectedProduct.value) {
+		toast.add({ severity: 'error', summary: 'Error', detail: 'Please select a product', life: 3000 });
+		return;
+	}
 	try {
 		const product = orderItems.value.find(p => p.product_id === selectedProduct.value);
 		if (!formData.value.quantity) {
@@ -98,6 +110,20 @@ const addItem = async () => {
 		console.error('Error adding item:', error);
 	}
 };
+
+const fetchReturns = async (order) => {
+	try {
+		const response = await axios.get('/api/inventory/returns', {
+			params: {
+				original_order: order
+			},
+		});
+		returnOrders.value = response.data;
+
+	} catch (error) {
+		console.error('Error fetching return orders:', error);
+	}
+}
 
 const onSubmit = async () => {
 	try {
@@ -125,8 +151,15 @@ const onSubmit = async () => {
 }
 
 
-watch(selectedOrder, (newValue) => {
-	fetchOrderItems(newValue);
+watch(selectedOrder, async (newValue) => {
+	await fetchReturns(newValue)
+	if (returnOrders.value.length > 0) {
+		toast.add({ severity: 'error', summary: 'Error', detail: 'Return already created for this order', life: 3000 });
+		return;
+	} else {
+		readyToCreate.value = true;
+		fetchOrderItems(newValue);
+	}
 })
 
 watch(selectedProduct, (newValue) => {
@@ -150,7 +183,7 @@ onMounted(() => {
 			<Select v-model="selectedOrder" :options="orders" optionLabel="order_number" option-value="id"
 				placeholder="Select Order" class="mr-4" />
 		</div>
-		<div v-if="selectedOrder" class="mb-4 flex">
+		<div v-if="readyToCreate" class="mb-4 flex">
 			<div class="flex flex-col">
 				<label for="product-select" class="mb-1">Product</label>
 				<Select id="product-select" v-model="selectedProduct" :options="orderItems" optionLabel="product_name"

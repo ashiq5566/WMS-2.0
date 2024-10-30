@@ -33,7 +33,7 @@ const routes = [
     <div class="flex">
         <div class="lg:block hidden p-4 w-64 h-full fixed top-0 left-0 shadow-lg">
             <div class="mb-4">
-                <img src="../assets/logo.webp" alt="">
+                <img src="../assets/logo_kc.jpeg" alt="">
             </div>
             <div v-for="route in routes" :key="route.path">
                 <RouterLink :to="route.path" class="block mb-2 p-2 rounded">{{ route.name }}</RouterLink>
