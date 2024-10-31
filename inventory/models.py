@@ -70,7 +70,10 @@ class OrderItem(models.Model):
         if self.order and self.order.order_type == 'PO':
             self.product.qty_purchased += self.quantity
             self.product.qty_available += self.quantity
-            self.product.save()
+        elif self.order and self.order.order_type == 'SO':
+            self.product.qty_purchased -= self.quantity
+            self.product.qty_available -= self.quantity
+        self.product.save()
             
         super().save(*args, **kwargs)
     
@@ -92,10 +95,23 @@ class ReturnItem(models.Model):
     return_order = models.ForeignKey(Return, on_delete=models.CASCADE, related_name='items')
     product = models.ForeignKey(Product, on_delete=models.CASCADE)
     quantity = models.PositiveIntegerField()
-    price_at_return = models.DecimalField(max_digits=10, decimal_places=2)
+    price_at_return = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    total = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
     
     def __str__(self):
         return f"Return of {self.quantity} of {self.product.name} for Return {self.return_order.id}"
+    
+    def save(self, *args, **kwargs):
+        # Update product quantity based on return order
+        if self.return_order and self.return_order.return_type == 'PR':
+            self.product.qty_purchased -= self.quantity
+            self.product.qty_available -= self.quantity
+        elif self.return_order and self.return_order.return_type == 'SR':
+            self.product.qty_purchased += self.quantity
+            self.product.qty_available += self.quantity
+        self.product.save()
+        
+        super().save(*args, **kwargs)
     
     
 class Payment(models.Model):

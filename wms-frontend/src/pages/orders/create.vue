@@ -87,6 +87,10 @@ const fetchProducts = async () => {
 }
 // function addItem to add order items
 const addItem = async () => {
+	if (itemsData.value.some(item => item.product === selectedProduct.value)) {
+		toast.add({ severity: 'error', summary: 'Error', detail: 'Product already added', life: 3000 });
+		return;
+	}
 	try {
 		const product = products.value.find(p => p.id === selectedProduct.value);
 		if (!product || !formData.value.quantity || !formData.value.price_at_time_of_order) {
@@ -102,7 +106,7 @@ const addItem = async () => {
 		grossAmount.value = grossAmount.value + formData.value.total;
 		itemsData.value.push(JSON.parse(JSON.stringify(formData.value)));
 		formData.value = JSON.parse(JSON.stringify(blankData));
-		selectedProduct.value = '';
+		// selectedProduct.value = '';
 
 	} catch (error) {
 		console.error('Error adding item:', error);

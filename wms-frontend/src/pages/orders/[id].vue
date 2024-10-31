@@ -7,6 +7,8 @@ import { ref, onMounted } from 'vue'
 const route = useRoute()
 const order = ref({})
 const orderItems = ref([])
+const returnOrder = ref()
+const returnItems = ref([])
 
 const getSeverity = (status) => {
 	switch (status) {
@@ -51,9 +53,39 @@ const fetchOrderItems = async () => {
 	}
 }
 
-onMounted(() => {
-	fetchOrder();
-	fetchOrderItems()
+const fetchReturn = async () => {
+	try {
+		const response = await axios.get('/api/inventory/returns/', {
+			params: {
+				original_order: route.params.id,
+			},
+		})
+		returnOrder.value = response.data[0]
+	} catch (error) {
+		console.log(error);
+
+	}
+}
+
+const fetchReturnItems = async () => {
+	try {
+		const response = await axios.get('/api/inventory/return-items/', {
+			params: {
+				return_order: returnOrder.value.id,
+			},
+		})
+		returnItems.value = response.data
+	} catch (error) {
+		console.log(error);
+
+	}
+}
+
+onMounted(async () => {
+	await fetchOrder();
+	await fetchOrderItems();
+	await fetchReturn();
+	await fetchReturnItems();
 })
 </script>
 <template>
@@ -110,36 +142,52 @@ onMounted(() => {
 					<Button @click="$router.back()" label="Go back" severity="warn" outlined class="mt-8" />
 				</template>button
 			</Card>
-			<Card class="mb-4">
+			<Card>
 				<template #title>
 					<span>Payment History</span>
 				</template>
 			</Card>
 		</div>
-		<Card>
-			<template #title>
-				<span>Items</span>
-			</template>
-			<template #content>
-				<DataTable :value="orderItems" tableStyle="min-width: 20rem">
-					<Column field="product_name" header="Product">
-						<template #body="slotProps">
-							{{ slotProps.data.product_obj.name }}
+		<div class="grid grid-cols-2 gap-4">
+			<Card>
+				<template #title>
+					<span>Items</span>
+				</template>
+				<template #content>
+					<DataTable :value="orderItems" tableStyle="min-width: 20rem">
+						<Column field="product_name" header="Product">
+							<template #body="slotProps">
+								{{ slotProps.data.product_obj.name }}
+							</template>
+						</Column>
+						<Column field="quantity" header="Quantity"></Column>
+						<Column field="price_at_time_of_order" header="Unit Price"></Column>
+						<Column field="total" header="Total"></Column>
+						<template #empty>
+							<span class="flex justify-center">No Orders found.</span>
 						</template>
-					</Column>
-					<Column field="quantity" header="Quantity"></Column>
-					<Column field="price_at_time_of_order" header="Unit Price"></Column>
-					<Column field="total" header="Total"></Column>
-					<template #empty>
-						<span class="flex justify-center">No Orders found.</span>
-					</template>
-				</DataTable>
-			</template>
-		</Card>
-		<Card>
-			<template #title>
-				<span>Return History</span>
-			</template>
-		</Card>
+					</DataTable>
+				</template>
+			</Card>
+			<Card>
+				<template #title>
+					<span>Returned Items</span>
+				</template>
+				<template #content>
+					<DataTable :value="returnItems" tableStyle="min-width: 20rem">
+						<Column field="product_name" header="Product">
+							<template #body="slotProps">
+								{{ slotProps.data.product_obj.name }}
+							</template>
+						</Column>
+						<Column field="quantity" header="Quantity"></Column>
+						<Column field="total" header="Total"></Column>
+						<template #empty>
+							<span class="flex justify-center">No Orders found.</span>
+						</template>
+					</DataTable>
+				</template>
+			</Card>
+		</div>
 	</div>
 </template>
