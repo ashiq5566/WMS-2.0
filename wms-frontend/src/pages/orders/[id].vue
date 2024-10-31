@@ -1,14 +1,16 @@
 <script setup>
+import { ref, onMounted } from 'vue'
 import { useRoute } from 'vue-router';
 import moment from 'moment';
 import axios from '@/plugins/axios'
-import { ref, onMounted } from 'vue'
+import paymentsLisCard from '@/components/payments/paymentsLisCard.vue';
 
 const route = useRoute()
 const order = ref({})
 const orderItems = ref([])
 const returnOrder = ref()
 const returnItems = ref([])
+const payments = ref([])
 
 const getSeverity = (status) => {
 	switch (status) {
@@ -81,7 +83,25 @@ const fetchReturnItems = async () => {
 	}
 }
 
+const fetchPayments = async () => {
+	try {
+		const response = await axios.get('/api/inventory/payments', {
+			params: {
+				order_id: route.params.id,
+			},
+		});
+
+		payments.value = response.data;
+	} catch (error) {
+		console.error('Error fetching payments:', error);
+	}
+}
+const handlePayment = async () => {
+	await fetchOrder();
+	await fetchPayments();
+}
 onMounted(async () => {
+	await fetchPayments();
 	await fetchOrder();
 	await fetchOrderItems();
 	await fetchReturn();
@@ -145,6 +165,10 @@ onMounted(async () => {
 			<Card>
 				<template #title>
 					<span>Payment History</span>
+				</template>
+				<template #content>
+					<paymentsLisCard :payments="payments" :pendingAmount="order.pending_amount" :orderId="route.params.id"
+						@instance-added="handlePayment" />
 				</template>
 			</Card>
 		</div>

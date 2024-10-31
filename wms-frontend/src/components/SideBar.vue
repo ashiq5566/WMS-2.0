@@ -25,6 +25,7 @@ const routes = [
     { path: '/orders', name: 'Orders' },
     { path: '/stocks', name: 'Stock' },
     { path: '/returns', name: 'Returns' },
+    { path: '/payments', name: 'Payments' },
 ]
 
 </script>
