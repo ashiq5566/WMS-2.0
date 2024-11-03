@@ -50,7 +50,7 @@ class Order(WebBaseModel):
         
     # when a order is created update the total amount and pending amount with value of net amount
     def save(self, *args, **kwargs):
-      if self.pk:
+      if self.pk is None:
         self.total_amount = self.net_amount
         self.pending_amount = self.net_amount
         super().save(*args, **kwargs)
@@ -145,6 +145,11 @@ class Payment(models.Model):
          Order.objects.filter(pk=self.order.pk).update(
             pending_amount=self.order.pending_amount - self.amount
          )
+         self.order.refresh_from_db()
+         if self.order.pending_amount == 0:
+             Order.objects.filter(pk=self.order.pk).update(
+                order_status='Closed'
+            )
          super().save(*args, **kwargs)
     
 

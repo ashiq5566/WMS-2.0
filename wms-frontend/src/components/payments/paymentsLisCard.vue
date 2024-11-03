@@ -2,9 +2,11 @@
 import { ref } from "vue";
 import moment from 'moment';
 import axios from '@/plugins/axios'
+import { useToast } from 'primevue/usetoast';
 
 const emit = defineEmits(['instance-added']);
 const selectedMethod = ref('')
+const toast = useToast();
 const props = defineProps({
 	payments: {
 		type: Array,
@@ -35,7 +37,8 @@ const methods = [
 ]
 
 const addPayment = async () => {
-	if (formData.value.amount > 0 && selectedMethod.value) {
+
+	if (Number(formData.value.amount) > 0 && selectedMethod.value && Number(formData.value.amount) <= Number(props.pendingAmount)) {
 
 		formData.value.order = props.orderId
 		formData.value.method = selectedMethod.value
@@ -46,7 +49,7 @@ const addPayment = async () => {
 		formData.value = JSON.parse(JSON.stringify(blankData));
 		selectedMethod.value = '';
 	} else {
-		alert('Please enter valid amount and select payment method.');
+		toast.add({ severity: 'error', summary: 'Error', detail: `Enter a valid method or Amount`, life: 3000 });
 	}
 }
 </script>

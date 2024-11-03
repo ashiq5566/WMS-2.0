@@ -111,8 +111,8 @@ onMounted(async () => {
 <template>
 	<div>
 		<h1>{{ route.params.id }}</h1>
-		<div class="grid grid-cols-2 gap-4 mb-4">
-			<Card>
+		<div class="grid grid-cols-5 gap-4 mb-4">
+			<Card class="col-span-2">
 				<template #title>
 					<span>Order Details</span>
 				</template>
@@ -162,13 +162,13 @@ onMounted(async () => {
 					<Button @click="$router.back()" label="Go back" severity="warn" outlined class="mt-8" />
 				</template>button
 			</Card>
-			<Card>
+			<Card class="col-span-3">
 				<template #title>
 					<span>Payment History</span>
 				</template>
 				<template #content>
-					<paymentsLisCard :payments="payments" :pendingAmount="order.pending_amount" :orderId="route.params.id"
-						@instance-added="handlePayment" />
+					<paymentsLisCard :payments="payments" :pendingAmount="order.pending_amount"
+						:orderId="route.params.id" @instance-added="handlePayment" />
 				</template>
 			</Card>
 		</div>

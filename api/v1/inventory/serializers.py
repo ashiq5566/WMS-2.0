@@ -14,8 +14,6 @@ class ProductSerializer(serializers.ModelSerializer):
         model = Product
         fields = '__all__'
 
-
-product_obj = ProductSerializer(source='product', read_only=True)
 class OrderItemSerializer(serializers.ModelSerializer):
     product_obj = ProductSerializer(source='product', read_only=True)
     order_obj = OrderSerializer(source='order', read_only=True)
