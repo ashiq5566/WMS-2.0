@@ -1,18 +1,53 @@
 <script setup>
-import { useRoute } from 'vue-router'
-import axios from '@/plugins/axios'
 import { ref, onMounted } from 'vue'
+import { useRoute } from 'vue-router'
+import moment from 'moment';
+import axios from '@/plugins/axios'
 
 const route = useRoute()
 const stakeholder = ref([])
+const ongoingBills = ref([])
+const closedBills = ref([])
+const transactions = ref([])
 
 const fetchStakeHolder = async () => {
 	const response = await axios.get(`/api/accounts/stakeholders/${route.params.id}`)
 	stakeholder.value = response.data
 }
 
-onMounted(() => {
-	fetchStakeHolder();
+const fetchBills = async () => {
+	try {
+		const response = await axios.get('/api/inventory/orders', {
+			params: {
+				stakeholder_id: stakeholder.value.id
+			},
+		});
+
+		ongoingBills.value = response.data.filter(bill => bill.order_status === 'Issued');
+		closedBills.value = response.data.filter(bill => bill.order_status === 'Closed');
+
+	} catch (error) {
+		console.error('Error fetching return Bills:', error);
+	}
+}
+
+const fetchTransactions = async () => {
+	try {
+		const response = await axios.get('/api/inventory/payments', {
+			params: {
+				order__stakeholder_id: stakeholder.value.id
+			},
+		});
+		transactions.value = response.data;
+	} catch (error) {
+		console.error('Error fetching return Bills:', error);
+	}
+}
+
+onMounted(async () => {
+	await fetchStakeHolder();
+	await fetchBills();
+	await fetchTransactions();
 })
 </script>
 
@@ -52,10 +87,73 @@ onMounted(() => {
 				<template #title>
 					<span>Ongoing Bills</span>
 				</template>
+				<template #content>
+					<DataTable :value="ongoingBills" tableStyle="min-width: 30rem" scrollHeight="300px">
+						<Column field="id" header="ID#">
+							<template #body="slotProps">
+								<router-link :to="{ name: 'orders-id', params: { id: slotProps.data.id } }">
+									<span class="font-bold">
+										{{ slotProps.data.id }}
+									</span>
+								</router-link>
+							</template>
+						</Column>
+						<Column field="order_number" header="Order Number"></Column>
+						<Column field="net_amount" header="Net Amount"></Column>
+						<Column field="pending_amount" header="Pending Amount"></Column>
+						<template #empty>
+							<span class="flex justify-center">No Orders found.</span>
+						</template>
+					</DataTable>
+				</template>
 			</Card>
 			<Card class="col-span-2 lg:col-span-1">
 				<template #title>
 					<span>Closed Bills</span>
+				</template>
+				<template #content>
+					<DataTable :value="closedBills" tableStyle="min-width: 30rem" scrollHeight="300px">
+						<Column field="id" header="ID#">
+							<template #body="slotProps">
+								<router-link :to="{ name: 'orders-id', params: { id: slotProps.data.id } }">
+									<span class="font-bold">
+										{{ slotProps.data.id }}
+									</span>
+								</router-link>
+							</template>
+						</Column>
+						<Column field="order_number" header="Order Number"></Column>
+						<Column field="net_amount" header="Net Amount"></Column>
+						<template #empty>
+							<span class="flex justify-center">No Orders found.</span>
+						</template>
+					</DataTable>
+				</template>
+			</Card>
+			<Card class="col-span-2 lg:col-span-1">
+				<template #title>
+					<span>Transactions</span>
+				</template>
+				<template #content>
+					<DataTable :value="transactions" tableStyle="min-width: 30rem;" scrollHeight="300px">
+						<Column field="id" header="ID#"></Column>
+						<Column field="payment_date" header="Date">
+							<template #body="slotProps">
+								{{ moment(slotProps.data.payment_date).format('DD/MM/YYYY') }}
+							</template>
+						</Column>
+						<Column field="order" header="Order No">
+							<template #body="slotProps">
+								{{ slotProps.data.order_obj.order_number }}
+							</template>
+						</Column>
+						<Column field="amount" header="Amount"></Column>
+						<Column field="payment_method" header="Method">
+						</Column>
+						<template #empty>
+							<span class="flex justify-center">No Payments found.</span>
+						</template>
+					</DataTable>
 				</template>
 			</Card>
 		</div>

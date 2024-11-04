@@ -90,7 +90,7 @@ onMounted(() => {
 				<span>Items</span>
 			</template>
 			<template #content>
-				<DataTable :value="returnItems" tableStyle="min-width: 20rem">
+				<DataTable :value="returnItems" tableStyle="min-width: 30rem" scrollHeight="300px">
 					<Column field="product_name" header="Product">
 						<template #body="slotProps">
 							{{ slotProps.data.product_obj.name }}

@@ -63,7 +63,7 @@ const addPayment = async () => {
 			<InputText class="mr-4 w-1/4" type="text" v-model="formData.amount" placeholder="Amount" />
 			<Button icon="pi pi-plus" aria-label="Save" @click="addPayment" />
 		</div>
-		<DataTable :value="props.payments" tableStyle="min-width: 50rem">
+		<DataTable :value="props.payments" tableStyle="min-width: 30rem" scrollHeight="300px">
 			<Column field="id" header="ID#"></Column>
 			<Column field="payment_date" header="Date">
 				<template #body="slotProps">

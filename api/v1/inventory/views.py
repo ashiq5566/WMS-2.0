@@ -14,6 +14,10 @@ class OrdersViewSet(viewsets.ModelViewSet):
 	queryset = Order.objects.all()
 	serializer_class = OrderSerializer
 	permission_classes = (IsAuthenticated,)
+	filter_backends = (DjangoFilterBackend, OrderingFilter)
+	filterset_fields = {
+		'stakeholder_id': ['exact'],
+	}
 
 	def create(self, request, *args, **kwargs):
 		order_data = request.data.get('order')
@@ -116,4 +120,5 @@ class PaymentViewSet(viewsets.ModelViewSet):
     filter_backends = (DjangoFilterBackend, OrderingFilter)
     filterset_fields = {
 		'order_id': ['exact'],
+		'order__stakeholder_id': ['exact'],
 	}
