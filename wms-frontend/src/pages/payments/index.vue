@@ -28,10 +28,20 @@ onMounted(() => {
 		<div class="flex justify-end">
 		</div>
 		<Card class="mt-4">
+			<template #header>
+				<div class="flex justify-end">
+					<IconField>
+						<InputIcon>
+							<i class="pi pi-search" />
+						</InputIcon>
+						<InputText v-model="filters['global'].value" placeholder="Keyword Search" />
+					</IconField>
+				</div>
+			</template>
 			<template #content>
 				<DataTable :value="payments" tableStyle="min-width: 50rem">
 					<Column field="id" header="ID#"></Column>
-					<Column field="payment_date" header="Date">
+					<Column field="payment_date" header="Date" sortable>
 						<template #body="slotProps">
 							{{ moment(slotProps.data.payment_date).format('DD/MM/YYYY') }}
 						</template>

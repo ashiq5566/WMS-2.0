@@ -60,7 +60,7 @@ onMounted(() => {
 							</router-link>
 						</template>
 					</Column>
-					<Column field="date_added" header="Order Date">
+					<Column field="date_added" header="Order Date" sortable>
 						<template #body="slotProps">
 							{{ moment(slotProps.data.date_added).format('DD/MM/YYYY') }}
 						</template>

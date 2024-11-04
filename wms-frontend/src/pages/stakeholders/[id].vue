@@ -137,7 +137,7 @@ onMounted(async () => {
 				<template #content>
 					<DataTable :value="transactions" tableStyle="min-width: 30rem;" scrollHeight="300px">
 						<Column field="id" header="ID#"></Column>
-						<Column field="payment_date" header="Date">
+						<Column field="payment_date" header="Date" sortable>
 							<template #body="slotProps">
 								{{ moment(slotProps.data.payment_date).format('DD/MM/YYYY') }}
 							</template>
