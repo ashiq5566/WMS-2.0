@@ -6,9 +6,9 @@ from rest_framework.filters import OrderingFilter
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
 from django.conf import settings
-from .serializers import OrderSerializer, ProductSerializer, OrderItemSerializer, ReturnSerializer, ReturnItemSerializer
+from .serializers import *
 
-from inventory.models import Order, OrderItem, Product, Return, ReturnItem
+from inventory.models import *
 
 class OrdersViewSet(viewsets.ModelViewSet):
 	queryset = Order.objects.all()
@@ -51,7 +51,7 @@ class OrderItemViewSet(viewsets.ModelViewSet):
     permission_classes = (IsAuthenticated, )
     filter_backends = (DjangoFilterBackend, OrderingFilter)
     filterset_fields = {
-        'order__id': ['exact'],
+        'order_id': ['exact'],
     }
     
 class ProductViewSet(viewsets.ModelViewSet):
@@ -108,3 +108,12 @@ class ReturnItemViewSet(viewsets.ModelViewSet):
 		filterset_fields = {
 			'return_order': ['exact'],
 		}
+  
+class PaymentViewSet(viewsets.ModelViewSet):
+    queryset = Payment.objects.all()
+    serializer_class = PaymentSerializer
+    permission_classes = (IsAuthenticated, )
+    filter_backends = (DjangoFilterBackend, OrderingFilter)
+    filterset_fields = {
+		'order_id': ['exact'],
+	}

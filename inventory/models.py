@@ -1,4 +1,6 @@
 from django.db import models
+from django.db import transaction
+from django.db.models import F
 
 from general.models import WebBaseModel
 from accounts.models import Stakeholder
@@ -47,13 +49,20 @@ class Order(WebBaseModel):
     def __str__(self):
             return f'{self.order_number}'
         
-    @property
-    def total_paid(self):
-        return sum(payment.amount for payment in self.payments.all())
+    # when a order is created update the total amount and pending amount with value of net amount
+    def save(self, *args, **kwargs):
+      if self.pk is None:
+        self.total_amount = self.net_amount
+        self.pending_amount = self.net_amount
+        super().save(*args, **kwargs)
+        
+    # @property
+    # def total_paid(self):
+    #     return sum(payment.amount for payment in self.payments.all())
 
-    @property
-    def balance_due(self):
-        return self.total_amount - self.total_paid
+    # @property
+    # def balance_due(self):
+    #     return self.total_amount - self.total_paid
         
 class OrderItem(models.Model):
     order = models.ForeignKey(Order, on_delete=models.CASCADE, related_name='items', null=True, blank=True)
@@ -90,6 +99,21 @@ class Return(WebBaseModel):
     
     def __str__(self):
         return f" return for Order {self.original_order.id} on {self.date}"
+    
+    def save(self, *args, **kwargs):
+        # Start an atomic transaction
+        with transaction.atomic():
+            # Check if the instance is being created (pk is None means it’s new)
+            if self.pk is None:
+                # Update the Order instance by subtracting the return total_amount
+                Order.objects.filter(pk=self.original_order.pk).update(
+                    total_amount=F('total_amount') - self.total_amount,
+                    pending_amount=F('pending_amount') - self.total_amount
+                )
+
+            # Save the Return instance
+            super().save(*args, **kwargs)
+    
 
 class ReturnItem(models.Model):
     return_order = models.ForeignKey(Return, on_delete=models.CASCADE, related_name='items')
@@ -129,4 +153,19 @@ class Payment(models.Model):
     
     def __str__(self):
         return f"Payment of {self.amount} for Order {self.order.id} on {self.payment_date}"
+    
+    
+    #when a payment instance is created with a amount minus the amount from order model field pending amount
+    def save(self, *args, **kwargs):
+        with transaction.atomic():
+         Order.objects.filter(pk=self.order.pk).update(
+            pending_amount=self.order.pending_amount - self.amount
+         )
+         self.order.refresh_from_db()
+         if self.order.pending_amount == 0:
+             Order.objects.filter(pk=self.order.pk).update(
+                order_status='Closed'
+            )
+         super().save(*args, **kwargs)
+    
 
