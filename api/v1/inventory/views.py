@@ -51,7 +51,7 @@ class OrderItemViewSet(viewsets.ModelViewSet):
     permission_classes = (IsAuthenticated, )
     filter_backends = (DjangoFilterBackend, OrderingFilter)
     filterset_fields = {
-        'order__id': ['exact'],
+        'order_id': ['exact'],
     }
     
 class ProductViewSet(viewsets.ModelViewSet):
@@ -113,3 +113,7 @@ class PaymentViewSet(viewsets.ModelViewSet):
     queryset = Payment.objects.all()
     serializer_class = PaymentSerializer
     permission_classes = (IsAuthenticated, )
+    filter_backends = (DjangoFilterBackend, OrderingFilter)
+    filterset_fields = {
+		'order_id': ['exact'],
+	}

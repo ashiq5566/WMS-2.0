@@ -153,6 +153,10 @@ onMounted(async () => {
 							<span>{{ order.net_amount }}</span>
 						</div>
 						<div class="flex justify-between w-3/4">
+							<label class="font-bold">RO Amount:</label>
+							<span>{{ order.total_amount }}</span>
+						</div>
+						<div class="flex justify-between w-3/4">
 							<label class="font-bold">Pending Amount:</label>
 							<span>{{ order.pending_amount }}</span>
 						</div>

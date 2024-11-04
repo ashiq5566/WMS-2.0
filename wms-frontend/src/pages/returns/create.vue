@@ -49,7 +49,7 @@ const fetchOrders = async () => {
 const fetchOrderItems = async (order) => {
 	try {
 		const response = await axios.get('/api/inventory/order-items/', {
-			params: { order__id: order },
+			params: { order_id: order },
 		});
 		const alteredData = response.data.map(item => (
 			{

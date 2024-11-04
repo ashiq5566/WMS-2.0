@@ -1,5 +1,6 @@
 from django.db import models
 from django.db import transaction
+from django.db.models import F
 
 from general.models import WebBaseModel
 from accounts.models import Stakeholder
@@ -98,6 +99,21 @@ class Return(WebBaseModel):
     
     def __str__(self):
         return f" return for Order {self.original_order.id} on {self.date}"
+    
+    def save(self, *args, **kwargs):
+        # Start an atomic transaction
+        with transaction.atomic():
+            # Check if the instance is being created (pk is None means it’s new)
+            if self.pk is None:
+                # Update the Order instance by subtracting the return total_amount
+                Order.objects.filter(pk=self.original_order.pk).update(
+                    total_amount=F('total_amount') - self.total_amount,
+                    pending_amount=F('pending_amount') - self.total_amount
+                )
+
+            # Save the Return instance
+            super().save(*args, **kwargs)
+    
 
 class ReturnItem(models.Model):
     return_order = models.ForeignKey(Return, on_delete=models.CASCADE, related_name='items')
