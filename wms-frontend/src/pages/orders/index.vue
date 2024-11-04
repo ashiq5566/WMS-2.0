@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { onMounted, ref } from "vue";
 import axios from '@/plugins/axios';
+import moment from 'moment';
 
 const orders = ref();
 
@@ -59,6 +60,11 @@ onMounted(() => {
 							</router-link>
 						</template>
 					</Column>
+					<Column field="date_added" header="Order Date">
+						<template #body="slotProps">
+							{{ moment(slotProps.data.date_added).format('DD/MM/YYYY') }}
+						</template>
+					</Column>
 					<Column field="order_type" header="Order Type"></Column>
 					<Column field="order_number" header="Order Number"></Column>
 					<Column field="stakeholder" header="Stakeholder">
@@ -69,7 +75,8 @@ onMounted(() => {
 					<Column field="net_amount" header="Net Amount"></Column>
 					<Column field="order_status" header="Status">
 						<template #body="slotProps">
-							<Tag :value="slotProps.data.order_status" :severity="getSeverity(slotProps.data.order_status)" />
+							<Tag :value="slotProps.data.order_status"
+								:severity="getSeverity(slotProps.data.order_status)" />
 						</template>
 					</Column>
 					<template #empty>
