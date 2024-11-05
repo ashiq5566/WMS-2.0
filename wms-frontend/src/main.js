@@ -24,6 +24,8 @@ import Drawer from 'primevue/drawer'
 import Toast from 'primevue/toast'
 import ToastService from 'primevue/toastservice'
 import Tag from 'primevue/tag'
+import IconField from 'primevue/iconfield'
+import InputIcon from 'primevue/inputicon'
 
 const app = createApp(App)
 
@@ -45,5 +47,7 @@ app.component('DataTable', DataTable)
 app.component('Column', Column)
 app.component('Toast', Toast)
 app.component('Tag', Tag)
+app.component('IconField', IconField)
+app.component('InputIcon', InputIcon)
 
 app.mount('#app')

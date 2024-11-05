@@ -1,9 +1,11 @@
 <script setup lang="ts">
-import { onMounted, ref } from "vue";
+import { onMounted, ref, watch } from "vue";
 import axios from '@/plugins/axios';
 import moment from 'moment';
+import { debounce } from 'lodash';
 
 const orders = ref();
+const searchInput = ref('');
 
 const getSeverity = (status) => {
 	switch (status) {
@@ -24,9 +26,12 @@ const getSeverity = (status) => {
 	}
 }
 
-const fetchOrders = async () => {
+
+const fetchOrders = async (search) => {
 	try {
-		const response = await axios.get('/api/inventory/orders');
+		const response = await axios.get('/api/inventory/orders', {
+			params: { search },
+		});
 
 		orders.value = response.data;
 	} catch (error) {
@@ -34,6 +39,10 @@ const fetchOrders = async () => {
 	}
 }
 
+const debouncedFetchOrders = debounce(fetchOrders, 300);
+watch(searchInput, (newVal) => {
+	debouncedFetchOrders(newVal);
+});
 onMounted(() => {
 	fetchOrders();
 })
@@ -51,6 +60,16 @@ onMounted(() => {
 		<Card class="mt-4">
 			<template #content>
 				<DataTable :value="orders" tableStyle="min-width: 50rem">
+					<template #header>
+						<div class="flex justify-end">
+							<IconField>
+								<InputIcon>
+									<i class="pi pi-search" />
+								</InputIcon>
+								<InputText v-model="searchInput" placeholder="Keyword Search" />
+							</IconField>
+						</div>
+					</template>
 					<Column field="id" header="ID#">
 						<template #body="slotProps">
 							<router-link :to="{ name: 'orders-id', params: { id: slotProps.data.id } }">
@@ -75,8 +94,7 @@ onMounted(() => {
 					<Column field="net_amount" header="Net Amount"></Column>
 					<Column field="order_status" header="Status">
 						<template #body="slotProps">
-							<Tag :value="slotProps.data.order_status"
-								:severity="getSeverity(slotProps.data.order_status)" />
+							<Tag :value="slotProps.data.order_status" :severity="getSeverity(slotProps.data.order_status)" />
 						</template>
 					</Column>
 					<template #empty>
