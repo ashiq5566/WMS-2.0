@@ -19,6 +19,7 @@ class OrdersViewSet(viewsets.ModelViewSet):
 	filter_backends = (DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter)
 	filterset_fields = {
 		'stakeholder_id': ['exact'],
+  		'date_added': ['exact', 'gte', 'lte'],
 	}
 	search_fields = ['id', 'order_number', 'stakeholder__name', 'order_type', 'order_status']
 
@@ -127,4 +128,6 @@ class PaymentViewSet(viewsets.ModelViewSet):
     filterset_fields = {
 		'order_id': ['exact'],
 		'order__stakeholder_id': ['exact'],
+  		'payment_date': ['exact', 'gte', 'lte'],
+  
 	}

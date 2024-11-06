@@ -6,6 +6,7 @@ import { debounce } from 'lodash';
 
 const orders = ref();
 const searchInput = ref('');
+const filterDates = ref();
 
 const getSeverity = (status) => {
 	switch (status) {
@@ -30,7 +31,11 @@ const getSeverity = (status) => {
 const fetchOrders = async (search) => {
 	try {
 		const response = await axios.get('/api/inventory/orders', {
-			params: { search },
+			params: {
+				search,
+				date_added__gte: filterDates.value ? filterDates.value[0] : null,
+				date_added__lte: filterDates.value ? filterDates.value[1] : null,
+			},
 		});
 
 		orders.value = response.data;
@@ -42,6 +47,10 @@ const fetchOrders = async (search) => {
 const debouncedFetchOrders = debounce(fetchOrders, 300);
 watch(searchInput, (newVal) => {
 	debouncedFetchOrders(newVal);
+});
+
+watch(filterDates, (newVal) => {
+	debouncedFetchOrders();
 });
 onMounted(() => {
 	fetchOrders();
@@ -62,6 +71,8 @@ onMounted(() => {
 				<DataTable :value="orders" tableStyle="min-width: 50rem">
 					<template #header>
 						<div class="flex justify-end">
+							<DatePicker v-model="filterDates" selectionMode="range" :manualInput="false" class="mr-4"
+								placeholder="Date Range" showIcon />
 							<IconField>
 								<InputIcon>
 									<i class="pi pi-search" />

@@ -26,6 +26,7 @@ import ToastService from 'primevue/toastservice'
 import Tag from 'primevue/tag'
 import IconField from 'primevue/iconfield'
 import InputIcon from 'primevue/inputicon'
+import DatePicker from 'primevue/datepicker'
 
 const app = createApp(App)
 
@@ -49,5 +50,6 @@ app.component('Toast', Toast)
 app.component('Tag', Tag)
 app.component('IconField', IconField)
 app.component('InputIcon', InputIcon)
+app.component('DatePicker', DatePicker)
 
 app.mount('#app')

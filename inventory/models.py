@@ -148,7 +148,7 @@ class Payment(models.Model):
 
     order = models.ForeignKey(Order, on_delete=models.CASCADE, related_name='payments')
     amount = models.DecimalField(max_digits=12, decimal_places=2)
-    payment_date = models.DateField(auto_now_add=True)
+    payment_date = models.DateTimeField(auto_now_add=True)
     payment_method = models.CharField(max_length=10, choices=PAYMENT_METHOD_CHOICES, default='CASH')
     
     def __str__(self):

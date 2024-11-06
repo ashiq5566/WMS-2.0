@@ -110,24 +110,23 @@ onMounted(async () => {
 </script>
 <template>
 	<div>
-		<h1>{{ route.params.id }}</h1>
 		<div class="grid grid-cols-5 gap-4 mb-4">
-			<Card class="col-span-2">
+			<Card class="col-span-3">
 				<template #title>
 					<span>Order Details</span>
 				</template>
 				<template #content>
 					<div class="grid grid-cols-2 gap-4">
 						<div class="flex justify-between w-3/4">
-							<label class="font-bold">Order No:</label>
+							<label class="font-bold">Order Number:</label>
 							<span>{{ order.order_number }}</span>
 						</div>
 						<div class="flex justify-between w-3/4">
-							<label class="font-bold">Order Type:</label>
+							<label class="font-bold">Order Category:</label>
 							<span>{{ order.order_type }}</span>
 						</div>
 						<div class="flex justify-between w-3/4">
-							<label class="font-bold">Company Name:</label>
+							<label class="font-bold">Client/Company:</label>
 							<span>{{ order.stakeholder_obj?.name }}</span>
 						</div>
 						<div class="flex justify-between w-3/4">
@@ -135,29 +134,29 @@ onMounted(async () => {
 							<span>{{ moment(order.created_at).format('YYYY-MM-DD') }}</span>
 						</div>
 						<div class="flex justify-between w-3/4">
-							<label class="font-bold">Order Status:</label>
+							<label class="font-bold">Current Status:</label>
 							<Tag :value="order.order_status" :severity="getSeverity(order.order_status)" />
 						</div>
 					</div>
 					<div class="grid grid-cols-2 gap-4 border-t mt-8 pt-8">
 						<div class="flex justify-between w-3/4">
-							<label class="font-bold">Total Amount:</label>
+							<label class="font-bold">Gross Amount:</label>
 							<span>{{ order.gross_amount }}</span>
 						</div>
 						<div class="flex justify-between w-3/4">
-							<label class="font-bold">Discount:</label>
+							<label class="font-bold">Discount Applied:</label>
 							<span>{{ order.discount }}</span>
 						</div>
 						<div class="flex justify-between w-3/4">
-							<label class="font-bold">Net Amount:</label>
+							<label class="font-bold">Net Payable:</label>
 							<span>{{ order.net_amount }}</span>
 						</div>
 						<div class="flex justify-between w-3/4">
-							<label class="font-bold">RO Amount:</label>
+							<label class="font-bold">Post-Return Amount:</label>
 							<span>{{ order.total_amount }}</span>
 						</div>
 						<div class="flex justify-between w-3/4">
-							<label class="font-bold">Pending Amount:</label>
+							<label class="font-bold">Outstanding Balance:</label>
 							<span>{{ order.pending_amount }}</span>
 						</div>
 					</div>
@@ -166,18 +165,7 @@ onMounted(async () => {
 					<Button @click="$router.back()" label="Go back" severity="warn" outlined class="mt-8" />
 				</template>button
 			</Card>
-			<Card class="col-span-3">
-				<template #title>
-					<span>Payment History</span>
-				</template>
-				<template #content>
-					<paymentsLisCard :payments="payments" :pendingAmount="order.pending_amount"
-						:orderId="route.params.id" @instance-added="handlePayment" />
-				</template>
-			</Card>
-		</div>
-		<div class="grid grid-cols-2 gap-4">
-			<Card>
+			<Card class="col-span-2">
 				<template #title>
 					<span>Items</span>
 				</template>
@@ -197,7 +185,9 @@ onMounted(async () => {
 					</DataTable>
 				</template>
 			</Card>
-			<Card>
+		</div>
+		<div class="grid grid-cols-5 gap-4">
+			<Card class="col-span-2">
 				<template #title>
 					<span>Returned Items</span>
 				</template>
@@ -214,6 +204,15 @@ onMounted(async () => {
 							<span class="flex justify-center">No Orders found.</span>
 						</template>
 					</DataTable>
+				</template>
+			</Card>
+			<Card class="col-span-3">
+				<template #title>
+					<span>Payment History</span>
+				</template>
+				<template #content>
+					<paymentsLisCard :payments="payments" :pendingAmount="order.pending_amount" :orderId="route.params.id"
+						@instance-added="handlePayment" />
 				</template>
 			</Card>
 		</div>

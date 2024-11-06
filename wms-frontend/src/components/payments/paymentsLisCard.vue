@@ -38,7 +38,7 @@ const methods = [
 
 const addPayment = async () => {
 
-	if (Number(formData.value.amount) > 0 && selectedMethod.value && Number(formData.value.amount) <= Number(props.pendingAmount)) {
+	if (Number(formData.value.amount) > 0 && selectedMethod.value && Number(formData.value.amount) <= Number(props.pendingAmount) && Number(props.pendingAmount) != 0) {
 
 		formData.value.order = props.orderId
 		formData.value.method = selectedMethod.value
