@@ -1,12 +1,18 @@
 <script setup lang="ts">
-import { onMounted, ref } from "vue";
+import { onMounted, ref, watch } from "vue";
 import axios from '@/plugins/axios';
+import { debounce } from 'lodash';
 
 const products = ref();
+const searchInput = ref('');
 
-const fetchProducts = async () => {
+const fetchProducts = async (search) => {
 	try {
-		const response = await axios.get('/api/inventory/products/');
+		const response = await axios.get('/api/inventory/products/', {
+			params: {
+				search,
+			},
+		});
 
 		products.value = response.data;
 	} catch (error) {
@@ -16,6 +22,11 @@ const fetchProducts = async () => {
 const reloadTable = () => {
 	fetchProducts();
 };
+
+const debouncedFetchOrders = debounce(fetchProducts, 300)
+watch(searchInput, (newVal) => {
+	debouncedFetchOrders(newVal);
+});
 
 onMounted(() => {
 	fetchProducts();
@@ -30,6 +41,16 @@ onMounted(() => {
 		<Card class="mt-4">
 			<template #content>
 				<DataTable :value="products" tableStyle="min-width: 50rem">
+					<template #header>
+						<div class="flex justify-end">
+							<IconField>
+								<InputIcon>
+									<i class="pi pi-search" />
+								</InputIcon>
+								<InputText v-model="searchInput" placeholder="Keyword Search" />
+							</IconField>
+						</div>
+					</template>
 					<Column field="product_id" header="ID"></Column>
 					<Column field="name" header="Name">
 						<template #body="slotProps">

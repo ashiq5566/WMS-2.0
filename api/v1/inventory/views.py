@@ -1,11 +1,13 @@
-from rest_framework import viewsets
 from django.db import transaction
-from rest_framework.response import Response
 from django_filters.rest_framework import DjangoFilterBackend
+from django.conf import settings
+
+from rest_framework import viewsets
+from rest_framework.response import Response
+from rest_framework import viewsets, filters
 from rest_framework.filters import OrderingFilter
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
-from django.conf import settings
 from .serializers import *
 
 from inventory.models import *
@@ -14,10 +16,12 @@ class OrdersViewSet(viewsets.ModelViewSet):
 	queryset = Order.objects.all()
 	serializer_class = OrderSerializer
 	permission_classes = (IsAuthenticated,)
-	filter_backends = (DjangoFilterBackend, OrderingFilter)
+	filter_backends = (DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter)
 	filterset_fields = {
 		'stakeholder_id': ['exact'],
+  		'date_added': ['exact', 'gte', 'lte'],
 	}
+	search_fields = ['id', 'order_number', 'stakeholder__name', 'order_type', 'order_status']
 
 	def create(self, request, *args, **kwargs):
 		order_data = request.data.get('order')
@@ -59,9 +63,12 @@ class OrderItemViewSet(viewsets.ModelViewSet):
     }
     
 class ProductViewSet(viewsets.ModelViewSet):
-    queryset = Product.objects.all()
-    serializer_class = ProductSerializer
-    permission_classes = (IsAuthenticated, )
+	queryset = Product.objects.all()
+	serializer_class = ProductSerializer
+	permission_classes = (IsAuthenticated, )
+	filter_backends = (DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter)
+	search_fields = ['product_id', 'name', 'status']
+
     
 class ReturnViewSet(viewsets.ModelViewSet):
 	queryset = Return.objects.all()
@@ -121,4 +128,6 @@ class PaymentViewSet(viewsets.ModelViewSet):
     filterset_fields = {
 		'order_id': ['exact'],
 		'order__stakeholder_id': ['exact'],
+  		'payment_date': ['exact', 'gte', 'lte'],
+  
 	}

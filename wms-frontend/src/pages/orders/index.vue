@@ -1,9 +1,12 @@
 <script setup lang="ts">
-import { onMounted, ref } from "vue";
+import { onMounted, ref, watch } from "vue";
 import axios from '@/plugins/axios';
 import moment from 'moment';
+import { debounce } from 'lodash';
 
 const orders = ref();
+const searchInput = ref('');
+const filterDates = ref();
 
 const getSeverity = (status) => {
 	switch (status) {
@@ -24,9 +27,16 @@ const getSeverity = (status) => {
 	}
 }
 
-const fetchOrders = async () => {
+
+const fetchOrders = async (search) => {
 	try {
-		const response = await axios.get('/api/inventory/orders');
+		const response = await axios.get('/api/inventory/orders', {
+			params: {
+				search,
+				date_added__gte: filterDates.value ? filterDates.value[0] : null,
+				date_added__lte: filterDates.value ? filterDates.value[1] : null,
+			},
+		});
 
 		orders.value = response.data;
 	} catch (error) {
@@ -34,6 +44,14 @@ const fetchOrders = async () => {
 	}
 }
 
+const debouncedFetchOrders = debounce(fetchOrders, 300);
+watch(searchInput, (newVal) => {
+	debouncedFetchOrders(newVal);
+});
+
+watch(filterDates, (newVal) => {
+	debouncedFetchOrders();
+});
 onMounted(() => {
 	fetchOrders();
 })
@@ -51,6 +69,18 @@ onMounted(() => {
 		<Card class="mt-4">
 			<template #content>
 				<DataTable :value="orders" tableStyle="min-width: 50rem">
+					<template #header>
+						<div class="flex justify-end">
+							<DatePicker v-model="filterDates" selectionMode="range" :manualInput="false" class="mr-4"
+								placeholder="Date Range" showIcon />
+							<IconField>
+								<InputIcon>
+									<i class="pi pi-search" />
+								</InputIcon>
+								<InputText v-model="searchInput" placeholder="Keyword Search" />
+							</IconField>
+						</div>
+					</template>
 					<Column field="id" header="ID#">
 						<template #body="slotProps">
 							<router-link :to="{ name: 'orders-id', params: { id: slotProps.data.id } }">
@@ -60,7 +90,7 @@ onMounted(() => {
 							</router-link>
 						</template>
 					</Column>
-					<Column field="date_added" header="Order Date">
+					<Column field="date_added" header="Order Date" sortable>
 						<template #body="slotProps">
 							{{ moment(slotProps.data.date_added).format('DD/MM/YYYY') }}
 						</template>
@@ -75,8 +105,7 @@ onMounted(() => {
 					<Column field="net_amount" header="Net Amount"></Column>
 					<Column field="order_status" header="Status">
 						<template #body="slotProps">
-							<Tag :value="slotProps.data.order_status"
-								:severity="getSeverity(slotProps.data.order_status)" />
+							<Tag :value="slotProps.data.order_status" :severity="getSeverity(slotProps.data.order_status)" />
 						</template>
 					</Column>
 					<template #empty>

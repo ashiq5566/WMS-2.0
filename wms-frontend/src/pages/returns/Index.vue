@@ -1,27 +1,10 @@
 <script setup lang="ts">
 import { onMounted, ref } from "vue";
 import axios from '@/plugins/axios';
+import moment from "moment";
 
 const returns = ref();
 
-// const getSeverity = (status) => {
-// 	switch (status) {
-// 		case 'Issued':
-// 			return 'warn';
-
-// 		case 'Delivered':
-// 			return 'success';
-
-// 		case 'Recieved':
-// 			return 'info';
-
-// 		case 'Cancelled':
-// 			return 'warn';
-
-// 		case 'Closed':
-// 			return 'danger';
-// 	}
-// }
 
 const fetchReturns = async () => {
 	try {
@@ -57,6 +40,11 @@ onMounted(() => {
 									{{ slotProps.data.id }}
 								</span>
 							</router-link>
+						</template>
+					</Column>
+					<Column field="return_type" header="Return Date" sortable>
+						<template #body="slotProps">
+							<span>{{ moment(slotProps.data.date_added).format('DD/MM/YYYY') }}</span>
 						</template>
 					</Column>
 					<Column field="return_type" header="Return Type"></Column>
