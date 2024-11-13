@@ -1,6 +1,6 @@
 <template>
 	<Card>
-		<template #title>Accounts Receivable(Sales)</template>
+		<template #title>Accounts Payable(Purchase)</template>
 		<template #content>
 			<div>
 				<apexchart width="700" type="bar" :options="options" :series="series">
@@ -15,7 +15,7 @@ import { ref, onMounted } from 'vue';
 import axios from '@/plugins/axios'
 
 
-const customers = ref([])
+const suppliers = ref([])
 const labels = ref([])
 const paymentDetails = ref([])
 
@@ -54,17 +54,17 @@ const series = ref([
 ]);
 
 
-const fetchCustomers = async () => {
+const fetchSuppliers = async () => {
 	try {
 		const response = await axios.get('/api/accounts/stakeholders', {
 			params: {
-				type: 'Customer'
+				type: 'Supplier'
 			}
 		});
-		customers.value = response.data;
+		suppliers.value = response.data;
 
 		// Update labels and series data
-		labels.value = customers.value.map(item => item.name);
+		labels.value = suppliers.value.map(item => item.name);
 
 		// Update options
 		options.value = {
@@ -75,7 +75,7 @@ const fetchCustomers = async () => {
 
 		console.log("labels:", labels.value);
 	} catch (error) {
-		console.error('Error fetching customers:', error);
+		console.error('Error fetching products:', error);
 	}
 };
 
@@ -83,10 +83,11 @@ const fetchOrders = async () => {
 	try {
 		const response = await axios.get('/api/inventory/orders/get_total_by_stakeholders', {
 			params: {
-				stakeholder_ids: customers.value.map(item => item.id)
+				stakeholder_ids: suppliers.value.map(item => item.id)
 			}
 		});
 		paymentDetails.value = response.data
+		console.log("Stake=", paymentDetails.value);
 
 		series.value = [
 			{
@@ -101,7 +102,7 @@ const fetchOrders = async () => {
 }
 
 onMounted(async () => {
-	await fetchCustomers()
+	await fetchSuppliers()
 	await fetchOrders()
 })
 </script>
