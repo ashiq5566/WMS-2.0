@@ -3,10 +3,17 @@ import { onMounted, ref, watch } from "vue";
 import axios from '@/plugins/axios';
 import moment from 'moment';
 import { debounce } from 'lodash';
+import "vue3-circle-progress/dist/circle-progress.css";
+import CircleProgress from "vue3-circle-progress";
 
 const orders = ref();
 const searchInput = ref('');
 const filterDates = ref();
+const totalOrdersCount = ref(0);
+const cloedOrderCount = ref(0);
+const salesOrderCount = ref(0);
+const purchaseOrderCount = ref(0);
+
 
 const getSeverity = (status) => {
 	switch (status) {
@@ -39,6 +46,10 @@ const fetchOrders = async (search) => {
 		});
 
 		orders.value = response.data;
+		totalOrdersCount.value = orders.value.length;
+		salesOrderCount.value = orders.value.filter(item => item.order_type === 'SO').length;
+		purchaseOrderCount.value = orders.value.filter(item => item.order_type === 'PO').length;
+		cloedOrderCount.value = orders.value.filter(item => item.order_status === 'Closed').length;
 	} catch (error) {
 		console.error('Error fetching orders:', error);
 	}
@@ -61,6 +72,44 @@ onMounted(() => {
 
 <template>
 	<div class="">
+		<div class="flex gap-4">
+			<Card>
+				<template #title>
+					Total Orders
+				</template>
+				<template #content>
+					<circle-progress :percent="totalOrdersCount" show-percent fill-color="#9B59B6" empty-color="#9B59B6"
+						class="custom-percent" transition="300" />
+				</template>
+			</Card>
+			<Card>
+				<template #title>
+					Sales Orders
+				</template>
+				<template #content>
+					<circle-progress :percent="salesOrderCount" show-percent fill-color="#7ED321" empty-color="#7ED321"
+						class="custom-percent" transition="300" />
+				</template>
+			</Card>
+			<Card>
+				<template #title>
+					Purchase Orders
+				</template>
+				<template #content>
+					<circle-progress :percent="purchaseOrderCount" show-percent fill-color="#F5A623" empty-color="#F5A623"
+						class="custom-percent" transition="300" />
+				</template>
+			</Card>
+			<Card>
+				<template #title>
+					Closed Orders
+				</template>
+				<template #content>
+					<circle-progress :percent="cloedOrderCount" show-percent fill-color="#288feb" empty-color="#288feb"
+						class="custom-percent" transition="300" />
+				</template>
+			</Card>
+		</div>
 		<div class="flex justify-end">
 			<router-link :to="{ name: 'orders-create' }">
 				<Button label="Create Order" />
@@ -117,4 +166,9 @@ onMounted(() => {
 	</div>
 </template>
 
-<style></style>
+<style>
+.custom-percent {
+	font-size: 25px;
+	font-weight: bold;
+}
+</style>

@@ -15,7 +15,7 @@ const formData = ref({
 });
 const typeOptions = ref([
 	{ name: 'Customer', value: 'Customer' },
-	{ name: 'Supplier', value: 'supplier' }
+	{ name: 'Supplier', value: 'Supplier' }
 ]);
 
 const handleSubmit = async () => {

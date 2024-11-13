@@ -6,9 +6,7 @@
 		</div>
 		<div class="grid grid-cols-2 gap-4 mt-4">
 			<purchasePaymentChart class="col-span-1" />
-			<Card>
-				<template #title>Turn Over</template>
-			</Card>
+			<turnOverChart class="col-span-1" />
 		</div>
 	</div>
 </template>
@@ -17,5 +15,6 @@
 import stockChart from '@/components/home/stockChart.vue';
 import salesPaymentChart from '@/components/home/salesPaymentChart.vue';
 import purchasePaymentChart from '@/components/home/purchasePaymentChart.vue';
+import turnOverChart from '@/components/home/turnOverChart.vue';
 
 </script>

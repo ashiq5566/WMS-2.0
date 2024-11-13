@@ -1,4 +1,5 @@
 from django.db import transaction
+from django.db.models import functions as db_functions
 from django_filters.rest_framework import DjangoFilterBackend
 from django.conf import settings
 from django.db.models import Sum, F
@@ -22,8 +23,18 @@ class OrdersViewSet(viewsets.ModelViewSet):
 	filterset_fields = {
 		'stakeholder_id': ['exact'],
   		'date_added': ['exact', 'gte', 'lte'],
+        'order_date': ['exact', 'gte', 'lte'],
 	}
 	search_fields = ['id', 'order_number', 'stakeholder__name', 'order_type', 'order_status']
+ 
+	def get_queryset(self):
+		queryset = super().get_queryset()
+		order_month = self.request.query_params.get('order_month')
+		
+		if order_month:
+			queryset = queryset.annotate(month=db_functions.ExtractMonth('order_date')).filter(month=order_month)
+		
+		return queryset
 
 	def create(self, request, *args, **kwargs):
 		order_data = request.data.get('order')

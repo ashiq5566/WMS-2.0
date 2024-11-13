@@ -26,20 +26,13 @@ const options = ref({
 	plotOptions: {
 		bar: {
 			horizontal: true,
-			colors: {
-				ranges: [{
-					from: 0,
-					to: 1000,
-					color: '#4CAF50' // Set a specific color based on value range (optional)
-				}]
-			}
 		}
 	},
 	xaxis: {
 		categories: [],
 		labels: {
 			style: {
-				colors: '#0000',
+				colors: '#333',
 				fontSize: '12px'
 			}
 		}
@@ -49,7 +42,8 @@ const options = ref({
 const series = ref([
 	{
 		name: 'Product Availability',
-		data: [] // Initialize empty; will be set dynamically
+		data: [], // Initialize empty; will be set dynamically
+		color: '#7ED321'
 	}
 ]);
 

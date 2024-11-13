@@ -41,7 +41,8 @@ const options = ref({
 const series = ref([
 	{
 		name: 'Product Availability',
-		data: [] // Initialize empty; will be set dynamically
+		data: [], // Initialize empty; will be set dynamically
+		color: '#4A90E2'
 	}
 ]);
 
