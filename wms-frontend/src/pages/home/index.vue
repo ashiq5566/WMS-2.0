@@ -6,6 +6,31 @@
 					<template #title>
 						Sales Overview
 					</template>
+					<template #content>
+						<div class="flex flex-col gap-4">
+							<div class="border border-gray-300 rounded-lg p-4 flex">
+								<div class="bg-[#FFF5EB] w-[50px] h-[50px] mr-4"></div>
+								<div>
+									<h3 class="text-2xl">5000</h3>
+									<span>Total Revenue</span>
+								</div>
+							</div>
+							<div class="border border-gray-300 rounded-lg p-4 flex">
+								<div class="bg-[#FFF5EB] w-[50px] h-[50px] mr-4"></div>
+								<div>
+									<h3 class="text-2xl">5000</h3>
+									<span>Total Revenue</span>
+								</div>
+							</div>
+							<div class="border border-gray-300 rounded-lg p-4 flex">
+								<div class="bg-[#FFF5EB] w-[50px] h-[50px] mr-4"></div>
+								<div>
+									<h3 class="text-2xl">5000</h3>
+									<span>Total Revenue</span>
+								</div>
+							</div>
+						</div>
+					</template>
 				</Card>
 				<Card class="w-1/2">
 					<template #title>
