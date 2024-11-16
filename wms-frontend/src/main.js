@@ -27,6 +27,7 @@ import Tag from 'primevue/tag'
 import IconField from 'primevue/iconfield'
 import InputIcon from 'primevue/inputicon'
 import DatePicker from 'primevue/datepicker'
+import VueApexCharts from 'vue3-apexcharts'
 
 const app = createApp(App)
 
@@ -38,6 +39,7 @@ app.use(PrimeVue, {
   }
 })
 app.use(ToastService)
+app.use(VueApexCharts)
 app.component('Button', Button)
 app.component('InputText', InputText)
 app.component('Card', Card)
