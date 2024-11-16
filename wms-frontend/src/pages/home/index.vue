@@ -130,21 +130,21 @@ const fetchProducts = async () => {
 };
 
 const salesData = computed(() => [
-	{ value: salesOrders.value.length, label: 'Sales Orders', icon: 'pi pi-cart-arrow-down' },
-	{ value: salesRevenue.value, label: 'Sales Revenue', icon: 'pi pi-truck' },
-	{ value: pendingRecievables.value, label: 'Pending Recievables', icon: 'pi pi-cart-arrow-down' },
-	{ value: collectedRecievables.value, label: 'Collected Recievables', icon: 'pi pi-users' },
+	{ value: salesOrders.value.length, label: 'Sales Orders', icon: 'pi pi-arrow-circle-down' },
+	{ value: salesRevenue.value, label: 'Sales Revenue', icon: 'pi pi-indian-rupee' },
+	{ value: pendingRecievables.value, label: 'Pending Recievables', icon: 'pi pi-indian-rupee' },
+	{ value: collectedRecievables.value, label: 'Collected Recievables', icon: 'pi pi-indian-rupee' },
 ]);
 
 const purchaseData = computed(() => [
-	{ value: purchaseOrders.value.length, label: 'Purchase Orders', icon: 'pi pi-cart-arrow-down' },
-	{ value: purchaseCredit.value, label: 'Purchase Credit', icon: 'pi pi-truck' },
-	{ value: outstandingPayables.value, label: 'Outstanding Payables', icon: 'pi pi-cart-arrow-down' },
+	{ value: purchaseOrders.value.length, label: 'Purchase Orders', icon: 'pi pi-arrow-circle-up' },
+	{ value: purchaseCredit.value, label: 'Purchase Credit', icon: 'pi pi-indian-rupee' },
+	{ value: outstandingPayables.value, label: 'Outstanding Payables', icon: 'pi pi-indian-rupee' },
 	{ value: setteledPayables.value, label: 'Setteled Payables', icon: 'pi pi-users' }
 ]);
 
 const summaryData = computed(() => [
-	{ value: totalProducts.value, label: 'Total Products', icon: 'pi pi-truck' },
+	{ value: totalProducts.value, label: 'Total Products', icon: 'pi pi-cart-plus' },
 	{ value: totalCustomers.value.length, label: 'Total Customers', icon: 'pi pi-users' },
 	{ value: totalSuppliers.value.length, label: 'Total Suppliers', icon: 'pi pi-users' }
 ]);
