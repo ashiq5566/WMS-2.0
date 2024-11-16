@@ -9,7 +9,7 @@
 		</template>
 		<template #content>
 			<div>
-				<apexchart width="500" type="bar" :options="options" :series="series">
+				<apexchart width="400" type="pie" :options="options" :series="series">
 				</apexchart>
 			</div>
 		</template>
@@ -27,32 +27,13 @@ const selectedMonth = ref(new Date())
 const options = ref({
 	chart: {
 		id: 'vuechart-example',
-		type: 'bar', // Make sure the type is set to 'bar'
+		type: 'pie', // Set chart type to 'pie'
 	},
-	colors: ['#2E93fA', '#66DA26'],  // Set colors for each bar in series
-	plotOptions: {
-		bar: {
-			columnWidth: '50%'  // Bar width
-		}
-	},
-	xaxis: {
-		categories: ['Sales', 'Purchase'],  // x-axis categories
-		labels: {
-			style: {
-				colors: '#333',  // Label colors
-				fontSize: '12px'  // Label font size
-			}
-		}
-	},
+	labels: ['Sales', 'Purchase'],  // Labels for each data point
+	colors: ['#26D4DF', '#966CFF'],  // Colors for each section of the pie
 });
 
-const series = ref([
-	{
-		name: 'Turn Over',
-		data: [],
-		color: '#9B59B6'
-	}
-]);
+const series = ref([]);
 
 const fetchOrders = async () => {
 	try {
@@ -71,12 +52,9 @@ const fetchOrders = async () => {
 		const totalPurchaseAmount = orders.value
 			.filter(order => order.order_type == "PO")
 			.reduce((sum, order) => sum + parseFloat(order.net_amount), 0);
-		series.value = [
-			{
-				name: 'Turn Over',
-				data: [totalSalesAmount, totalPurchaseAmount] // Example: use qty_available or any other field
-			}
-		];
+
+		series.value = [totalSalesAmount, totalPurchaseAmount]
+
 
 	} catch (error) {
 

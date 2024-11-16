@@ -1,114 +1,53 @@
 <template>
 	<div>
-		<div class="grid grid-cols-3 gap-4 mb-4">
-			<div class="flex col-span-2 gap-2">
-				<Card class="w-1/2">
-					<template #title>
-						<div class="flex justify-between">
-							<span>Business Overview</span>
-							<DatePicker v-model="selectedMonth" view="month" dateFormat="mm/yy" placeholder="Select Month" show-icon
-								class="w-[200px]" />
-						</div>
-					</template>
-					<template #content>
-						<div class="flex flex-col gap-4">
-							<div v-for="(item, index) in salesData" :key="index" class="border border-gray-300 rounded-lg p-4 flex">
-								<div class="bg-[#FFF5EB] w-[50px] h-[50px] mr-4 flex justify-center items-center"><i
-										:class="item.icon"></i></div>
-								<div>
-									<h3 class="text-2xl" style="font-weight:600;">{{ item.value }}</h3>
-									<span>{{ item.label }}</span>
-								</div>
-							</div>
-						</div>
-					</template>
-				</Card>
-				<Card class="w-1/2">
-					<template #title>
-						<div class="flex justify-between">
-							<span>Orders Overview</span>
-							<DatePicker v-model="selectedMonth" view="month" dateFormat="mm/yy" placeholder="Select Month" show-icon
-								class="w-[200px]" />
-						</div>
-					</template>
-					<template #content>
-						<div class="flex flex-col gap-4">
-							<div v-for="(item, index) in purchaseData" :key="index"
-								class="border border-gray-300 rounded-lg p-4 flex">
-								<div class="bg-[#F2EEFF] w-[50px] h-[50px] mr-4 flex justify-center items-center"><i
-										:class="item.icon"></i></div>
-								<div>
-									<h3 class="text-2xl" style="font-weight:600;">{{ item.value }}</h3>
-									<span>{{ item.label }}</span>
-								</div>
-							</div>
-						</div>
-					</template>
-				</Card>
-			</div>
-			<div class="col-span-1">
-				<turnOverChart class="col-span-1" />
-			</div>
-		</div>
-		<div class="grid grid-cols-3 gap-4 mb-4">
-			<Card>
-				<template #title>
-					Payements Overview (Sales)
-				</template>
-				<template #content>
-					<div class="flex flex-col gap-4">
-						<div v-for="(item, index) in salesPaymentData" :key="index"
-							class="border border-gray-300 rounded-lg p-4 flex">
-							<div class="bg-[#FFF5EB] w-[50px] h-[50px] mr-4 flex justify-center items-center"><i
-									:class="item.icon"></i></div>
-							<div>
-								<h3 class="text-2xl" style="font-weight:600;">&#8377;{{ item.value }}</h3>
-								<span>{{ item.label }}</span>
-							</div>
-						</div>
+		<div class="mb-4">
+			<div class="grid grid-cols-3 gap-4 mb-4">
+				<div v-for="(item, index) in summaryData" :key="index" class="border border-gray-300 rounded-lg p-4 flex">
+					<div class="bg-[#E5FAFB] w-[52px] h-[52px] mr-4 flex justify-center items-center"><i :class="item.icon"></i>
 					</div>
-				</template>
-			</Card>
-			<Card>
-				<template #title>
-					Payements Overview (Purchase)
-				</template>
-				<template #content>
-					<div class="flex flex-col gap-4">
-						<div v-for="(item, index) in purchasePaymentData" :key="index"
-							class="border border-gray-300 rounded-lg p-4 flex">
-							<div class="bg-[#FFF5EB] w-[50px] h-[50px] mr-4 flex justify-center items-center"><i
-									:class="item.icon"></i></div>
-							<div>
-								<h3 class="text-2xl" style="font-weight:600;">&#8377;{{ item.value }}</h3>
-								<span>{{ item.label }}</span>
-							</div>
-						</div>
+					<div>
+						<h3 class="text-2xl" style="font-weight:600;">{{ item.value }}</h3>
+						<span>{{ item.label }}</span>
 					</div>
-				</template>
-			</Card>
-			<Card>
-				<template #title>
-					Business Summary
-				</template>
-				<template #content>
-					<div class="flex flex-col gap-4">
-						<div v-for="(item, index) in summaryData" :key="index" class="border border-gray-300 rounded-lg p-4 flex">
-							<div class="bg-[#FFF5EB] w-[50px] h-[50px] mr-4 flex justify-center items-center"><i
-									:class="item.icon"></i></div>
+				</div>
+			</div>
+			<div class="grid grid-cols-2 gap-4">
+				<div class="flex flex-col gap-4 col-span-1">
+					<!-- sales statistics -->
+					<div class="grid grid-cols-2 gap-2">
+						<div v-for="(item, index) in salesData" :key="index" class="border border-gray-300 rounded-lg p-4 flex">
+							<div class="bg-[#FFF5EB] w-[52px] h-[52px] mr-4 flex justify-center items-center"><i
+									:class="item.icon"></i>
+							</div>
 							<div>
 								<h3 class="text-2xl" style="font-weight:600;">{{ item.value }}</h3>
 								<span>{{ item.label }}</span>
 							</div>
 						</div>
 					</div>
-				</template>
-			</Card>
+					<!-- purchase statistics -->
+					<div class="grid grid-cols-2 gap-2">
+						<div v-for="(item, index) in purchaseData" :key="index" class="border border-gray-300 rounded-lg p-4 flex">
+							<div class="bg-[#F2EEFF] w-[52px] h-[52px] mr-4 flex justify-center items-center"><i
+									:class="item.icon"></i>
+							</div>
+							<div>
+								<h3 class="text-2xl" style="font-weight:600;">{{ item.value }}</h3>
+								<span>{{ item.label }}</span>
+							</div>
+						</div>
+					</div>
+				</div>
+				<div class="col-span-1">
+					<stockChart />
+				</div>
+			</div>
 		</div>
 		<div class="grid grid-cols-3 gap-4">
+			<turnOverChart />
 			<salesPaymentChart />
 			<purchasePaymentChart />
-			<stockChart />
+
 		</div>
 	</div>
 </template>
@@ -191,34 +130,17 @@ const fetchProducts = async () => {
 };
 
 const salesData = computed(() => [
+	{ value: salesOrders.value.length, label: 'Sales Orders', icon: 'pi pi-cart-arrow-down' },
 	{ value: salesRevenue.value, label: 'Sales Revenue', icon: 'pi pi-truck' },
-	{ value: purchaseCredit.value, label: 'Purchase Credit', icon: 'pi pi-truck' },
-
-]);
-
-const salesPaymentData = computed(() => [
-	{ value: salesRevenue.value, label: 'Total Sales Credit', icon: 'pi pi-truck' },
-	{
-		value: pendingRecievables.value, label: 'Pending Recievables', icon: 'pi pi-cart-arrow-down'
-	},
-	{ value: collectedRecievables.value, label: 'Collected Recievables', icon: 'pi pi-users' }
-]);
-
-const purchasePaymentData = computed(() => [
-	{ value: purchaseCredit.value, label: 'Total Purchase Credit', icon: 'pi pi-truck' },
-	{
-		value: outstandingPayables.value, label: 'Outstanding Payables', icon: 'pi pi-cart-arrow-down'
-	},
-	{ value: setteledPayables.value, label: 'Setteled Payables', icon: 'pi pi-users' }
+	{ value: pendingRecievables.value, label: 'Pending Recievables', icon: 'pi pi-cart-arrow-down' },
+	{ value: collectedRecievables.value, label: 'Collected Recievables', icon: 'pi pi-users' },
 ]);
 
 const purchaseData = computed(() => [
-	{
-		value: salesOrders.value.length, label: 'Total Sales Orders', icon: 'pi pi-cart-arrow-down'
-	},
-	{
-		value: purchaseOrders.value.length, label: 'Total Purchase Orders', icon: 'pi pi-cart-arrow-down'
-	},
+	{ value: purchaseOrders.value.length, label: 'Purchase Orders', icon: 'pi pi-cart-arrow-down' },
+	{ value: purchaseCredit.value, label: 'Purchase Credit', icon: 'pi pi-truck' },
+	{ value: outstandingPayables.value, label: 'Outstanding Payables', icon: 'pi pi-cart-arrow-down' },
+	{ value: setteledPayables.value, label: 'Setteled Payables', icon: 'pi pi-users' }
 ]);
 
 const summaryData = computed(() => [
