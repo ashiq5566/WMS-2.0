@@ -1,9 +1,9 @@
 <template>
 	<Card>
-		<template #title>Product Status</template>
+		<template #title>Stock</template>
 		<template #content>
 			<div>
-				<apexchart width="700" type="bar" :options="options" :series="series">
+				<apexchart width="500" type="bar" :options="options" :series="series">
 				</apexchart>
 			</div>
 		</template>

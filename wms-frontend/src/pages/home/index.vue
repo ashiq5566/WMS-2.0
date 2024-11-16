@@ -5,7 +5,7 @@
 				<Card class="w-1/2">
 					<template #title>
 						<div class="flex justify-between">
-							<span>Sales Overview</span>
+							<span>Business Overview</span>
 							<DatePicker v-model="selectedMonth" view="month" dateFormat="mm/yy" placeholder="Select Month" show-icon
 								class="w-[200px]" />
 						</div>
@@ -16,7 +16,7 @@
 								<div class="bg-[#FFF5EB] w-[50px] h-[50px] mr-4 flex justify-center items-center"><i
 										:class="item.icon"></i></div>
 								<div>
-									<h3 class="text-2xl">{{ item.value }}</h3>
+									<h3 class="text-2xl" style="font-weight:600;">{{ item.value }}</h3>
 									<span>{{ item.label }}</span>
 								</div>
 							</div>
@@ -26,7 +26,7 @@
 				<Card class="w-1/2">
 					<template #title>
 						<div class="flex justify-between">
-							<span>Purchase Overview</span>
+							<span>Orders Overview</span>
 							<DatePicker v-model="selectedMonth" view="month" dateFormat="mm/yy" placeholder="Select Month" show-icon
 								class="w-[200px]" />
 						</div>
@@ -38,7 +38,7 @@
 								<div class="bg-[#F2EEFF] w-[50px] h-[50px] mr-4 flex justify-center items-center"><i
 										:class="item.icon"></i></div>
 								<div>
-									<h3 class="text-2xl">{{ item.value }}</h3>
+									<h3 class="text-2xl" style="font-weight:600;">{{ item.value }}</h3>
 									<span>{{ item.label }}</span>
 								</div>
 							</div>
@@ -51,25 +51,64 @@
 			</div>
 		</div>
 		<div class="grid grid-cols-3 gap-4 mb-4">
-			<div class="col-span-2 flex gap-2">
-				<Card class="w-1/2">
-					<template #title>
-						Payements Overview (Sales)
-					</template>
-				</Card>
-				<Card class="w-1/2">
-					<template #title>
-						Payements Overview (Purchase)
-					</template>
-				</Card>
-			</div>
-			<div class="col-span-1">
-				<salesPaymentChart />
-				<purchasePaymentChart />
-			</div>
+			<Card>
+				<template #title>
+					Payements Overview (Sales)
+				</template>
+				<template #content>
+					<div class="flex flex-col gap-4">
+						<div v-for="(item, index) in salesPaymentData" :key="index"
+							class="border border-gray-300 rounded-lg p-4 flex">
+							<div class="bg-[#FFF5EB] w-[50px] h-[50px] mr-4 flex justify-center items-center"><i
+									:class="item.icon"></i></div>
+							<div>
+								<h3 class="text-2xl" style="font-weight:600;">&#8377;{{ item.value }}</h3>
+								<span>{{ item.label }}</span>
+							</div>
+						</div>
+					</div>
+				</template>
+			</Card>
+			<Card>
+				<template #title>
+					Payements Overview (Purchase)
+				</template>
+				<template #content>
+					<div class="flex flex-col gap-4">
+						<div v-for="(item, index) in purchasePaymentData" :key="index"
+							class="border border-gray-300 rounded-lg p-4 flex">
+							<div class="bg-[#FFF5EB] w-[50px] h-[50px] mr-4 flex justify-center items-center"><i
+									:class="item.icon"></i></div>
+							<div>
+								<h3 class="text-2xl" style="font-weight:600;">&#8377;{{ item.value }}</h3>
+								<span>{{ item.label }}</span>
+							</div>
+						</div>
+					</div>
+				</template>
+			</Card>
+			<Card>
+				<template #title>
+					Business Summary
+				</template>
+				<template #content>
+					<div class="flex flex-col gap-4">
+						<div v-for="(item, index) in summaryData" :key="index" class="border border-gray-300 rounded-lg p-4 flex">
+							<div class="bg-[#FFF5EB] w-[50px] h-[50px] mr-4 flex justify-center items-center"><i
+									:class="item.icon"></i></div>
+							<div>
+								<h3 class="text-2xl" style="font-weight:600;">{{ item.value }}</h3>
+								<span>{{ item.label }}</span>
+							</div>
+						</div>
+					</div>
+				</template>
+			</Card>
 		</div>
-		<div class="grid grid-cols-2 gap-4">
-			<stockChart class="col-span-1" />
+		<div class="grid grid-cols-3 gap-4">
+			<salesPaymentChart />
+			<purchasePaymentChart />
+			<stockChart />
 		</div>
 	</div>
 </template>
@@ -83,13 +122,19 @@ import purchasePaymentChart from '@/components/home/purchasePaymentChart.vue';
 import turnOverChart from '@/components/home/turnOverChart.vue';
 
 const salesRevenue = ref()
-const purchaseRevenue = ref();
+const purchaseCredit = ref();
 const orders = ref([]);
 const totalCustomers = ref(0);
 const totalSuppliers = ref(0);
 const salesOrders = ref([]);
 const purchaseOrders = ref([]);
 const selectedMonth = ref(new Date())
+const pendingRecievables = ref();
+const collectedRecievables = ref();
+const outstandingPayables = ref();
+const setteledPayables = ref();
+const totalProducts = ref();
+
 
 
 const fetchOrders = async () => {
@@ -100,12 +145,17 @@ const fetchOrders = async () => {
 			}
 		});
 		orders.value = response.data
-
+		// Sales order
 		salesOrders.value = orders.value.filter(order => order.order_type == "SO")
 		salesRevenue.value = salesOrders.value.reduce((sum, order) => sum + parseFloat(order.net_amount), 0);
+		pendingRecievables.value = salesOrders.value.reduce((sum, order) => sum + parseFloat(order.pending_amount), 0);
+		collectedRecievables.value = salesRevenue.value - pendingRecievables.value;
 
+		// Purchase order
 		purchaseOrders.value = orders.value.filter(order => order.order_type == "PO")
-		purchaseRevenue.value = purchaseOrders.value.reduce((sum, order) => sum + parseFloat(order.net_amount), 0);
+		purchaseCredit.value = purchaseOrders.value.reduce((sum, order) => sum + parseFloat(order.net_amount), 0);
+		outstandingPayables.value = purchaseOrders.value.reduce((sum, order) => sum + parseFloat(order.pending_amount), 0);
+		setteledPayables.value = purchaseCredit.value - outstandingPayables.value;
 
 
 	} catch (error) {
@@ -130,19 +180,50 @@ const fetchCustomers = async () => {
 	}
 };
 
+const fetchProducts = async () => {
+	try {
+		const response = await axios.get('/api/inventory/products');
+		totalProducts.value = response.data.length;
+
+	} catch (error) {
+		console.error('Error fetching customers:', error);
+	}
+};
+
 const salesData = computed(() => [
 	{ value: salesRevenue.value, label: 'Sales Revenue', icon: 'pi pi-truck' },
+	{ value: purchaseCredit.value, label: 'Purchase Credit', icon: 'pi pi-truck' },
+
+]);
+
+const salesPaymentData = computed(() => [
+	{ value: salesRevenue.value, label: 'Total Sales Credit', icon: 'pi pi-truck' },
 	{
-		value: salesOrders.value.length, label: 'Total Orders', icon: 'pi pi-cart-arrow-down'
+		value: pendingRecievables.value, label: 'Pending Recievables', icon: 'pi pi-cart-arrow-down'
 	},
-	{ value: totalCustomers.value.length, label: 'Total Customers', icon: 'pi pi-users' }
+	{ value: collectedRecievables.value, label: 'Collected Recievables', icon: 'pi pi-users' }
+]);
+
+const purchasePaymentData = computed(() => [
+	{ value: purchaseCredit.value, label: 'Total Purchase Credit', icon: 'pi pi-truck' },
+	{
+		value: outstandingPayables.value, label: 'Outstanding Payables', icon: 'pi pi-cart-arrow-down'
+	},
+	{ value: setteledPayables.value, label: 'Setteled Payables', icon: 'pi pi-users' }
 ]);
 
 const purchaseData = computed(() => [
-	{ value: purchaseRevenue.value, label: 'Purchase Revenue', icon: 'pi pi-truck' },
 	{
-		value: purchaseOrders.value.length, label: 'Total Orders', icon: 'pi pi-cart-arrow-down'
+		value: salesOrders.value.length, label: 'Total Sales Orders', icon: 'pi pi-cart-arrow-down'
 	},
+	{
+		value: purchaseOrders.value.length, label: 'Total Purchase Orders', icon: 'pi pi-cart-arrow-down'
+	},
+]);
+
+const summaryData = computed(() => [
+	{ value: totalProducts.value, label: 'Total Products', icon: 'pi pi-truck' },
+	{ value: totalCustomers.value.length, label: 'Total Customers', icon: 'pi pi-users' },
 	{ value: totalSuppliers.value.length, label: 'Total Suppliers', icon: 'pi pi-users' }
 ]);
 
@@ -153,6 +234,7 @@ watch(selectedMonth, () => {
 onMounted(async () => {
 	await fetchOrders()
 	fetchCustomers();
+	fetchProducts();
 })
 
 </script>
