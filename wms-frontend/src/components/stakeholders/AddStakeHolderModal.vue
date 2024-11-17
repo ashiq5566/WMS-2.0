@@ -44,7 +44,7 @@ const handleSubmit = async () => {
 		<div class="flex justify-end">
 			<Button label="Add" @click="visible = true" />
 		</div>
-		<Dialog v-model:visible="visible" modal header="Edit Profile" :style="{ width: '40rem' }">
+		<Dialog v-model:visible="visible" modal header="Add Stakeholders" :style="{ width: '40rem' }">
 			<div class="flex items-center gap-4 mb-4">
 				<label for="name" class="font-semibold w-32">Name</label>
 				<InputText id="name" v-model=formData.name class="flex-auto" autocomplete="off" />

@@ -43,8 +43,8 @@ class Order(WebBaseModel):
     discount = models.PositiveIntegerField(null=True)
     net_amount = models.PositiveIntegerField(null=True)
     order_status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='Issued')
-    total_amount = models.DecimalField(max_digits=12, decimal_places=2, blank=True, null=True)
-    pending_amount = models.DecimalField(max_digits=12, decimal_places=2, blank=True, null=True)
+    total_amount = models.PositiveIntegerField(null=True)
+    pending_amount = models.PositiveIntegerField(null=True)
     order_date = models.DateTimeField(null=True, blank=True)
     
     def __str__(self):
@@ -140,7 +140,7 @@ class Payment(models.Model):
     ]
 
     order = models.ForeignKey(Order, on_delete=models.CASCADE, related_name='payments')
-    amount = models.DecimalField(max_digits=12, decimal_places=2)
+    amount = models.PositiveIntegerField(null=True, blank=True)
     payment_date = models.DateTimeField(auto_now_add=True)
     payment_method = models.CharField(max_length=10, choices=PAYMENT_METHOD_CHOICES, default='CASH')
     

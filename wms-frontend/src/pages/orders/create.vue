@@ -13,6 +13,7 @@ const selectedType = ref(null);
 const selectedStakeholder = ref('');
 const stakeholderOptions = ref([]);
 const selectedProductUnit = ref('');
+const orderDate = ref('');
 
 const blankData =
 {
@@ -32,7 +33,7 @@ const orderBlankData = {
 	gross_amount: '',
 	discount: '',
 	net_amount: '',
-
+	order_date: '',
 }
 const orderData = ref(JSON.parse(JSON.stringify(orderBlankData)));
 const itemsData = ref([])
@@ -122,6 +123,7 @@ const onSubmit = async (discountAmount, updatedGrossAmount) => {
 		orderData.value.gross_amount = grossAmount.value;
 		orderData.value.discount = discountAmount;
 		orderData.value.net_amount = updatedGrossAmount;
+		orderData.value.order_date = new Date(orderDate.value).toISOString();
 		const response = await axios.post('/api/inventory/orders/', {
 			order: orderData.value,
 			items: itemsData.value
@@ -169,7 +171,8 @@ onMounted(() => {
 				placeholder="Select type" class="mr-4" />
 			<Select v-model="selectedStakeholder" :options="stakeholderOptions" optionLabel="name" option-value="id"
 				placeholder="Select Company" class="mr-4" />
-			<InputText class="mr-4" type="text" v-model="orderData.order_number" placehoder="Order Number" disabled />
+			<DatePicker v-model="orderDate" show-icon />
+			<InputText class="ml-4" type="text" v-model="orderData.order_number" placehoder="Order Number" disabled />
 		</div>
 		<div v-if="selectedType" class="mb-4">
 			<Select v-model="selectedProduct" :options="products" optionLabel="name" option-value="id"
