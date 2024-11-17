@@ -3,7 +3,9 @@ import { ref, onMounted, computed } from 'vue'
 import { useRoute } from 'vue-router'
 import moment from 'moment';
 import axios from '@/plugins/axios'
+import { useToast } from 'primevue/usetoast';
 
+const toast = useToast();
 const route = useRoute()
 const stakeholder = ref([])
 const ongoingBills = ref([])
@@ -56,6 +58,17 @@ const progressPercentage = computed(() =>
 		: 0
 );
 
+const onUpdate = async () => {
+	try {
+		const response = await axios.put(`/api/accounts/stakeholders/${route.params.id}`, stakeholder.value);
+		toast.add({ severity: 'success', summary: 'Success', detail: `Profile Updated SuccessFully`, life: 3000 });
+	} catch (error) {
+		console.log("Failed to update profile", error);
+
+		toast.add({ severity: 'error', summary: 'Error', detail: `${error.message}`, life: 3000 });
+	}
+}
+
 onMounted(async () => {
 	await fetchStakeHolder();
 	await fetchBills();
@@ -74,23 +87,26 @@ onMounted(async () => {
 					<div class="grid grid-cols-2 gap-4">
 						<div class="flex items-center">
 							<label for="name" class="w-20">Name</label>
-							<InputText type="text" id="name" v-model="stakeholder.name" disabled />
+							<InputText type="text" id="name" v-model="stakeholder.name" />
 						</div>
 						<div class="flex items-center">
 							<label for="email" class="w-20">Email</label>
-							<InputText type="email" id="email" v-model="stakeholder.email" disabled />
+							<InputText type="email" id="email" v-model="stakeholder.email" />
 						</div>
 						<div class="flex items-center">
 							<label for="mobile" class="w-20">Phone</label>
-							<InputText type="text" id="mobile" v-model="stakeholder.mobile" disabled />
+							<InputText type="text" id="mobile" v-model="stakeholder.mobile" />
 						</div>
 						<div class="flex items-center">
 							<label for="address" class="w-20">Address</label>
-							<InputText type="text" id="address" v-model="stakeholder.address" disabled />
+							<InputText type="text" id="address" v-model="stakeholder.address" />
 						</div>
 						<div class="flex items-center">
 							<label for="type" class="w-20">Type</label>
 							<InputText type="text" id="type" v-model="stakeholder.type" disabled />
+						</div>
+						<div class="flex col-span-2 justify-end">
+							<Button label="Update" @click="onUpdate" />
 						</div>
 					</div>
 				</template>
