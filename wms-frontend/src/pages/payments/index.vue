@@ -10,8 +10,6 @@ const filterDates = ref();
 const salesRevenue = ref()
 const purchaseCredit = ref();
 const orders = ref([]);
-const totalCustomers = ref(0);
-const totalSuppliers = ref(0);
 const salesOrders = ref([]);
 const purchaseOrders = ref([]);
 const selectedMonth = ref(new Date())
@@ -19,7 +17,6 @@ const pendingRecievables = ref();
 const collectedRecievables = ref();
 const outstandingPayables = ref();
 const setteledPayables = ref();
-const totalProducts = ref();
 
 const fetchOrders = async () => {
 	try {
@@ -75,6 +72,10 @@ watch(filterDates, (newVal) => {
 	debouncedFetchOrders();
 });
 
+watch(selectedMonth, () => {
+	fetchOrders();
+})
+
 onMounted(() => {
 	fetchPayments();
 	fetchOrders();
@@ -85,6 +86,10 @@ onMounted(() => {
 
 <template>
 	<div class="">
+		<div class="flex justify-end">
+			<DatePicker v-model="selectedMonth" view="month" dateFormat="mm/yy" placeholder="Select Month" show-icon
+				class="w-[200px] mb-4" />
+		</div>
 		<div class="grid grid-cols-4 gap-4 mb-4">
 			<div v-for="(item, index) in statisticsData" :key="index" class="border border-gray-300 rounded-lg p-4 flex">
 				<div class="bg-[#FFF5EB] w-[52px] h-[52px] mr-4 flex justify-center items-center"><i :class="item.icon"></i>
