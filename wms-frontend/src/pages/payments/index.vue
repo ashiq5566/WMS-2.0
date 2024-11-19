@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, ref, watch } from "vue";
+import { onMounted, ref, watch, computed } from "vue";
 import axios from '@/plugins/axios';
 import moment from 'moment';
 import { debounce } from 'lodash';
@@ -7,7 +7,46 @@ import { debounce } from 'lodash';
 
 const payments = ref();
 const filterDates = ref();
+const salesRevenue = ref()
+const purchaseCredit = ref();
+const orders = ref([]);
+const totalCustomers = ref(0);
+const totalSuppliers = ref(0);
+const salesOrders = ref([]);
+const purchaseOrders = ref([]);
+const selectedMonth = ref(new Date())
+const pendingRecievables = ref();
+const collectedRecievables = ref();
+const outstandingPayables = ref();
+const setteledPayables = ref();
+const totalProducts = ref();
 
+const fetchOrders = async () => {
+	try {
+		const response = await axios.get('/api/inventory/orders', {
+			params: {
+				order_month: selectedMonth.value.getMonth() + 1
+			}
+		});
+		orders.value = response.data
+		// Sales order
+		salesOrders.value = orders.value.filter(order => order.order_type == "SO")
+		salesRevenue.value = salesOrders.value.reduce((sum, order) => sum + parseFloat(order.net_amount), 0);
+		pendingRecievables.value = salesOrders.value.reduce((sum, order) => sum + parseFloat(order.pending_amount), 0);
+		collectedRecievables.value = salesRevenue.value - pendingRecievables.value;
+
+		// Purchase order
+		purchaseOrders.value = orders.value.filter(order => order.order_type == "PO")
+		purchaseCredit.value = purchaseOrders.value.reduce((sum, order) => sum + parseFloat(order.net_amount), 0);
+		outstandingPayables.value = purchaseOrders.value.reduce((sum, order) => sum + parseFloat(order.pending_amount), 0);
+		setteledPayables.value = purchaseCredit.value - outstandingPayables.value;
+
+
+	} catch (error) {
+		console.log(error);
+
+	}
+}
 
 const fetchPayments = async () => {
 	try {
@@ -25,12 +64,20 @@ const fetchPayments = async () => {
 }
 const debouncedFetchOrders = debounce(fetchPayments, 300);
 
+const statisticsData = computed(() => [
+	{ value: pendingRecievables.value, label: 'Pendig Recievables', icon: 'pi pi-arrow-circle-down' },
+	{ value: collectedRecievables.value, label: 'Collected Recievables', icon: 'pi pi-indian-rupee' },
+	{ value: outstandingPayables.value, label: 'Outstanding Payables', icon: 'pi pi-indian-rupee' },
+	{ value: setteledPayables.value, label: 'setteled Payables', icon: 'pi pi-indian-rupee' },
+]);
+
 watch(filterDates, (newVal) => {
 	debouncedFetchOrders();
 });
 
 onMounted(() => {
 	fetchPayments();
+	fetchOrders();
 })
 
 
@@ -38,7 +85,15 @@ onMounted(() => {
 
 <template>
 	<div class="">
-		<div class="flex justify-end">
+		<div class="grid grid-cols-4 gap-4 mb-4">
+			<div v-for="(item, index) in statisticsData" :key="index" class="border border-gray-300 rounded-lg p-4 flex">
+				<div class="bg-[#FFF5EB] w-[52px] h-[52px] mr-4 flex justify-center items-center"><i :class="item.icon"></i>
+				</div>
+				<div>
+					<h3 class="text-2xl" style="font-weight:600;">{{ item.value }}</h3>
+					<span>{{ item.label }}</span>
+				</div>
+			</div>
 		</div>
 		<Card class="mt-4">
 			<template #content>
