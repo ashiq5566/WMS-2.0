@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, ref, watch } from "vue";
+import { onMounted, ref, watch, computed } from "vue";
 import axios from '@/plugins/axios';
 import moment from 'moment';
 import { debounce } from 'lodash';
@@ -34,6 +34,12 @@ const getSeverity = (status) => {
 	}
 }
 
+const statisticsData = computed(() => [
+	{ value: totalOrdersCount.value, label: 'Total Orders', icon: 'pi pi-arrow-circle-down' },
+	{ value: salesOrderCount.value, label: 'Sales Orders', icon: 'pi pi-indian-rupee' },
+	{ value: purchaseOrderCount.value, label: 'Purchase Orders', icon: 'pi pi-indian-rupee' },
+	{ value: cloedOrderCount.value, label: 'Closed Orders', icon: 'pi pi-indian-rupee' },
+]);
 
 const fetchOrders = async (search) => {
 	try {
@@ -72,62 +78,32 @@ onMounted(() => {
 
 <template>
 	<div class="">
-		<div class="flex gap-4">
-			<Card>
-				<template #title>
-					Total Orders
-				</template>
-				<template #content>
-					<circle-progress :percent="totalOrdersCount" show-percent fill-color="#9B59B6" empty-color="#9B59B6"
-						class="custom-percent" transition="300" />
-				</template>
-			</Card>
-			<Card>
-				<template #title>
-					Sales Orders
-				</template>
-				<template #content>
-					<circle-progress :percent="salesOrderCount" show-percent fill-color="#7ED321" empty-color="#7ED321"
-						class="custom-percent" transition="300" />
-				</template>
-			</Card>
-			<Card>
-				<template #title>
-					Purchase Orders
-				</template>
-				<template #content>
-					<circle-progress :percent="purchaseOrderCount" show-percent fill-color="#F5A623" empty-color="#F5A623"
-						class="custom-percent" transition="300" />
-				</template>
-			</Card>
-			<Card>
-				<template #title>
-					Closed Orders
-				</template>
-				<template #content>
-					<circle-progress :percent="cloedOrderCount" show-percent fill-color="#288feb" empty-color="#288feb"
-						class="custom-percent" transition="300" />
-				</template>
-			</Card>
-		</div>
-		<div class="flex justify-end">
-			<router-link :to="{ name: 'orders-create' }">
-				<Button label="Create Order" />
-			</router-link>
+		<div class="grid grid-cols-4 gap-4 mb-4">
+			<div v-for="(item, index) in statisticsData" :key="index" class="border border-gray-300 rounded-lg p-4 flex">
+				<div class="bg-[#FFF5EB] w-[52px] h-[52px] mr-4 flex justify-center items-center"><i :class="item.icon"></i>
+				</div>
+				<div>
+					<h3 class="text-2xl" style="font-weight:600;">{{ item.value }}</h3>
+					<span>{{ item.label }}</span>
+				</div>
+			</div>
 		</div>
 		<Card class="mt-4">
 			<template #content>
 				<DataTable :value="orders" tableStyle="min-width: 50rem">
 					<template #header>
-						<div class="flex justify-end">
-							<DatePicker v-model="filterDates" selectionMode="range" :manualInput="false" class="mr-4"
-								placeholder="Date Range" showIcon />
+						<div class="flex justify-end gap-4">
+							<DatePicker v-model="filterDates" selectionMode="range" :manualInput="false" placeholder="Date Range"
+								showIcon />
 							<IconField>
 								<InputIcon>
 									<i class="pi pi-search" />
 								</InputIcon>
 								<InputText v-model="searchInput" placeholder="Keyword Search" />
 							</IconField>
+							<router-link :to="{ name: 'orders-create' }">
+								<Button label="Create Order" />
+							</router-link>
 						</div>
 					</template>
 					<Column field="id" header="ID#">
