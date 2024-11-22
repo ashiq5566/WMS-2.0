@@ -4,7 +4,6 @@ import axios from '@/plugins/axios';
 import moment from 'moment';
 import { debounce } from 'lodash';
 import "vue3-circle-progress/dist/circle-progress.css";
-import CircleProgress from "vue3-circle-progress";
 
 const orders = ref();
 const searchInput = ref('');
@@ -13,7 +12,8 @@ const totalOrdersCount = ref(0);
 const cloedOrderCount = ref(0);
 const salesOrderCount = ref(0);
 const purchaseOrderCount = ref(0);
-
+const selectedStakeholder = ref('');
+const stakeholders = ref([]);
 
 const getSeverity = (status) => {
 	switch (status) {
@@ -48,6 +48,7 @@ const fetchOrders = async (search) => {
 				search,
 				date_added__gte: filterDates.value ? filterDates.value[0] : null,
 				date_added__lte: filterDates.value ? filterDates.value[1] : null,
+				stakeholder_id: selectedStakeholder.value,
 			},
 		});
 
@@ -61,9 +62,22 @@ const fetchOrders = async (search) => {
 	}
 }
 
+const fetchStakeholders = async () => {
+	try {
+		const response = await axios.get('/api/accounts/stakeholders/');
+		stakeholders.value = response.data.map(item => ({ value: item.id, label: item.name }));
+	} catch (error) {
+		console.error('Error fetching stakeholders:', error);
+	}
+}
+
 const debouncedFetchOrders = debounce(fetchOrders, 300);
 watch(searchInput, (newVal) => {
 	debouncedFetchOrders(newVal);
+});
+
+watch(selectedStakeholder, (newVal) => {
+	fetchOrders();
 });
 
 watch(filterDates, (newVal) => {
@@ -71,6 +85,8 @@ watch(filterDates, (newVal) => {
 });
 onMounted(() => {
 	fetchOrders();
+	fetchStakeholders();
+
 })
 
 
@@ -93,6 +109,8 @@ onMounted(() => {
 				<DataTable :value="orders" tableStyle="min-width: 50rem">
 					<template #header>
 						<div class="flex justify-end gap-4">
+							<Select v-model="selectedStakeholder" :options="stakeholders" optionLabel="label" option-value="value"
+								placeholder="Select type" class="mr-4" filter />
 							<DatePicker v-model="filterDates" selectionMode="range" :manualInput="false" placeholder="Date Range"
 								showIcon />
 							<IconField>
