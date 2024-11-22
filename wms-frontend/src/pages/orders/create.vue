@@ -13,6 +13,7 @@ const selectedType = ref(null);
 const selectedStakeholder = ref('');
 const stakeholderOptions = ref([]);
 const selectedProductUnit = ref('');
+const selectedProductStock = ref('');
 const orderDate = ref('');
 
 const blankData =
@@ -73,6 +74,11 @@ const selectRow = (data) => {
 	const removedProduct = data.product_name
 	itemsData.value = itemsData.value.filter(item => item.product !== data.product);
 	toast.add({ severity: 'info', summary: 'Info', detail: `${removedProduct} is Removed Succesfully`, life: 3000 });
+	if (selectedType.value === 'PO') {
+		selectedProductStock.value = parseInt(selectedProductStock.value) - parseInt(data.quantity)
+	} else if (selectedType.value == 'SO') {
+		selectedProductStock.value = parseInt(selectedProductStock.value) + parseInt(data.quantity)
+	}
 };
 
 
@@ -80,8 +86,7 @@ const fetchProducts = async () => {
 	try {
 		const response = await axios.get('/api/inventory/products');
 
-		products.value = response.data;
-
+		products.value = response.data.filter(product => product.qty_available > 0);
 	} catch (error) {
 		console.error('Error fetching orders:', error);
 	}
@@ -103,6 +108,13 @@ const addItem = async () => {
 		if (formData.value.quantity > 0 && formData.value.price_at_time_of_order > 0) {
 			// calculate total price of each and save it in variable
 			formData.value.total = formData.value.quantity * formData.value.price_at_time_of_order;
+			// real time update of stock
+			if (selectedType.value == 'PO') {
+				selectedProductStock.value = parseInt(selectedProductStock.value) + parseInt(formData.value.quantity)
+			} else if (selectedType.value == 'SO') {
+				selectedProductStock.value = parseInt(selectedProductStock.value) - parseInt(formData.value.quantity)
+			}
+
 		}
 		grossAmount.value = grossAmount.value + formData.value.total;
 		itemsData.value.push(JSON.parse(JSON.stringify(formData.value)));
@@ -150,6 +162,7 @@ watch(selectedType, (newValue) => {
 watch(selectedProduct, (newValue) => {
 	if (products.value.length > 0) {
 		selectedProductUnit.value = products.value.find(p => p.id === newValue).unit;
+		selectedProductStock.value = products.value.find(p => p.id === newValue).qty_available;
 	}
 })
 
@@ -177,6 +190,7 @@ onMounted(() => {
 		<div v-if="selectedType" class="mb-4">
 			<Select v-model="selectedProduct" :options="products" optionLabel="name" option-value="id"
 				placeholder="Select product" class="mr-4" />
+			<InputText v-if="selectedProduct" class="mr-4" type="text" v-model="selectedProductStock" disabled />
 			<InputText class="mr-4" type="text" v-model="formData.quantity" :placeholder="selectedProductUnit" />
 			<InputText class="mr-4" type="text" v-model="formData.price_at_time_of_order" placeholder="Unit Price" />
 			<Button icon="pi pi-plus" aria-label="Save" @click="addItem" />

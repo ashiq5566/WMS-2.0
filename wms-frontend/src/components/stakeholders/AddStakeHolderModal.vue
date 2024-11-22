@@ -5,14 +5,16 @@ import axios from '@/plugins/axios.js';
 const emit = defineEmits(['instance-added']);
 const visible = ref(false);
 
-const formData = ref({
+const blankData = {
 	name: '',
 	address: '',
 	mobile: '',
 	email: '',
 	company_name: '',
 	type: '',
-});
+};
+const formData = ref(JSON.parse(JSON.stringify(blankData)));
+
 const typeOptions = ref([
 	{ name: 'Customer', value: 'Customer' },
 	{ name: 'Supplier', value: 'Supplier' }
@@ -32,6 +34,8 @@ const handleSubmit = async () => {
 		console.log(response);
 		visible.value = false;
 		emit('instance-added');
+		formData.value = JSON.parse(JSON.stringify(blankData));
+
 	} catch (error) {
 		console.error('Creation failed:', error);
 	}
