@@ -126,10 +126,9 @@ const addItem = async () => {
 	}
 };
 
-const onSubmit = async (discountAmount, updatedGrossAmount) => {
+const onSubmit = async (discountAmount, updatedGrossAmount, downPayment, paymentType) => {
 	try {
 		fetchOrders()
-		console.log('Order confirmed with discount amount:', discountAmount);
 		orderData.value.order_type = selectedType.value;
 		orderData.value.stakeholder = selectedStakeholder.value;
 		orderData.value.gross_amount = grossAmount.value;
@@ -140,7 +139,17 @@ const onSubmit = async (discountAmount, updatedGrossAmount) => {
 			order: orderData.value,
 			items: itemsData.value
 		})
-		console.log('Order created:', response.data)
+		// save initial order payment if any
+		if (downPayment > 0 && response.status == 201) {
+			const paymentResponse = await axios.post('/api/inventory/payments/',
+				{
+					order: response.data.order.id,
+					amount: downPayment,
+					payment_date: orderData.value.order_date,
+					payment_method: paymentType
+				}
+			)
+		}
 		toast.add({ severity: 'info', summary: 'Info', detail: 'Order Created SuccessFully', life: 3000 });
 	} catch (error) {
 		console.error('Error creating order:', error.response?.data)
