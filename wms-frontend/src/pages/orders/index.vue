@@ -110,7 +110,7 @@ onMounted(() => {
 					<template #header>
 						<div class="flex justify-end gap-4">
 							<Select v-model="selectedStakeholder" :options="stakeholders" optionLabel="label" option-value="value"
-								placeholder="Select type" class="mr-4" filter />
+								placeholder="Select Stakeholder" class="mr-4" filter />
 							<DatePicker v-model="filterDates" selectionMode="range" :manualInput="false" placeholder="Date Range"
 								showIcon />
 							<IconField>
