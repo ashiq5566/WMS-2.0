@@ -107,10 +107,12 @@ class ReturnViewSet(viewsets.ModelViewSet):
 	permission_classes = (IsAuthenticated, )
 	filter_backends = (DjangoFilterBackend, OrderingFilter)
 	filterset_fields = {
-			'original_order': ['exact'],
+		'original_order': ['exact'],
+		'date_added': ['exact', 'gte', 'lte'],
+		'return_type': ['exact'],
+		'original_order__stakeholder': ['exact']
 	}
-	
-	
+
 	def create(self, request, *args, **kwargs):
 		return_data = request.data.get('return')
 		items_data = request.data.get('items', [])
