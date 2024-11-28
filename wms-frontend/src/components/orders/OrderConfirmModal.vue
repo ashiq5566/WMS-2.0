@@ -19,11 +19,19 @@ const router = useRouter();
 const emit = defineEmits(['order-confirmed']);
 const visible = ref(false);
 const discountAmount = ref(0);
-const updatedGrossAmount = ref(props.grossAmount);
+const downPayment = ref(0);
+const paymentType = ref('');
 
+const updatedGrossAmount = ref(props.grossAmount);
+const methods = [
+	{ value: 'CASH', label: 'CASH' },
+	{ value: 'CARD', label: 'Card' },
+	{ value: 'BANK', label: 'BANK' },
+	{ value: 'OTHER', label: 'OTHER' },
+]
 
 const handleSubmit = () => {
-	emit('order-confirmed', discountAmount.value, updatedGrossAmount.value);
+	emit('order-confirmed', discountAmount.value, updatedGrossAmount.value, downPayment.value, paymentType.value);
 	visible.value = false;
 	router.push('/orders');
 }
@@ -57,6 +65,13 @@ watch(discountAmount, (newValue) => {
 			</DataTable>
 			<div class="flex justify-end">
 				<InputText class="my-4" type="text" v-model="discountAmount" placeholder="Discount" />
+			</div>
+			<div class="flex justify-end">
+				<InputText class="my-4" type="text" v-model="downPayment" placeholder="Down Payment" />
+			</div>
+			<div class="flex justify-end">
+				<Select class="my-4" v-model="paymentType" :options="methods" optionLabel="label" option-value="value"
+					placeholder="Payment Type" />
 			</div>
 			<div class="flex justify-end mt-4">
 				<span class="font-bold">Total Gross Amount: {{ updatedGrossAmount }}</span>

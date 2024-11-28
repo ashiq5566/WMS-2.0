@@ -17,6 +17,8 @@ const pendingRecievables = ref();
 const collectedRecievables = ref();
 const outstandingPayables = ref();
 const setteledPayables = ref();
+const stakeholders = ref();
+const selectedStakeholder = ref();
 
 const fetchOrders = async () => {
 	try {
@@ -51,6 +53,7 @@ const fetchPayments = async () => {
 			params: {
 				payment_date__gte: filterDates.value ? filterDates.value[0] : null,
 				payment_date__lte: filterDates.value ? filterDates.value[1] : null,
+				order__stakeholder_id: selectedStakeholder.value ? selectedStakeholder.value : null
 			}
 		});
 
@@ -59,6 +62,16 @@ const fetchPayments = async () => {
 		console.error('Error fetching payments:', error);
 	}
 }
+
+const fetchStakeholders = async () => {
+	try {
+		const response = await axios.get('/api/accounts/stakeholders/');
+		stakeholders.value = response.data.map(item => ({ value: item.id, label: item.name }));
+	} catch (error) {
+		console.error('Error fetching stakeholders:', error);
+	}
+}
+
 const debouncedFetchOrders = debounce(fetchPayments, 300);
 
 const statisticsData = computed(() => [
@@ -76,9 +89,14 @@ watch(selectedMonth, () => {
 	fetchOrders();
 })
 
+watch(selectedStakeholder, (newVal) => {
+	fetchPayments();
+});
+
 onMounted(() => {
 	fetchPayments();
 	fetchOrders();
+	fetchStakeholders();
 })
 
 
@@ -102,9 +120,11 @@ onMounted(() => {
 		</div>
 		<Card class="mt-4">
 			<template #content>
-				<DataTable :value="payments" tableStyle="min-width: 50rem">
+				<DataTable :value="payments">
 					<template #header>
 						<div class="flex justify-end">
+							<Select v-model="selectedStakeholder" :options="stakeholders" optionLabel="label" option-value="value"
+								placeholder="Select Company" class="mr-4" filter show-clear />
 							<DatePicker v-model="filterDates" selectionMode="range" :manualInput="false" class="mr-4"
 								placeholder="Date Range" showIcon />
 						</div>
@@ -113,6 +133,11 @@ onMounted(() => {
 					<Column field="payment_date" header="Date" sortable>
 						<template #body="slotProps">
 							{{ moment(slotProps.data.payment_date).format('DD/MM/YYYY') }}
+						</template>
+					</Column>
+					<Column field="company_name" header="Company Name">
+						<template #body="slotProps">
+							{{ slotProps.data.order_obj.stakeholder_obj.name }}
 						</template>
 					</Column>
 					<Column field="order" header="Order No">
