@@ -88,10 +88,15 @@ const addItem = async () => {
 		toast.add({ severity: 'error', summary: 'Error', detail: 'Please select a product', life: 3000 });
 		return;
 	}
+
 	try {
 		const product = orderItems.value.find(p => p.product_id === selectedProduct.value);
 		if (!formData.value.quantity) {
 			toast.add({ severity: 'error', summary: 'Error', detail: 'Please fill in all fields', life: 3000 });
+			return;
+		}
+		if (formData.value.quantity > orderQuantity.value) {
+			toast.add({ severity: 'error', summary: 'Error', detail: 'Entered Quantity exeeds the order quantity!', life: 3000 });
 			return;
 		}
 		formData.value.product = product.product_id
