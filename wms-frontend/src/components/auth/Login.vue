@@ -27,6 +27,11 @@ const handleSubmit = async () => {
 <template>
     <div class="flex justify-center items-center h-screen">
         <Card class="card">
+            <template #header>
+                <div class="">
+                    <img src="../../assets/logo_kc.jpeg" alt="" style="width:100%; height: 80px">
+                </div>
+            </template>
             <template #content>
                 <div class="">
                     <div class="flex flex-col">
