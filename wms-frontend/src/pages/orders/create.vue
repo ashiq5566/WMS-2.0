@@ -86,7 +86,7 @@ const fetchProducts = async () => {
 	try {
 		const response = await axios.get('/api/inventory/products');
 
-		products.value = response.data.filter(product => product.qty_available > 0);
+		products.value = response.data
 	} catch (error) {
 		console.error('Error fetching orders:', error);
 	}
@@ -165,6 +165,7 @@ watch(selectedType, (newValue) => {
 		fetchStakeholders('Supplier');
 	} else if (newValue == 'SO') {
 		fetchStakeholders('Customer');
+		products.value = products.value.filter(product => product.qty_available > 0);
 	}
 })
 
