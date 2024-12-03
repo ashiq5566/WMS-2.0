@@ -3,6 +3,7 @@ import { onMounted, ref, watch, computed } from "vue";
 import axios from '@/plugins/axios';
 import moment from 'moment';
 import { debounce } from 'lodash';
+import AddPaymentModal from "@/components/payments/AddPaymentModal.vue";
 
 
 const payments = ref();
@@ -93,6 +94,10 @@ watch(selectedStakeholder, (newVal) => {
 	fetchPayments();
 });
 
+const reloadTable = () => {
+	fetchStakeholders();
+};
+
 onMounted(() => {
 	fetchPayments();
 	fetchOrders();
@@ -127,6 +132,7 @@ onMounted(() => {
 								placeholder="Select Company" class="mr-4" filter show-clear />
 							<DatePicker v-model="filterDates" selectionMode="range" :manualInput="false" class="mr-4"
 								placeholder="Date Range" showIcon />
+							<AddPaymentModal @instance-added="reloadTable" />
 						</div>
 					</template>
 					<Column field="id" header="ID#"></Column>

@@ -139,7 +139,8 @@ class Payment(models.Model):
         ('OTHER', 'Other'),
     ]
 
-    order = models.ForeignKey(Order, on_delete=models.CASCADE, related_name='payments')
+    order = models.ForeignKey(Order, on_delete=models.CASCADE, related_name='payments', null=True, blank=True)
+    company = models.ForeignKey(Stakeholder, on_delete=models.CASCADE, null=True, blank=True)
     amount = models.PositiveIntegerField(null=True, blank=True)
     payment_date = models.DateTimeField(auto_now_add=True)
     payment_method = models.CharField(max_length=10, choices=PAYMENT_METHOD_CHOICES, default='CASH')
