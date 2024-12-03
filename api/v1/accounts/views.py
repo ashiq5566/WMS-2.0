@@ -1,13 +1,15 @@
 from django.shortcuts import render
-from rest_framework import viewsets
+from django.contrib.auth import authenticate, login
+from django.conf import settings
 from django_filters.rest_framework import DjangoFilterBackend
+
+from rest_framework import viewsets
+from rest_framework import viewsets, filters
 from rest_framework.filters import OrderingFilter
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.permissions import AllowAny, IsAuthenticated
-from django.contrib.auth import authenticate, login
-from django.conf import settings
 from importlib import import_module
 from .serializers import UserSerializer, StakeHolderSerializer
 
@@ -52,11 +54,13 @@ class StakeholderView(viewsets.ModelViewSet):
     queryset = Stakeholder.objects.all()
     serializer_class = StakeHolderSerializer
     permission_classes = (IsAuthenticated, )
-    filter_backends = (DjangoFilterBackend, OrderingFilter)
+    filter_backends = (DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter)
     filterset_fields = {
         'type': ['exact', 'icontains'],
+        'name': ['exact'],
     }
     ordering_fields = ['name', 'created_at']
-    ordering = ['name'] 
+    ordering = ['name']
+    search_fields = ['id', 'name', 'type', 'address', 'mobile', 'email']
     
         
