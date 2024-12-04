@@ -28,6 +28,13 @@ class Stakeholder(WebBaseModel):
     def total_pending_amount(self):
         return self.order_set.filter(pending_amount__gt=0).aggregate(total=models.Sum('pending_amount'))['total'] or 0
     
+    @property
+    def next_bill_to_clear(self):
+        bill = self.order_set.filter(pending_amount__gt=0).order_by('date_added').first()
+        pending_amount = bill.pending_amount
+        order_number = bill.order_number
+        
+        return {'pending_amount': pending_amount, 'order_number': order_number}
     def __str__(self):
             return f'{self.id}'
 

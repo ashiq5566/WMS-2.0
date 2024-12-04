@@ -11,7 +11,8 @@ from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from importlib import import_module
-from .serializers import UserSerializer, StakeHolderSerializer
+from .serializers import UserSerializer
+from api.v1.inventory.serializers import StakeHolderSerializer
 
 from accounts.models import Stakeholder
 

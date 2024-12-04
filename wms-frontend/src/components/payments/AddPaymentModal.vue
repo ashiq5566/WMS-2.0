@@ -9,7 +9,7 @@ const selectedMethod = ref('');
 const selectedCompany = ref('');
 const stakeholders = ref([]);
 const paymentDate = ref('');
-const totalPendingAmount = ref('');
+const nextBillToClear = ref('');
 const formData = ref()
 
 const blankData = {
@@ -52,7 +52,8 @@ const handleSubmit = async () => {
 watch(selectedCompany, (newVal, oldVal) => {
 	if (newVal) {
 		const selectedStakeholder = stakeholders.value.find((s) => s.id === newVal);
-		totalPendingAmount.value = selectedStakeholder.total_pending_amount
+		nextBillToClear.value = selectedStakeholder.next_bill_to_clear
+
 	}
 });
 
@@ -74,8 +75,12 @@ onMounted(() => {
 					placeholder="Select a Company" class="w-[450px]" />
 			</div>
 			<div v-if="selectedCompany" class="flex items-center gap-4 mb-4">
+				<label for="bill" class="font-semibold w-32">Next Bill To Cle</label>
+				<InputText id="bill" v-model="nextBillToClear.order_number" class="flex-auto" disabled />
+			</div>
+			<div v-if="selectedCompany" class="flex items-center gap-4 mb-4">
 				<label for="amount" class="font-semibold w-32">Pending Amount</label>
-				<InputText id="amount" v-model="totalPendingAmount" class="flex-auto" disabled />
+				<InputText id="amount" v-model="nextBillToClear.pending_amount" class="flex-auto" disabled />
 			</div>
 			<div class="flex items-center gap-4 mb-8">
 				<label for="type" class="font-semibold w-32">Method</label>

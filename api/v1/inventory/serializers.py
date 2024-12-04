@@ -1,7 +1,15 @@
 from rest_framework import serializers
+from accounts.models import Stakeholder
 from inventory.models import Order, OrderItem, Product, Return, ReturnItem, Payment
-from api.v1.accounts.serializers import StakeHolderSerializer
         
+        
+class StakeHolderSerializer(serializers.ModelSerializer):
+    total_pending_amount = serializers.ReadOnlyField()
+    next_bill_to_clear = serializers.ReadOnlyField()
+    class Meta:
+        model = Stakeholder
+        fields = ('id', 'stakeholder_id', 'name', 'address', 'mobile', 'email', 'type', 'total_pending_amount', 'next_bill_to_clear')
+
 class OrderSerializer(serializers.ModelSerializer):
     stakeholder_obj = StakeHolderSerializer(source='stakeholder', read_only=True)
 
