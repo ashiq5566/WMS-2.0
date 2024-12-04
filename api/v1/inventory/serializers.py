@@ -35,6 +35,7 @@ class ReturnItemSerializer(serializers.ModelSerializer):
         
 class PaymentSerializer(serializers.ModelSerializer):
     order_obj = OrderSerializer(source='order', read_only=True)
+    company_obj = StakeHolderSerializer(source='company', read_only=True)
     class Meta:
         model = Payment
         fields = '__all__'

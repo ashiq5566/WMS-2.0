@@ -9,6 +9,7 @@ class UserSerializer(serializers.ModelSerializer):
         
 
 class StakeHolderSerializer(serializers.ModelSerializer):
+    total_pending_amount = serializers.ReadOnlyField()
     class Meta:
         model = Stakeholder
-        fields = ('id', 'stakeholder_id', 'name', 'address', 'mobile', 'email', 'type')
+        fields = ('id', 'stakeholder_id', 'name', 'address', 'mobile', 'email', 'type', 'total_pending_amount')

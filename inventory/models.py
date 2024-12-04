@@ -146,20 +146,27 @@ class Payment(models.Model):
     payment_method = models.CharField(max_length=10, choices=PAYMENT_METHOD_CHOICES, default='CASH')
     
     def __str__(self):
-        return f"Payment of {self.amount} for Order {self.order.id} on {self.payment_date}"
+        return f"Payment of {self.amount} for Order {self.company.name} on {self.payment_date}"
     
     
     #when a payment instance is created with a amount minus the amount from order model field pending amount
     def save(self, *args, **kwargs):
         with transaction.atomic():
-         Order.objects.filter(pk=self.order.pk).update(
-            pending_amount=self.order.pending_amount - self.amount
-         )
-         self.order.refresh_from_db()
-         if self.order.pending_amount == 0:
-             Order.objects.filter(pk=self.order.pk).update(
-                order_status='Closed'
-            )
-         super().save(*args, **kwargs)
+            if self.order is not None:
+                order_instance = Order.objects.get(pk=self.order.pk)
+                order_instance.pending_amount=self.order.pending_amount - self.amount
+                order_instance.save()
+            elif self.order is None:
+                if self.company is not None:
+                    order_instance = Order.objects.filter(stakeholder=self.company, order_status='Issued').order_by('date_added').first()
+                    order_instance.pending_amount=order_instance.pending_amount - self.amount
+                    self.order = order_instance
+                    order_instance.save()
+                    
+            order_instance.refresh_from_db()
+            if order_instance.pending_amount == 0:
+                order_instance.order_status='Closed'
+                order_instance.save()
+            super().save(*args, **kwargs)
     
 

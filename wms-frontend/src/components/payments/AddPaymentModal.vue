@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref } from "vue";
+import { ref, watch } from "vue";
 import axios from '@/plugins/axios.js';
 import { onMounted } from "vue";
 
@@ -9,13 +9,15 @@ const selectedMethod = ref('');
 const selectedCompany = ref('');
 const stakeholders = ref([]);
 const paymentDate = ref('');
+const totalPendingAmount = ref('');
+const formData = ref()
 
 const blankData = {
 	company: '',
 	amount: '',
 	payment_method: '',
 };
-const formData = ref(JSON.parse(JSON.stringify(blankData)));
+formData.value = ref(JSON.parse(JSON.stringify(blankData)));
 
 const methods = [
 	{ value: 'CASH', label: 'CASH' },
@@ -39,12 +41,20 @@ const handleSubmit = async () => {
 		formData.value.payment_date = new Date(paymentDate.value).toISOString();
 		const response = await axios.post('/api/inventory/payments/', formData.value);
 		visible.value = false;
-		emit('instance-added');
 		formData.value = JSON.parse(JSON.stringify(blankData));
+		emit('instance-added');
 	} catch (error) {
 		console.error('Creation failed:', error);
 	}
 };
+
+//watch selectedCompany and fetch selected company details ffrom stakeholder.value
+watch(selectedCompany, (newVal, oldVal) => {
+	if (newVal) {
+		const selectedStakeholder = stakeholders.value.find((s) => s.id === newVal);
+		totalPendingAmount.value = selectedStakeholder.total_pending_amount
+	}
+});
 
 onMounted(() => {
 	fetchStakeholders();
@@ -62,6 +72,10 @@ onMounted(() => {
 				<label for="type" class="font-semibold w-32">Company</label>
 				<Select v-model="selectedCompany" :options="stakeholders" optionLabel="name" optionValue="id"
 					placeholder="Select a Company" class="w-[450px]" />
+			</div>
+			<div v-if="selectedCompany" class="flex items-center gap-4 mb-4">
+				<label for="amount" class="font-semibold w-32">Pending Amount</label>
+				<InputText id="amount" v-model="totalPendingAmount" class="flex-auto" disabled />
 			</div>
 			<div class="flex items-center gap-4 mb-8">
 				<label for="type" class="font-semibold w-32">Method</label>

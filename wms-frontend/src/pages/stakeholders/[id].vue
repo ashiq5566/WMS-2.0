@@ -11,7 +11,6 @@ const stakeholder = ref([])
 const ongoingBills = ref([])
 const closedBills = ref([])
 const transactions = ref([])
-const totalReceivableAmount = ref()
 const collectedAmount = ref();
 
 const fetchStakeHolder = async () => {
@@ -30,7 +29,6 @@ const fetchBills = async () => {
 		ongoingBills.value = response.data.filter(bill => bill.order_status === 'Issued');
 		closedBills.value = response.data.filter(bill => bill.order_status === 'Closed');
 		const net_amount = response.data.reduce((sum, bill) => sum + bill.net_amount, 0);
-		totalReceivableAmount.value = response.data.reduce((sum, bill) => sum + bill.pending_amount, 0);
 
 	} catch (error) {
 		console.error('Error fetching return Bills:', error);
@@ -41,7 +39,7 @@ const fetchTransactions = async () => {
 	try {
 		const response = await axios.get('/api/inventory/payments', {
 			params: {
-				order__stakeholder_id: stakeholder.value.id
+				company__id: stakeholder.value.id
 			},
 		});
 		transactions.value = response.data;
@@ -53,8 +51,8 @@ const fetchTransactions = async () => {
 
 // Calculate the progress percentage
 const progressPercentage = computed(() =>
-	totalReceivableAmount.value > 0
-		? (collectedAmount.value / totalReceivableAmount.value) * 100
+	stakeholder.value.total_pending_amount > 0
+		? (collectedAmount.value / stakeholder.value.total_pending_amount) * 100
 		: 0
 );
 
@@ -168,7 +166,8 @@ onMounted(async () => {
 							</div>
 							<div class="flex justify-between">
 								<div class="flex flex-col">
-									<span class="font-semibold	text-lg">&#8377;{{ totalReceivableAmount }}</span>
+									<span class="font-semibold	text-lg">&#8377;{{ stakeholder.total_pending_amount
+										}}</span>
 									<span v-if="stakeholder.type == 'Customer'" class="text-sm">Recievable</span>
 									<span v-if="stakeholder.type == 'Supplier'" class="text-sm">Payable</span>
 								</div>
@@ -191,7 +190,7 @@ onMounted(async () => {
 						</Column>
 						<Column field="order" header="Order No">
 							<template #body="slotProps">
-								{{ slotProps.data.order_obj.order_number }}
+								{{ slotProps.data.order_obj?.order_number }}
 							</template>
 						</Column>
 						<Column field="amount" header="Amount"></Column>

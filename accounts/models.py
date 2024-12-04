@@ -24,6 +24,10 @@ class Stakeholder(WebBaseModel):
     email = models.EmailField(null=True, blank=True)
     type = models.CharField(choices=STAKEHOLDER_TYPES, max_length=128, null=True, blank=True)
     
+    @property
+    def total_pending_amount(self):
+        return self.order_set.filter(pending_amount__gt=0).aggregate(total=models.Sum('pending_amount'))['total'] or 0
+    
     def __str__(self):
             return f'{self.id}'
 
