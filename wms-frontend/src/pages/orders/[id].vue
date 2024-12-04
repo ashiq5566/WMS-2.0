@@ -35,6 +35,8 @@ const fetchOrder = async () => {
 	try {
 		const response = await axios.get(`/api/inventory/orders/${route.params.id}`)
 		order.value = response.data
+		console.log('Order', order.value);
+
 	} catch (error) {
 		console.log(error);
 
@@ -212,7 +214,7 @@ onMounted(async () => {
 				</template>
 				<template #content>
 					<paymentsLisCard :payments="payments" :pendingAmount="order.pending_amount" :orderId="route.params.id"
-						@instance-added="handlePayment" />
+						:companyId="order.stakeholder" @instance-added="handlePayment" />
 				</template>
 			</Card>
 		</div>

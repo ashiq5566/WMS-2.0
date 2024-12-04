@@ -20,12 +20,17 @@ const props = defineProps({
 		type: String,
 		required: true,
 	},
+	companyId: {
+		type: String,
+		required: true,
+	},
 });
 const blankData =
 {
 	method: '',
 	amount: '',
 	order: '',
+	company: '',
 };
 const formData = ref(JSON.parse(JSON.stringify(blankData)));
 
@@ -41,10 +46,12 @@ const addPayment = async () => {
 	if (Number(formData.value.amount) > 0 && selectedMethod.value && Number(formData.value.amount) <= Number(props.pendingAmount) && Number(props.pendingAmount) != 0) {
 
 		formData.value.order = props.orderId
+		formData.value.company = props.companyId
 		formData.value.method = selectedMethod.value
 
 		const response = await axios.post('/api/inventory/payments/', formData.value)
 		//set emit when add performed
+		toast.add({ severity: 'success', summary: 'Success', detail: `Payment Added`, life: 3000 });
 		emit('instance-added');
 		formData.value = JSON.parse(JSON.stringify(blankData));
 		selectedMethod.value = '';

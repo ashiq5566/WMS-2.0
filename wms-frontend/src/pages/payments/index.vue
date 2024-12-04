@@ -3,6 +3,7 @@ import { onMounted, ref, watch, computed } from "vue";
 import axios from '@/plugins/axios';
 import moment from 'moment';
 import { debounce } from 'lodash';
+import AddPaymentModal from "@/components/payments/AddPaymentModal.vue";
 
 
 const payments = ref();
@@ -93,6 +94,10 @@ watch(selectedStakeholder, (newVal) => {
 	fetchPayments();
 });
 
+const reloadTable = () => {
+	fetchPayments();
+};
+
 onMounted(() => {
 	fetchPayments();
 	fetchOrders();
@@ -120,13 +125,14 @@ onMounted(() => {
 		</div>
 		<Card class="mt-4">
 			<template #content>
-				<DataTable :value="payments">
+				<DataTable :value="payments" tableStyle="min-width: 50rem">
 					<template #header>
 						<div class="flex justify-end">
 							<Select v-model="selectedStakeholder" :options="stakeholders" optionLabel="label" option-value="value"
 								placeholder="Select Company" class="mr-4" filter show-clear />
 							<DatePicker v-model="filterDates" selectionMode="range" :manualInput="false" class="mr-4"
 								placeholder="Date Range" showIcon />
+							<AddPaymentModal @instance-added="reloadTable" />
 						</div>
 					</template>
 					<Column field="id" header="ID#"></Column>
@@ -137,12 +143,12 @@ onMounted(() => {
 					</Column>
 					<Column field="company_name" header="Company Name">
 						<template #body="slotProps">
-							{{ slotProps.data.order_obj.stakeholder_obj.name }}
+							{{ slotProps.data.company_obj?.name }}
 						</template>
 					</Column>
 					<Column field="order" header="Order No">
 						<template #body="slotProps">
-							{{ slotProps.data.order_obj.order_number }}
+							{{ slotProps.data.order_obj?.order_number }}
 						</template>
 					</Column>
 					<Column field="amount" header="Amount"></Column>

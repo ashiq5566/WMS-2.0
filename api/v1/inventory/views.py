@@ -161,6 +161,7 @@ class PaymentViewSet(viewsets.ModelViewSet):
     filterset_fields = {
 		'order_id': ['exact'],
 		'order__stakeholder_id': ['exact'],
+		'company__id': ['exact'],
   		'payment_date': ['exact', 'gte', 'lte'],
   
 	}
