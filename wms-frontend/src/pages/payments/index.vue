@@ -13,7 +13,7 @@ const purchaseCredit = ref();
 const orders = ref([]);
 const salesOrders = ref([]);
 const purchaseOrders = ref([]);
-const selectedMonth = ref(new Date())
+const selectedMonth = ref()
 const pendingRecievables = ref();
 const collectedRecievables = ref();
 const outstandingPayables = ref();
@@ -25,7 +25,7 @@ const fetchOrders = async () => {
 	try {
 		const response = await axios.get('/api/inventory/orders', {
 			params: {
-				order_month: selectedMonth.value.getMonth() + 1
+				order_month: selectedMonth.value ? selectedMonth.value.getMonth() + 1 : null
 			}
 		});
 		orders.value = response.data
@@ -114,8 +114,10 @@ onMounted(() => {
 				class="w-[200px] mb-4" />
 		</div>
 		<div class="grid grid-cols-4 gap-4 mb-4">
-			<div v-for="(item, index) in statisticsData" :key="index" class="border border-gray-300 rounded-lg p-4 flex">
-				<div class="bg-[#FFF5EB] w-[52px] h-[52px] mr-4 flex justify-center items-center"><i :class="item.icon"></i>
+			<div v-for="(item, index) in statisticsData" :key="index"
+				class="border border-gray-300 rounded-lg p-4 flex">
+				<div class="bg-[#FFF5EB] w-[52px] h-[52px] mr-4 flex justify-center items-center"><i
+						:class="item.icon"></i>
 				</div>
 				<div>
 					<h3 class="text-2xl" style="font-weight:600;">{{ item.value }}</h3>
@@ -128,8 +130,8 @@ onMounted(() => {
 				<DataTable :value="payments" tableStyle="min-width: 50rem">
 					<template #header>
 						<div class="flex justify-end">
-							<Select v-model="selectedStakeholder" :options="stakeholders" optionLabel="label" option-value="value"
-								placeholder="Select Company" class="mr-4" filter show-clear />
+							<Select v-model="selectedStakeholder" :options="stakeholders" optionLabel="label"
+								option-value="value" placeholder="Select Company" class="mr-4" filter show-clear />
 							<DatePicker v-model="filterDates" selectionMode="range" :manualInput="false" class="mr-4"
 								placeholder="Date Range" showIcon />
 							<AddPaymentModal @instance-added="reloadTable" />

@@ -11,7 +11,6 @@ const stakeholder = ref([])
 const ongoingBills = ref([])
 const closedBills = ref([])
 const transactions = ref([])
-const collectedAmount = ref();
 
 const fetchStakeHolder = async () => {
 	const response = await axios.get(`/api/accounts/stakeholders/${route.params.id}`)
@@ -43,7 +42,6 @@ const fetchTransactions = async () => {
 			},
 		});
 		transactions.value = response.data;
-		collectedAmount.value = transactions.value.reduce((sum, bill) => sum + bill.amount, 0);
 	} catch (error) {
 		console.error('Error fetching return Bills:', error);
 	}
@@ -52,7 +50,7 @@ const fetchTransactions = async () => {
 // Calculate the progress percentage
 const progressPercentage = computed(() =>
 	stakeholder.value.total_pending_amount > 0
-		? (collectedAmount.value / stakeholder.value.total_pending_amount) * 100
+		? (stakeholder.value.total_setteled_amount / stakeholder.value.total_pending_amount) * 100
 		: 0
 );
 
@@ -172,8 +170,9 @@ onMounted(async () => {
 									<span v-if="stakeholder.type == 'Supplier'" class="text-sm">Payable</span>
 								</div>
 								<div class="flex flex-col">
-									<span class="font-semibold  text-lg">&#8377;{{ collectedAmount }}</span>
-									<span v-if="stakeholder.type == 'Customer'" class="text-sm">Collected</span>
+									<span class="font-semibold  text-lg">&#8377;{{ stakeholder.total_setteled_amount
+										}}</span>
+									<span v-if="stakeholder.type == 'Customer'" class="text-sm">Setteled</span>
 									<span v-if="stakeholder.type == 'Supplier'" class="text-sm">Paid</span>
 								</div>
 							</div>

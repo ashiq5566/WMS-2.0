@@ -6,12 +6,15 @@ from inventory.models import Order, OrderItem, Product, Return, ReturnItem, Paym
 class StakeHolderSerializer(serializers.ModelSerializer):
     total_pending_amount = serializers.ReadOnlyField()
     next_bill_to_clear = serializers.ReadOnlyField()
+    total_setteled_amount = serializers.ReadOnlyField()
     class Meta:
         model = Stakeholder
-        fields = ('id', 'stakeholder_id', 'name', 'address', 'mobile', 'email', 'type', 'total_pending_amount', 'next_bill_to_clear')
+        fields = ('id', 'stakeholder_id', 'name', 'address', 'mobile', 'email', 'type', 'total_pending_amount', 'next_bill_to_clear','total_setteled_amount')
 
 class OrderSerializer(serializers.ModelSerializer):
     stakeholder_obj = StakeHolderSerializer(source='stakeholder', read_only=True)
+    total_sales_orders = serializers.ReadOnlyField()
+    total_purchase_orders = serializers.ReadOnlyField()
 
     class Meta:
         model = Order
