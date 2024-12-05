@@ -41,7 +41,7 @@ const fetchReturnItems = async () => {
 	try {
 		const response = await axios.get('/api/inventory/return-items/', {
 			params: {
-				order_id: route.params.id,
+				return_order: route.params.id,
 			},
 		})
 		returnItems.value = response.data
