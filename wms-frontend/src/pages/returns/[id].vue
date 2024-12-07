@@ -97,7 +97,7 @@ onMounted(() => {
 						</template>
 					</Column>
 					<Column field="quantity" header="Quantity"></Column>
-					<Column field="price_at_time_of_order" header="Unit Price"></Column>
+					<Column field="price_at_return" header="Unit Price"></Column>
 					<Column field="total" header="Total"></Column>
 					<template #empty>
 						<span class="flex justify-center">No Orders found.</span>
