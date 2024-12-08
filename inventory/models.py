@@ -47,6 +47,14 @@ class Order(WebBaseModel):
     pending_amount = models.PositiveIntegerField(null=True)
     order_date = models.DateTimeField(null=True, blank=True)
     
+    @property
+    def total_sales_orders(self):
+        return Order.objects.filter(order_type='SO', is_deleted=False).count()
+    
+    @property
+    def total_purchase_orders(self):
+        return Order.objects.filter(order_type='PO', is_deleted=False).count()
+    
     def __str__(self):
             return f'{self.order_number}'
         

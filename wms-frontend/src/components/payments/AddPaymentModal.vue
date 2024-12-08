@@ -8,7 +8,6 @@ const visible = ref(false);
 const selectedMethod = ref('');
 const selectedCompany = ref('');
 const stakeholders = ref([]);
-const paymentDate = ref('');
 const nextBillToClear = ref('');
 const formData = ref()
 
@@ -16,9 +15,15 @@ const blankData = {
 	company: '',
 	amount: '',
 	payment_method: '',
+	payment_date: '',
 };
 formData.value = ref(JSON.parse(JSON.stringify(blankData)));
-
+const clearFormData = () => {
+	formData.value = JSON.parse(JSON.stringify(blankData));
+	selectedMethod.value = '';
+	selectedCompany.value = '';
+	nextBillToClear.value = '';
+}
 const methods = [
 	{ value: 'CASH', label: 'CASH' },
 	{ value: 'CARD', label: 'Card' },
@@ -38,15 +43,20 @@ const handleSubmit = async () => {
 	try {
 		formData.value.company = selectedCompany.value;
 		formData.value.payment_method = selectedMethod.value;
-		formData.value.payment_date = new Date(paymentDate.value).toISOString();
+		formData.value.payment_date = new Date(formData.value.payment_date).toISOString();
 		const response = await axios.post('/api/inventory/payments/', formData.value);
 		visible.value = false;
-		formData.value = JSON.parse(JSON.stringify(blankData));
+		clearFormData();
 		emit('instance-added');
 	} catch (error) {
 		console.error('Creation failed:', error);
 	}
 };
+
+const cancel = async () => {
+	visible.value = false;
+	clearFormData();
+}
 
 //watch selectedCompany and fetch selected company details ffrom stakeholder.value
 watch(selectedCompany, (newVal, oldVal) => {
@@ -93,10 +103,10 @@ onMounted(() => {
 			</div>
 			<div class="flex items-center gap-4 mb-4">
 				<label for="date" class="font-semibold w-32">Date</label>
-				<DatePicker v-model="paymentDate" show-icon />
+				<DatePicker v-model="formData.payment_date" show-icon />
 			</div>
 			<div class="flex justify-end gap-2">
-				<Button type="button" label="Cancel" severity="secondary" @click="visible = false"></Button>
+				<Button type="button" label="Cancel" severity="secondary" @click="cancel"></Button>
 				<Button type="submit" label="Save" @click="handleSubmit()"></Button>
 			</div>
 		</Dialog>

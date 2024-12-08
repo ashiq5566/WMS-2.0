@@ -29,6 +29,10 @@ class Stakeholder(WebBaseModel):
         return self.order_set.filter(pending_amount__gt=0).aggregate(total=models.Sum('pending_amount'))['total'] or 0
     
     @property
+    def total_setteled_amount(self):
+        return self.payment_set.aggregate(total=models.Sum('amount'))['total'] or 0
+    
+    @property
     def next_bill_to_clear(self):
         bill = self.order_set.filter(pending_amount__gt=0).order_by('date_added').first()
         pending_amount = bill.pending_amount

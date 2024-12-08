@@ -23,7 +23,7 @@ const blankData =
 	product: '',
 	quantity: '',
 	total: '',
-	order_price: '',
+	price_at_return: '',
 };
 const formData = ref(JSON.parse(JSON.stringify(blankData)));
 
@@ -101,8 +101,8 @@ const addItem = async () => {
 		}
 		formData.value.product = product.product_id
 		formData.value.product_name = product.product_name
-		formData.value.order_price = orderPrice.value;
-		if (formData.value.quantity > 0 && formData.value.order_price > 0) {
+		formData.value.price_at_return = orderPrice.value;
+		if (formData.value.quantity > 0 && formData.value.price_at_return > 0) {
 			// calculate total price of each and save it in variable
 			formData.value.total = formData.value.quantity * orderPrice.value;
 		}
@@ -221,7 +221,7 @@ onMounted(() => {
 					</Column>
 					<Column field="quantity" header="Return Quantity">
 					</Column>
-					<Column field="order_price" header="Unit Price"></Column>
+					<Column field="price_at_return" header="Unit Price"></Column>
 					<Column field="total" header="Total"></Column>
 					<Column class="w-24 !text-end">
 						<template #body="{ data }">

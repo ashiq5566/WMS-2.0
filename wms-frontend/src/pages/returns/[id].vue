@@ -41,7 +41,7 @@ const fetchReturnItems = async () => {
 	try {
 		const response = await axios.get('/api/inventory/return-items/', {
 			params: {
-				order_id: route.params.id,
+				return_order: route.params.id,
 			},
 		})
 		returnItems.value = response.data
@@ -97,7 +97,7 @@ onMounted(() => {
 						</template>
 					</Column>
 					<Column field="quantity" header="Quantity"></Column>
-					<Column field="price_at_time_of_order" header="Unit Price"></Column>
+					<Column field="price_at_return" header="Unit Price"></Column>
 					<Column field="total" header="Total"></Column>
 					<template #empty>
 						<span class="flex justify-center">No Orders found.</span>

@@ -11,7 +11,6 @@ const stakeholder = ref([])
 const ongoingBills = ref([])
 const closedBills = ref([])
 const transactions = ref([])
-const collectedAmount = ref();
 
 const fetchStakeHolder = async () => {
 	const response = await axios.get(`/api/accounts/stakeholders/${route.params.id}`)
@@ -43,7 +42,6 @@ const fetchTransactions = async () => {
 			},
 		});
 		transactions.value = response.data;
-		collectedAmount.value = transactions.value.reduce((sum, bill) => sum + bill.amount, 0);
 	} catch (error) {
 		console.error('Error fetching return Bills:', error);
 	}
@@ -52,13 +50,13 @@ const fetchTransactions = async () => {
 // Calculate the progress percentage
 const progressPercentage = computed(() =>
 	stakeholder.value.total_pending_amount > 0
-		? (collectedAmount.value / stakeholder.value.total_pending_amount) * 100
+		? (stakeholder.value.total_setteled_amount / stakeholder.value.total_pending_amount) * 100
 		: 0
 );
 
 const onUpdate = async () => {
 	try {
-		const response = await axios.put(`/api/accounts/stakeholders/${route.params.id}`, stakeholder.value);
+		const response = await axios.put(`/api/accounts/stakeholders/${route.params.id}/`, stakeholder.value);
 		toast.add({ severity: 'success', summary: 'Success', detail: `Profile Updated SuccessFully`, life: 3000 });
 	} catch (error) {
 		console.log("Failed to update profile", error);
@@ -102,6 +100,10 @@ onMounted(async () => {
 						<div class="flex items-center">
 							<label for="type" class="w-20">Type</label>
 							<InputText type="text" id="type" v-model="stakeholder.type" disabled />
+						</div>
+						<div class="flex items-center">
+							<label for="type" class="w-20">Pending</label>
+							<InputText type="text" id="type" v-model="stakeholder.total_pending_amount" disabled />
 						</div>
 						<div class="flex col-span-2 justify-end">
 							<Button label="Update" @click="onUpdate" />
@@ -172,8 +174,9 @@ onMounted(async () => {
 									<span v-if="stakeholder.type == 'Supplier'" class="text-sm">Payable</span>
 								</div>
 								<div class="flex flex-col">
-									<span class="font-semibold  text-lg">&#8377;{{ collectedAmount }}</span>
-									<span v-if="stakeholder.type == 'Customer'" class="text-sm">Collected</span>
+									<span class="font-semibold  text-lg">&#8377;{{ stakeholder.total_setteled_amount
+										}}</span>
+									<span v-if="stakeholder.type == 'Customer'" class="text-sm">Setteled</span>
 									<span v-if="stakeholder.type == 'Supplier'" class="text-sm">Paid</span>
 								</div>
 							</div>
