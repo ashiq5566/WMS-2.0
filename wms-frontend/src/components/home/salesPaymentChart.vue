@@ -67,7 +67,6 @@ const fetchCustomers = async () => {
 			}
 		};
 
-		console.log("labels:", labels.value);
 	} catch (error) {
 		console.error('Error fetching customers:', error);
 	}

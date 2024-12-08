@@ -68,7 +68,6 @@ const fetchProducts = async () => {
 			}
 		};
 
-		console.log("labels:", labels.value);
 	} catch (error) {
 		console.error('Error fetching products:', error);
 	}

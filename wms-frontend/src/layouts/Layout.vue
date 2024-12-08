@@ -17,8 +17,8 @@ onBeforeMount(() => {
         router.push('/login');
     }
 });
+console.log(isAuthenticated.value, "================================");
 
-console.log(isAuthenticated.value);
 </script>
 
 <template>

@@ -67,7 +67,6 @@ const fetchSuppliers = async () => {
 			}
 		};
 
-		console.log("labels:", labels.value);
 	} catch (error) {
 		console.error('Error fetching products:', error);
 	}
@@ -81,7 +80,6 @@ const fetchOrders = async () => {
 			}
 		});
 		paymentDetails.value = response.data
-		console.log("Stake=", paymentDetails.value);
 
 		series.value = [
 			{
