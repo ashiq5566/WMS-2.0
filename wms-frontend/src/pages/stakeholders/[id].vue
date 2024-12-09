@@ -59,8 +59,21 @@ const onUpdate = async () => {
 		const response = await axios.put(`/api/accounts/stakeholders/${route.params.id}/`, stakeholder.value);
 		toast.add({ severity: 'success', summary: 'Success', detail: `Profile Updated SuccessFully`, life: 3000 });
 	} catch (error) {
-		console.log("Failed to update profile", error);
+		toast.add({ severity: 'error', summary: 'Error', detail: `${error.message}`, life: 3000 });
+	}
+}
 
+const changeStatus = async () => {
+	try {
+		// if (stakeholder.value.is_deleted == false) { 
+
+		// }
+		const response = await axios.patch(`/api/accounts/stakeholders/${route.params.id}/`, {
+			is_deleted: !stakeholder.value.is_deleted,
+		});
+		fetchStakeHolder()
+		toast.add({ severity: 'success', summary: 'Success', detail: `Status Updated SuccessFully`, life: 3000 });
+	} catch (error) {
 		toast.add({ severity: 'error', summary: 'Error', detail: `${error.message}`, life: 3000 });
 	}
 }
@@ -105,8 +118,10 @@ onMounted(async () => {
 							<label for="type" class="w-20">Pending</label>
 							<InputText type="text" id="type" v-model="stakeholder.total_pending_amount" disabled />
 						</div>
-						<div class="flex col-span-2 justify-end">
+						<div class="flex col-span-2 justify-end gap-2">
 							<Button label="Update" @click="onUpdate" />
+							<Button :label="stakeholder.is_deleted == false ? 'Deactivate' : 'Activate'"
+								:severity="stakeholder.is_deleted == false ? 'warn' : 'success'" @click="changeStatus" />
 						</div>
 					</div>
 				</template>

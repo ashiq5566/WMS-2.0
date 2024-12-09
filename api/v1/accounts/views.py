@@ -59,9 +59,10 @@ class StakeholderView(viewsets.ModelViewSet):
     filterset_fields = {
         'type': ['exact', 'icontains'],
         'name': ['exact'],
+        'is_deleted': ['exact'],
     }
     ordering_fields = ['name', 'created_at']
-    ordering = ['name']
+    ordering = ['name', 'is_deleted']
     search_fields = ['id', 'name', 'type', 'address', 'mobile', 'email']
     
         
