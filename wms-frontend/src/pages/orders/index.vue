@@ -14,6 +14,8 @@ const salesOrderCount = ref(0);
 const purchaseOrderCount = ref(0);
 const selectedStakeholder = ref('');
 const stakeholders = ref([]);
+const selectedType = ref('');
+const selectedStatus = ref('');
 
 const getSeverity = (status) => {
 	switch (status) {
@@ -49,6 +51,8 @@ const fetchOrders = async (search) => {
 				date_added__gte: filterDates.value ? filterDates.value[0] : null,
 				date_added__lte: filterDates.value ? filterDates.value[1] : null,
 				stakeholder_id: selectedStakeholder.value,
+				order_type: selectedType.value,
+				order_status: selectedStatus.value,
 			},
 		});
 
@@ -69,6 +73,20 @@ const fetchStakeholders = async () => {
 	} catch (error) {
 		console.error('Error fetching stakeholders:', error);
 	}
+}
+
+const filterOrders = (type) => {
+	if (type == "Sales Orders") {
+		selectedType.value = 'SO';
+	} else if (type == "Purchase Orders") {
+		selectedType.value = 'PO';
+	} else if (type == "Total Orders") {
+		selectedType.value = null;
+		selectedStatus.value = null;
+	} else if (type == "Closed Orders") {
+		selectedStatus.value = "Closed"
+	}
+	fetchOrders()
 }
 
 const debouncedFetchOrders = debounce(fetchOrders, 300);
@@ -95,7 +113,8 @@ onMounted(() => {
 <template>
 	<div class="">
 		<div class="grid grid-cols-4 gap-4 mb-4">
-			<div v-for="(item, index) in statisticsData" :key="index" class="border border-gray-300 rounded-lg p-4 flex">
+			<div v-for="(item, index) in statisticsData" :key="index"
+				class="border border-gray-300 rounded-lg p-4 flex cursor-pointer" @click="filterOrders(item.label)">
 				<div class="bg-[#FFF5EB] w-[52px] h-[52px] mr-4 flex justify-center items-center"><i :class="item.icon"></i>
 				</div>
 				<div>
