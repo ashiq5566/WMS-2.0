@@ -24,6 +24,8 @@ class OrdersViewSet(viewsets.ModelViewSet):
 		'stakeholder_id': ['exact'],
   		'date_added': ['exact', 'gte', 'lte'],
         'order_date': ['exact', 'gte', 'lte'],
+        'order_type': ['exact'],
+        'order_status': ['exact'],
 	}
 	search_fields = ['id', 'order_number', 'stakeholder__name', 'order_type', 'order_status']
  
