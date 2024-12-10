@@ -175,28 +175,7 @@ onMounted(async () => {
 			</Card>
 			<Card class="col-span-2 lg:col-span-1">
 				<template #title>
-					<div class="flex justify-between">
-						<span>Transactions</span>
-						<div class="w-1/2 mb-4">
-							<div class="w-full bg-gray-200 rounded-full h-4 overflow-hidden">
-								<div class="h-full bg-green-500" :style="{ width: `${progressPercentage}%` }"></div>
-							</div>
-							<div class="flex justify-between">
-								<div class="flex flex-col">
-									<span class="font-semibold	text-lg">&#8377;{{ stakeholder.total_pending_amount
-										}}</span>
-									<span v-if="stakeholder.type == 'Customer'" class="text-sm">Recievable</span>
-									<span v-if="stakeholder.type == 'Supplier'" class="text-sm">Payable</span>
-								</div>
-								<div class="flex flex-col">
-									<span class="font-semibold  text-lg">&#8377;{{ stakeholder.total_setteled_amount
-										}}</span>
-									<span v-if="stakeholder.type == 'Customer'" class="text-sm">Setteled</span>
-									<span v-if="stakeholder.type == 'Supplier'" class="text-sm">Paid</span>
-								</div>
-							</div>
-						</div>
-					</div>
+					<span>Transactions</span>
 				</template>
 				<template #content>
 					<DataTable :value="transactions" tableStyle="min-width: 30rem;" scrollHeight="300px">
@@ -214,6 +193,12 @@ onMounted(async () => {
 						<Column field="amount" header="Amount"></Column>
 						<Column field="payment_method" header="Method">
 						</Column>
+						<template #footer>
+							<div class="flex justify-end items-center">
+								<label for="total">Total Paid:</label>
+								<span class="text-red-500 font-bold ml-2 text-xl">{{ stakeholder.total_setteled_amount }}/-</span>
+							</div>
+						</template>
 						<template #empty>
 							<span class="flex justify-center">No Payments found.</span>
 						</template>

@@ -38,7 +38,9 @@ const itemsData = ref([])
 
 const fetchOrders = async () => {
 	try {
-		const response = await axios.get('/api/inventory/orders');
+		const response = await axios.get('/api/inventory/orders', {
+			params: { order_status_array: ['Issued', 'Pending', 'Delivered', 'Recieved'] },
+		});
 		orders.value = response.data;
 
 	} catch (error) {

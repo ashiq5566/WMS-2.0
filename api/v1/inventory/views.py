@@ -32,9 +32,13 @@ class OrdersViewSet(viewsets.ModelViewSet):
 	def get_queryset(self):
 		queryset = super().get_queryset()
 		order_month = self.request.query_params.get('order_month')
+		order_status_array = self.request.query_params.getlist('order_status_array[]', [])
 		
 		if order_month:
 			queryset = queryset.annotate(month=db_functions.ExtractMonth('order_date')).filter(month=order_month)
+   
+		if order_status_array:
+			queryset = queryset.filter(order_status__in=order_status_array)
 		
 		return queryset
 
@@ -147,23 +151,34 @@ class ReturnViewSet(viewsets.ModelViewSet):
     
     
 class ReturnItemViewSet(viewsets.ModelViewSet):
-		queryset = ReturnItem.objects.all()
-		serializer_class = ReturnItemSerializer
-		permission_classes = (IsAuthenticated, )
-		filter_backends = (DjangoFilterBackend, OrderingFilter)
-		filterset_fields = {
-			'return_order': ['exact'],
-		}
+	queryset = ReturnItem.objects.all()
+	serializer_class = ReturnItemSerializer
+	permission_classes = (IsAuthenticated, )
+	filter_backends = (DjangoFilterBackend, OrderingFilter)
+	filterset_fields = {
+		'return_order': ['exact'],
+	}
   
 class PaymentViewSet(viewsets.ModelViewSet):
     queryset = Payment.objects.all()
     serializer_class = PaymentSerializer
-    permission_classes = (IsAuthenticated, )
+    permission_classes = (IsAuthenticated,)
     filter_backends = (DjangoFilterBackend, OrderingFilter)
     filterset_fields = {
-		'order_id': ['exact'],
-		'order__stakeholder_id': ['exact'],
-		'company__id': ['exact'],
-  		'payment_date': ['exact', 'gte', 'lte'],
-  
-	}
+        'order_id': ['exact'],
+        'order__stakeholder_id': ['exact'],
+        'order__order_type': ['exact'],
+        'company__id': ['exact'],
+        'payment_date': ['exact', 'gte', 'lte'],
+    }
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        order_month = self.request.query_params.get('order_month')
+
+        if order_month:
+            queryset = queryset.annotate(month=db_functions.ExtractMonth('payment_date')).filter(month=order_month)
+
+        return queryset
+
+
