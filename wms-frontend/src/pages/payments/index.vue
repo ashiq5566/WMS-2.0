@@ -20,6 +20,12 @@ const outstandingPayables = ref();
 const setteledPayables = ref();
 const stakeholders = ref();
 const selectedStakeholder = ref();
+const selectedType = ref();
+
+const orderTypes = [
+	{ label: "Sales Order", value: "SO" },
+	{ label: "Purchase Order", value: "PO" },
+]
 
 const fetchOrders = async () => {
 	try {
@@ -33,15 +39,11 @@ const fetchOrders = async () => {
 		salesOrders.value = orders.value.filter(order => order.order_type == "SO")
 		salesRevenue.value = salesOrders.value.reduce((sum, order) => sum + parseFloat(order.net_amount), 0);
 		pendingRecievables.value = salesOrders.value.reduce((sum, order) => sum + parseFloat(order.pending_amount), 0);
-		collectedRecievables.value = salesRevenue.value - pendingRecievables.value;
 
 		// Purchase order
 		purchaseOrders.value = orders.value.filter(order => order.order_type == "PO")
 		purchaseCredit.value = purchaseOrders.value.reduce((sum, order) => sum + parseFloat(order.net_amount), 0);
 		outstandingPayables.value = purchaseOrders.value.reduce((sum, order) => sum + parseFloat(order.pending_amount), 0);
-		setteledPayables.value = purchaseCredit.value - outstandingPayables.value;
-
-
 	} catch (error) {
 		console.log(error);
 
@@ -54,11 +56,20 @@ const fetchPayments = async () => {
 			params: {
 				payment_date__gte: filterDates.value ? filterDates.value[0] : null,
 				payment_date__lte: filterDates.value ? filterDates.value[1] : null,
-				order__stakeholder_id: selectedStakeholder.value ? selectedStakeholder.value : null
+				order__stakeholder_id: selectedStakeholder.value ? selectedStakeholder.value : null,
+				order_month: selectedMonth.value ? selectedMonth.value.getMonth() + 1 : null,
+				order__order_type: selectedType.value,
 			}
 		});
 
 		payments.value = response.data;
+
+		const purchasePayments = payments.value.filter(payment => payment.order_obj.order_type == "PO")
+		setteledPayables.value = purchasePayments.reduce((sum, payment) => sum + parseFloat(payment.amount), 0);
+
+		const salesPayments = payments.value.filter(payment => payment.order_obj.order_type == "SO")
+		collectedRecievables.value = salesPayments.reduce((sum, payment) => sum + parseFloat(payment.amount), 0);
+
 	} catch (error) {
 		console.error('Error fetching payments:', error);
 	}
@@ -88,9 +99,14 @@ watch(filterDates, (newVal) => {
 
 watch(selectedMonth, () => {
 	fetchOrders();
+	fetchPayments();
 })
 
 watch(selectedStakeholder, (newVal) => {
+	fetchPayments();
+});
+
+watch(selectedType, (newVal) => {
 	fetchPayments();
 });
 
@@ -114,10 +130,8 @@ onMounted(() => {
 				class="w-[200px] mb-4" />
 		</div>
 		<div class="grid grid-cols-4 gap-4 mb-4">
-			<div v-for="(item, index) in statisticsData" :key="index"
-				class="border border-gray-300 rounded-lg p-4 flex">
-				<div class="bg-[#FFF5EB] w-[52px] h-[52px] mr-4 flex justify-center items-center"><i
-						:class="item.icon"></i>
+			<div v-for="(item, index) in statisticsData" :key="index" class="border border-gray-300 rounded-lg p-4 flex">
+				<div class="bg-[#FFF5EB] w-[52px] h-[52px] mr-4 flex justify-center items-center"><i :class="item.icon"></i>
 				</div>
 				<div>
 					<h3 class="text-2xl" style="font-weight:600;">{{ item.value }}</h3>
@@ -130,8 +144,10 @@ onMounted(() => {
 				<DataTable :value="payments" tableStyle="min-width: 50rem">
 					<template #header>
 						<div class="flex justify-end">
-							<Select v-model="selectedStakeholder" :options="stakeholders" optionLabel="label"
-								option-value="value" placeholder="Select Company" class="mr-4" filter show-clear />
+							<Select v-model="selectedType" :options="orderTypes" optionLabel="label" option-value="value"
+								placeholder="Select Type" class="mr-4" showClear />
+							<Select v-model="selectedStakeholder" :options="stakeholders" optionLabel="label" option-value="value"
+								placeholder="Select Company" class="mr-4" filter show-clear />
 							<DatePicker v-model="filterDates" selectionMode="range" :manualInput="false" class="mr-4"
 								placeholder="Date Range" showIcon />
 							<AddPaymentModal @instance-added="reloadTable" />
