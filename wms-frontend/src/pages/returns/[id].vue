@@ -72,7 +72,11 @@ onMounted(() => {
 						</div>
 						<div class="flex justify-between w-3/4">
 							<label class="font-bold">Bill:</label>
-							<span>{{ returnOrder.order_obj?.order_number }}</span>
+							<router-link :to="{ name: 'orders-id', params: { id: returnOrder.order_obj?.id } }">
+								<span class="font-bold">
+									{{ returnOrder.order_obj?.order_number }}
+								</span>
+							</router-link>
 						</div>
 						<div class="flex justify-between w-3/4">
 							<label class="font-bold">Date:</label>
