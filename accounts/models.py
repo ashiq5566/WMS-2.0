@@ -23,10 +23,11 @@ class Stakeholder(WebBaseModel):
     mobile = models.CharField(max_length=15,null=True)
     email = models.EmailField(null=True, blank=True)
     type = models.CharField(choices=STAKEHOLDER_TYPES, max_length=128, null=True, blank=True)
+    opening_balance = models.IntegerField(null=True, blank=True, default=0)
     
     @property
     def total_pending_amount(self):
-        return self.order_set.filter(pending_amount__gt=0).aggregate(total=models.Sum('pending_amount'))['total'] or 0
+        return self.order_set.filter(pending_amount__gt=0).aggregate(total=models.Sum('pending_amount'))['total'] or self.opening_balance
     
     @property
     def total_setteled_amount(self):
