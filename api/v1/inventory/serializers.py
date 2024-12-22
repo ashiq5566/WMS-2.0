@@ -9,7 +9,7 @@ class StakeHolderSerializer(serializers.ModelSerializer):
     total_setteled_amount = serializers.ReadOnlyField()
     class Meta:
         model = Stakeholder
-        fields = ('id', 'stakeholder_id', 'name', 'address', 'mobile', 'email', 'type', 'total_pending_amount', 'next_bill_to_clear','total_setteled_amount', 'is_deleted')
+        fields = ('id', 'stakeholder_id', 'name', 'address', 'mobile', 'email', 'type', 'total_pending_amount', 'next_bill_to_clear','total_setteled_amount', 'is_deleted', 'opening_balance')
 
 class OrderSerializer(serializers.ModelSerializer):
     stakeholder_obj = StakeHolderSerializer(source='stakeholder', read_only=True)

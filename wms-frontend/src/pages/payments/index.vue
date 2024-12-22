@@ -75,9 +75,13 @@ const fetchPayments = async () => {
 	}
 }
 
-const fetchStakeholders = async () => {
+const fetchStakeholders = async (stakeholder_type = null) => {
 	try {
-		const response = await axios.get('/api/accounts/stakeholders/');
+		const response = await axios.get('/api/accounts/stakeholders/', {
+			params: {
+				type: stakeholder_type
+			}
+		});
 		stakeholders.value = response.data.map(item => ({ value: item.id, label: item.name }));
 	} catch (error) {
 		console.error('Error fetching stakeholders:', error);
@@ -107,8 +111,17 @@ watch(selectedStakeholder, (newVal) => {
 });
 
 watch(selectedType, (newVal) => {
+	console.log("selected", newVal);
+
+	if (newVal == 'PO') {
+		fetchStakeholders('Supplier')
+	} else if (newVal == 'SO') {
+		fetchStakeholders('Customer')
+	}
 	fetchPayments();
+
 });
+
 
 const reloadTable = () => {
 	fetchPayments();

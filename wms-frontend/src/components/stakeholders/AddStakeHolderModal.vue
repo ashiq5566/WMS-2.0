@@ -12,6 +12,7 @@ const blankData = {
 	email: '',
 	company_name: '',
 	type: '',
+	opening_balance: 0,
 };
 const formData = ref(JSON.parse(JSON.stringify(blankData)));
 
@@ -29,6 +30,7 @@ const handleSubmit = async () => {
 		data.append('email', formData.value.email);
 		data.append('company_name', formData.value.company_name);
 		data.append('type', formData.value.type);
+		data.append('opening_balance', formData.value.opening_balance);
 
 		const response = await axios.post('/api/accounts/stakeholders/', data);
 		console.log(response);
@@ -51,19 +53,19 @@ const handleSubmit = async () => {
 		<Dialog v-model:visible="visible" modal header="Add Stakeholders" :style="{ width: '40rem' }">
 			<div class="flex items-center gap-4 mb-4">
 				<label for="name" class="font-semibold w-32">Name</label>
-				<InputText id="name" v-model=formData.name class="flex-auto" autocomplete="off" />
+				<InputText id="name" v-model="formData.name" class="flex-auto" autocomplete="off" />
 			</div>
 			<div class="flex items-center gap-4 mb-4">
 				<label for="address" class="font-semibold w-32">Address</label>
-				<InputText id="address" v-model=formData.address class="flex-auto" autocomplete="off" />
+				<InputText id="address" v-model="formData.address" class="flex-auto" autocomplete="off" />
 			</div>
 			<div class="flex items-center gap-4 mb-4">
 				<label for="mobile" class="font-semibold w-32">Phone</label>
-				<InputText id="mobile" v-model=formData.mobile class="flex-auto" autocomplete="off" />
+				<InputText id="mobile" v-model="formData.mobile" class="flex-auto" autocomplete="off" />
 			</div>
 			<div class="flex items-center gap-4 mb-8">
 				<label for="email" class="font-semibold w-32">Email</label>
-				<InputText id="email" v-model=formData.email class="flex-auto" autocomplete="off" />
+				<InputText id="email" v-model="formData.email" class="flex-auto" autocomplete="off" />
 			</div>
 			<div class="flex items-center gap-4 mb-8">
 				<label for="type" class="font-semibold w-32">Type</label>
@@ -73,7 +75,12 @@ const handleSubmit = async () => {
 			</div>
 			<div class="flex items-center gap-4 mb-8">
 				<label for="company_name" class="font-semibold w-32">Company Name</label>
-				<InputText id="company_name" v-model=formData.company_name class="flex-auto" autocomplete="off" />
+				<InputText id="company_name" v-model="formData.company_name" class="flex-auto" autocomplete="off" />
+			</div>
+			<div class="flex items-center gap-4 mb-8">
+				<label for="opening_balance" class="font-semibold w-32">Opening Balance</label>
+				<InputText id="opening_balance" v-model="formData.opening_balance" class="flex-auto"
+					autocomplete="off" />
 			</div>
 			<div class="flex justify-end gap-2">
 				<Button type="button" label="Cancel" severity="secondary" @click="visible = false"></Button>
