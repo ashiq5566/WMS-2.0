@@ -12,10 +12,10 @@
 					</div>
 				</router-link>
 			</div>
-			<div class="grid grid-cols-2 gap-4">
-				<div class="flex flex-col gap-4 col-span-1">
+			<div class="flex flex-col gap-4">
+				<div class="flex flex-col gap-4">
 					<!-- sales statistics -->
-					<div class="grid grid-cols-2 gap-2">
+					<div class="grid grid-cols-4 gap-2">
 						<router-link :to="{ name: 'orders' }" v-for="(item, index) in salesData" :key="index"
 							class="border border-gray-300 rounded-lg p-4 flex">
 							<div class="bg-[#FFF5EB] w-[52px] h-[52px] mr-4 flex justify-center items-center"><i
@@ -28,7 +28,7 @@
 						</router-link>
 					</div>
 					<!-- purchase statistics -->
-					<div class="grid grid-cols-2 gap-2">
+					<div class="grid grid-cols-4 gap-2">
 						<router-link :to="{ name: 'orders' }" v-for="(item, index) in purchaseData" :key="index"
 							class="border border-gray-300 rounded-lg p-4 flex">
 							<div class="bg-[#F2EEFF] w-[52px] h-[52px] mr-4 flex justify-center items-center"><i
@@ -41,15 +41,15 @@
 						</router-link>
 					</div>
 				</div>
-				<div class="col-span-1">
-					<stockChart />
+				<div class="grid grid-cols-2 gap-4">
+					<stockChart class="col-span-2 xl:col-span-1" />
+					<turnOverChart class="col-span-2 xl:col-span-1" />
 				</div>
 			</div>
 		</div>
-		<div class="grid grid-cols-3 gap-4">
-			<turnOverChart />
-			<salesPaymentChart />
-			<purchasePaymentChart />
+		<div class="grid grid-cols-2 gap-4">
+			<salesPaymentChart class="col-span-2 xl:col-span-1" />
+			<purchasePaymentChart class="col-span-2 xl:col-span-1" />
 
 		</div>
 	</div>

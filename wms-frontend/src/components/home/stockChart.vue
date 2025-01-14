@@ -3,7 +3,7 @@
 		<template #title>Stock</template>
 		<template #content>
 			<div>
-				<apexchart width="600" type="bar" :options="options" :series="series">
+				<apexchart width="400" type="bar" :options="options" :series="series">
 				</apexchart>
 			</div>
 		</template>
