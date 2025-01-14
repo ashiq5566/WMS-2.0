@@ -27,7 +27,8 @@ class Stakeholder(WebBaseModel):
     
     @property
     def total_pending_amount(self):
-        return self.order_set.filter(pending_amount__gt=0).aggregate(total=models.Sum('pending_amount'))['total'] or self.opening_balance
+        pending = self.order_set.filter(pending_amount__gt=0).aggregate(total=models.Sum('pending_amount'))['total'] or 0
+        return pending + self.opening_balance
     
     @property
     def total_setteled_amount(self):
