@@ -150,7 +150,7 @@ class Payment(models.Model):
     order = models.ForeignKey(Order, on_delete=models.CASCADE, related_name='payments', null=True, blank=True)
     company = models.ForeignKey(Stakeholder, on_delete=models.CASCADE, null=True, blank=True)
     amount = models.PositiveIntegerField(null=True, blank=True)
-    payment_date = models.DateTimeField(auto_now_add=True)
+    payment_date = models.DateTimeField()
     payment_method = models.CharField(max_length=10, choices=PAYMENT_METHOD_CHOICES, default='CASH')
     
     def __str__(self):
@@ -166,15 +166,19 @@ class Payment(models.Model):
                 order_instance.save()
             elif self.order is None:
                 if self.company is not None:
-                    order_instance = Order.objects.filter(stakeholder=self.company, order_status='Issued').order_by('date_added').first()
-                    order_instance.pending_amount=order_instance.pending_amount - self.amount
-                    self.order = order_instance
-                    order_instance.save()
+                    if self.company.opening_balance > 0:
+                        self.company.opening_balance -= self.amount
+                        self.company.save()
+                    else:
+                        order_instance = Order.objects.filter(stakeholder=self.company, order_status='Issued').order_by('date_added').first()
+                        order_instance.pending_amount=order_instance.pending_amount - self.amount
+                        self.order = order_instance
+                        order_instance.save()
                     
-            order_instance.refresh_from_db()
-            if order_instance.pending_amount == 0:
-                order_instance.order_status='Closed'
-                order_instance.save()
+                        order_instance.refresh_from_db()
+                        if order_instance.pending_amount == 0:
+                            order_instance.order_status='Closed'
+                            order_instance.save()
             super().save(*args, **kwargs)
     
 
