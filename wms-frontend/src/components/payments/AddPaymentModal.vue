@@ -8,7 +8,7 @@ const visible = ref(false);
 const selectedMethod = ref('');
 const selectedCompany = ref('');
 const stakeholders = ref([]);
-const nextBillToClear = ref('');
+const nextBillToClear = ref({});
 const formData = ref()
 
 const blankData = {
@@ -62,8 +62,13 @@ const cancel = async () => {
 watch(selectedCompany, (newVal, oldVal) => {
 	if (newVal) {
 		const selectedStakeholder = stakeholders.value.find((s) => s.id === newVal);
-		nextBillToClear.value = selectedStakeholder.next_bill_to_clear
 
+		if (selectedStakeholder.opening_balance > 0) {
+			nextBillToClear.value = { 'pending_amount': selectedStakeholder.opening_balance, 'order_number': "OB" }
+			return nextBillToClear.value
+		} else {
+			nextBillToClear.value = selectedStakeholder.next_bill_to_clear
+		}
 	}
 });
 
