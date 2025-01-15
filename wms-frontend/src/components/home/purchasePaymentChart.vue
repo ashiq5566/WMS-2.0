@@ -3,7 +3,7 @@
 		<template #title>Accounts Payable(Purchase)</template>
 		<template #content>
 			<div>
-				<apexchart width="500" type="bar" :options="options" :series="series">
+				<apexchart width="400" type="bar" :options="options" :series="series">
 				</apexchart>
 			</div>
 		</template>
