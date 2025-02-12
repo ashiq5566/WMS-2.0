@@ -1,5 +1,5 @@
 
-
+import os
 from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -35,14 +35,17 @@ INSTALLED_APPS = [
     
     'rest_framework',
     'corsheaders',
+    'django_vite',
     
     'accounts',
     'inventory',
-    'general'
+    'general',
+    'frontmatter'
 ]
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'corsheaders.middleware.CorsMiddleware',
@@ -58,7 +61,8 @@ CORS_ALLOW_ALL_ORIGINS = True
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        # 'DIRS': [os.path.join(BASE_DIR, 'frontmatter', 'templates')],
+        'DIRS': [os.path.join(BASE_DIR, "wms-frontend", "dist")],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -122,11 +126,24 @@ USE_I18N = True
 
 USE_TZ = True
 
+DJANGO_VITE = {
+   "default": {
+       "dev_mode": False,
+       "static_url_prefix": "wms-frontend",
+   }
+}
+
+
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.0/howto/static-files/
 
-STATIC_URL = 'static/'
+STATIC_URL = '/static/'
+STATIC_ROOT = os.path.join(BASE_DIR, 'var/static_root')  # Collected static files
+
+STATICFILES_DIRS = [
+    os.path.join(BASE_DIR, "static"),  # Serve all built Vue files
+]
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.0/ref/settings/#default-auto-field
