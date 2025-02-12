@@ -81,3 +81,7 @@ coverage.xml
 
 # MyPy
 .mypy
+
+dist
+static
+var
