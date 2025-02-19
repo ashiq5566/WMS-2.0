@@ -21,7 +21,7 @@ CSRF_TRUSTED_ORIGINS = [
     'http://localhost:5173',  # Your Vue.js development URL
     'http://127.0.0.1:5173',  # Add if you also access via IP
 ]
-
+CORS_ALLOW_CREDENTIALS = True
 
 # Application definition
 
@@ -61,8 +61,8 @@ CORS_ALLOW_ALL_ORIGINS = True
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        # 'DIRS': [os.path.join(BASE_DIR, 'frontmatter', 'templates')],
-        'DIRS': [os.path.join(BASE_DIR, "wms-frontend", "dist")],
+        'DIRS': [os.path.join(BASE_DIR,'templates')],
+        # 'DIRS': [os.path.join(BASE_DIR, "wms-frontend", "dist")],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -149,3 +149,11 @@ STATICFILES_DIRS = [
 # https://docs.djangoproject.com/en/5.0/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+# EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+# EMAIL_HOST = 'smtp.gmail.com'
+# EMAIL_PORT = 587
+# EMAIL_USE_TLS = True
+# EMAIL_HOST_USER = 'ashiq.ilmlearn@gmail.com'
+# EMAIL_HOST_PASSWORD = 'olfl udnj aird ptzb'

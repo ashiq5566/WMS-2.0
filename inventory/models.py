@@ -154,7 +154,7 @@ class Payment(models.Model):
     payment_method = models.CharField(max_length=10, choices=PAYMENT_METHOD_CHOICES, default='CASH')
     
     def __str__(self):
-        return f"Payment of {self.amount} for Order {self.company.name} on {self.payment_date}"
+        return f"Payment of {self.amount} on {self.payment_date}"
     
     
     #when a payment instance is created with a amount minus the amount from order model field pending amount

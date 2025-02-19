@@ -16,6 +16,8 @@ from api.v1.inventory.serializers import StakeHolderSerializer
 
 from accounts.models import Stakeholder
 
+from django.contrib.auth.views import PasswordResetView
+
 
 
 class LoginView(APIView):
@@ -64,5 +66,11 @@ class StakeholderView(viewsets.ModelViewSet):
     ordering_fields = ['name', 'created_at']
     ordering = ['name', 'is_deleted']
     search_fields = ['id', 'name', 'type', 'address', 'mobile', 'email']
+    
+    
+class CustomPasswordResetView(PasswordResetView):
+    def form_valid(self, form):
+        print("Password reset email should be sent!")  # Debugging
+        return super().form_valid(form)
     
         
