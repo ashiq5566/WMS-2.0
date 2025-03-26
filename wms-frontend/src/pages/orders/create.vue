@@ -158,6 +158,7 @@ watch(selectedType, (newValue) => {
 	fetchOrders();
 	if (newValue == 'PO') {
 		fetchStakeholders('Supplier');
+		fetchProducts()
 	} else if (newValue == 'SO') {
 		fetchStakeholders('Customer');
 		products.value = products.value.filter(product => product.qty_available > 0);
@@ -222,10 +223,18 @@ onMounted(() => {
 			<DatePicker v-model="orderDate" show-icon />
 			<InputText class="ml-4" type="text" v-model="orderData.order_number" placehoder="Order Number" disabled />
 		</div>
-		<div class="grid grid-cols-2 gap-4">
-			<div class="grid grid-cols-4 gap-2">
+		<div class="">
+			<div class="grid grid-cols-7 gap-2">
 				<div v-for="product in products" :key="product.id">
-					<div class="border p-4 cursor-pointer" @click="addProduct(product.id)">{{ product.name }}</div>
+					<div class="border p-4 cursor-pointer h-48 w-full flex flex-col justify-between items-center"
+						@click="addProduct(product.id)">
+						<div class="h-32 w-32 flex items-center justify-center">
+							<img :src="product.image" alt="Image" class="block w-full h-full object-cover" />
+						</div>
+						<div class="mt-4">
+							<span>{{ product.name }}</span>
+						</div>
+					</div>
 				</div>
 			</div>
 			<div>
