@@ -53,7 +53,7 @@ watch(discountAmount, (newValue) => {
 		<div class="flex justify-end">
 			<Button label="Confirm" @click="visible = true" />
 		</div>
-		<Dialog v-model:visible="visible" modal header="Edit Profile" :style="{ width: '40rem' }">
+		<Dialog v-model:visible="visible" modal header="Order Confirm" :style="{ width: '40rem' }" :draggable="false">
 			<DataTable :value="items" tableStyle="min-width: 20rem">
 				<Column field="product_name" header="Product"></Column>
 				<Column field="quantity" header="Quantity"></Column>
@@ -63,13 +63,16 @@ watch(discountAmount, (newValue) => {
 					<span class="flex justify-center">No Orders found.</span>
 				</template>
 			</DataTable>
-			<div class="flex justify-end">
+			<div class="flex justify-end items-center gap-4">
+				<span class="font-semibold">Discount:</span>
 				<InputText class="my-4" type="text" v-model="discountAmount" placeholder="Discount" />
 			</div>
-			<div class="flex justify-end">
+			<div class="flex justify-end items-center gap-4">
+				<span class="font-semibold">Down Payment:</span>
 				<InputText class="my-4" type="text" v-model="downPayment" placeholder="Down Payment" />
 			</div>
-			<div class="flex justify-end">
+			<div class="flex justify-end items-center gap-4">
+				<span class="font-semibold">Payment Type:</span>
 				<Select class="my-4" v-model="paymentType" :options="methods" optionLabel="label" option-value="value"
 					placeholder="Payment Type" />
 			</div>

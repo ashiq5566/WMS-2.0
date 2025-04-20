@@ -139,6 +139,7 @@ const onSubmit = async (discountAmount, updatedGrossAmount, downPayment, payment
 			const paymentResponse = await axios.post('/api/inventory/payments/',
 				{
 					order: response.data.order.id,
+					company: response.data.order.stakeholder,
 					amount: downPayment,
 					payment_date: orderData.value.order_date,
 					payment_method: paymentType
@@ -184,6 +185,10 @@ const onUpdateQty = (data) => {
 }
 
 const addProduct = (id) => {
+	if (!selectedStakeholder.value || !selectedType.value || !orderDate.value) {
+		toast.add({ severity: 'warn', summary: 'Warning', detail: 'Please Ensure Order Type, Stakeholder, Order Date are entered', life: 3000 });
+		return
+	}
 	try {
 		const product = products.value.find(p => p.id === id);
 
@@ -201,7 +206,13 @@ const addProduct = (id) => {
 
 
 		grossAmount.value = grossAmount.value + formData.value.total;
-		itemsData.value.push(JSON.parse(JSON.stringify(formData.value)));
+		const existingItem = itemsData.value.find(item => item.product === formData.value.product);
+		if (existingItem) {
+			existingItem.quantity = parseFloat(existingItem.quantity) + parseFloat(formData.value.quantity);
+		} else {
+			itemsData.value.push(JSON.parse(JSON.stringify(formData.value)));
+		}
+
 		formData.value = JSON.parse(JSON.stringify(blankData));
 
 	} catch (error) {
@@ -238,16 +249,6 @@ onMounted(() => {
 				</div>
 			</div>
 			<div>
-
-				<!-- <div v-if="selectedType" class="mb-4">
-				<Select v-model="selectedProduct" :options="products" optionLabel="name" option-value="id"
-					placeholder="Select product" class="mr-4" />
-				<InputText v-if="selectedProduct" class="mr-4" type="text" v-model="selectedProductStock" disabled />
-				<InputText class="mr-4" type="text" v-model="formData.quantity" :placeholder="selectedProductUnit" />
-				<InputText class="mr-4" type="text" v-model="formData.price_at_time_of_order"
-					placeholder="Unit Price" />
-				<Button icon="pi pi-plus" aria-label="Save" @click="addItem" />
-			</div> -->
 				<Card>
 					<template #content>
 						<DataTable :value="itemsData" tableStyle="min-width: 50rem">
@@ -266,8 +267,7 @@ onMounted(() => {
 							<Column field="total" header="Total"></Column>
 							<Column class="w-24 !text-end">
 								<template #body="{ data }">
-									<Button icon="pi pi-times" @click="selectRow(data)" severity="secondary"
-										rounded></Button>
+									<Button icon="pi pi-times" @click="selectRow(data)" severity="secondary" rounded></Button>
 								</template>
 							</Column>
 							<template #empty>
@@ -275,8 +275,7 @@ onMounted(() => {
 							</template>
 						</DataTable>
 						<div v-if="itemsData.length" class="flex justify-end mt-4">
-							<OrderConfirmModal @order-confirmed="onSubmit" :items="itemsData"
-								:gross-amount="grossAmount" />
+							<OrderConfirmModal @order-confirmed="onSubmit" :items="itemsData" :gross-amount="grossAmount" />
 						</div>
 					</template>
 				</Card>
