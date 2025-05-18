@@ -115,7 +115,8 @@ onMounted(() => {
 		<div class="grid grid-cols-4 gap-4 mb-4">
 			<div v-for="(item, index) in statisticsData" :key="index"
 				class="border border-gray-300 rounded-lg p-4 flex cursor-pointer" @click="filterOrders(item.label)">
-				<div class="bg-[#FFF5EB] w-[52px] h-[52px] mr-4 flex justify-center items-center"><i :class="item.icon"></i>
+				<div class="bg-[#FFF5EB] w-[52px] h-[52px] mr-4 flex justify-center items-center"><i
+						:class="item.icon"></i>
 				</div>
 				<div>
 					<h3 class="text-2xl" style="font-weight:600;">{{ item.value }}</h3>
@@ -128,10 +129,10 @@ onMounted(() => {
 				<DataTable :value="orders" tableStyle="min-width: 50rem">
 					<template #header>
 						<div class="flex justify-end gap-4">
-							<Select v-model="selectedStakeholder" :options="stakeholders" optionLabel="name" option-value="id"
-								placeholder="Select Stakeholder" class="mr-4" filter />
-							<DatePicker v-model="filterDates" selectionMode="range" :manualInput="false" placeholder="Date Range"
-								showIcon />
+							<Select v-model="selectedStakeholder" :options="stakeholders" optionLabel="name"
+								option-value="id" placeholder="Select Stakeholder" class="mr-4" filter />
+							<DatePicker v-model="filterDates" selectionMode="range" :manualInput="false"
+								placeholder="Date Range" showIcon />
 							<IconField>
 								<InputIcon>
 									<i class="pi pi-search" />
@@ -167,7 +168,8 @@ onMounted(() => {
 					<Column field="net_amount" header="Net Amount"></Column>
 					<Column field="order_status" header="Status">
 						<template #body="slotProps">
-							<Tag :value="slotProps.data.order_status" :severity="getSeverity(slotProps.data.order_status)" />
+							<Tag :value="slotProps.data.order_status"
+								:severity="getSeverity(slotProps.data.order_status)" />
 						</template>
 					</Column>
 					<template #empty>

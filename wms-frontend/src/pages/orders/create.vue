@@ -108,12 +108,7 @@ const addItem = async () => {
 		if (formData.value.quantity > 0 && formData.value.price_at_time_of_order > 0) {
 			// calculate total price of each and save it in variable
 			formData.value.total = formData.value.quantity * formData.value.price_at_time_of_order;
-			// real time update of stock
-			if (selectedType.value == 'PO') {
-				selectedProductStock.value = parseInt(selectedProductStock.value) + parseInt(formData.value.quantity)
-			} else if (selectedType.value == 'SO') {
-				selectedProductStock.value = parseInt(selectedProductStock.value) - parseInt(formData.value.quantity)
-			}
+
 
 		}
 		grossAmount.value = grossAmount.value + formData.value.total;
@@ -144,6 +139,7 @@ const onSubmit = async (discountAmount, updatedGrossAmount, downPayment, payment
 			const paymentResponse = await axios.post('/api/inventory/payments/',
 				{
 					order: response.data.order.id,
+					company: response.data.order.stakeholder,
 					amount: downPayment,
 					payment_date: orderData.value.order_date,
 					payment_method: paymentType
@@ -163,6 +159,7 @@ watch(selectedType, (newValue) => {
 	fetchOrders();
 	if (newValue == 'PO') {
 		fetchStakeholders('Supplier');
+		fetchProducts()
 	} else if (newValue == 'SO') {
 		fetchStakeholders('Customer');
 		products.value = products.value.filter(product => product.qty_available > 0);
@@ -179,9 +176,43 @@ watch(selectedProduct, (newValue) => {
 watch(itemsData, (newValue) => {
 	const totalAmount = newValue.reduce((acc, item) => acc + (item.total || 0), 0);
 	grossAmount.value = totalAmount;
-
-	console.log("Updated Gross Amount:", grossAmount.value);
 }, { deep: true });
+
+const onUpdateQty = (data) => {
+	const item = itemsData.value.find(p => p.product === data.product)
+	item.quantity = data.quantity
+	item.total = data.quantity * data.price_at_time_of_order;
+}
+
+const addProduct = (id) => {
+	if (!selectedStakeholder.value || !selectedType.value || !orderDate.value) {
+		toast.add({ severity: 'warn', summary: 'Warning', detail: 'Please Ensure Order Type, Stakeholder, Order Date are entered', life: 3000 });
+		return
+	}
+	try {
+		const product = products.value.find(p => p.id === id);
+
+		formData.value.product = product.id
+		formData.value.product_name = product.name
+		formData.value.price_at_time_of_order = product.selling_price
+		formData.value.quantity = 1
+		formData.value.total = formData.value.quantity * product.selling_price
+
+
+		grossAmount.value = grossAmount.value + formData.value.total;
+		const existingItem = itemsData.value.find(item => item.product === formData.value.product);
+		if (existingItem) {
+			existingItem.quantity = parseFloat(existingItem.quantity) + parseFloat(formData.value.quantity);
+		} else {
+			itemsData.value.push(JSON.parse(JSON.stringify(formData.value)));
+		}
+
+		formData.value = JSON.parse(JSON.stringify(blankData));
+
+	} catch (error) {
+		console.error('Error adding item:', error);
+	}
+}
 
 onMounted(() => {
 	fetchProducts();
@@ -189,7 +220,7 @@ onMounted(() => {
 </script>
 <template>
 	<div>
-		<div class="flex justify-end mb-4">
+		<div class="flex mb-4">
 			<Select v-model="selectedType" :options="order_types" optionLabel="name" option-value="value"
 				placeholder="Select type" class="mr-4" />
 			<Select v-model="selectedStakeholder" :options="stakeholderOptions" optionLabel="name" option-value="id"
@@ -197,38 +228,54 @@ onMounted(() => {
 			<DatePicker v-model="orderDate" show-icon />
 			<InputText class="ml-4" type="text" v-model="orderData.order_number" placehoder="Order Number" disabled />
 		</div>
-		<div v-if="selectedType" class="mb-4">
-			<Select v-model="selectedProduct" :options="products" optionLabel="name" option-value="id"
-				placeholder="Select product" class="mr-4" />
-			<InputText v-if="selectedProduct" class="mr-4" type="text" v-model="selectedProductStock" disabled />
-			<InputText class="mr-4" type="text" v-model="formData.quantity" :placeholder="selectedProductUnit" />
-			<InputText class="mr-4" type="text" v-model="formData.price_at_time_of_order" placeholder="Unit Price" />
-			<Button icon="pi pi-plus" aria-label="Save" @click="addItem" />
-		</div>
-		<Card>
-			<template #content>
-				<DataTable :value="itemsData" tableStyle="min-width: 50rem">
-					<Column field="product" header="Product">
-						<template #body="slotProps">
-							<span>{{ slotProps.data.product_name }}</span>
-						</template>
-					</Column>
-					<Column field="quantity" header="Quantity"></Column>
-					<Column field="price_at_time_of_order" header="Unit Price"></Column>
-					<Column field="total" header="Total"></Column>
-					<Column class="w-24 !text-end">
-						<template #body="{ data }">
-							<Button icon="pi pi-times" @click="selectRow(data)" severity="secondary" rounded></Button>
-						</template>
-					</Column>
-					<template #empty>
-						<span class="flex justify-center">No Orders found.</span>
-					</template>
-				</DataTable>
-				<div v-if="itemsData.length" class="flex justify-end mt-4">
-					<OrderConfirmModal @order-confirmed="onSubmit" :items="itemsData" :gross-amount="grossAmount" />
+		<div class="">
+			<div class="grid grid-cols-7 gap-2">
+				<div v-for="product in products" :key="product.id">
+					<div class="border p-4 cursor-pointer h-48 w-full flex flex-col justify-between items-center"
+						@click="addProduct(product.id)">
+						<div class="h-32 w-32 flex items-center justify-center">
+							<img :src="product.image" alt="Image" class="block w-full h-full object-cover" />
+						</div>
+						<div class="mt-4">
+							<span>{{ product.name }}</span>
+						</div>
+					</div>
 				</div>
-			</template>
-		</Card>
+			</div>
+			<div>
+				<Card>
+					<template #content>
+						<DataTable :value="itemsData" tableStyle="min-width: 50rem">
+							<Column field="product" header="Product">
+								<template #body="slotProps">
+									<span>{{ slotProps.data.product_name }}</span>
+								</template>
+							</Column>
+							<Column field="quantity" header="Quantity">
+								<template #body="slotProps">
+									<input type="number" v-model="slotProps.data.quantity" style="width: 100px"
+										class="p-inputtext p-component" @input="onUpdateQty(slotProps.data)" />
+								</template>
+							</Column>
+							<Column field="price_at_time_of_order" header="Unit Price"></Column>
+							<Column field="total" header="Total"></Column>
+							<Column class="w-24 !text-end">
+								<template #body="{ data }">
+									<Button icon="pi pi-times" @click="selectRow(data)" severity="secondary"
+										rounded></Button>
+								</template>
+							</Column>
+							<template #empty>
+								<span class="flex justify-center">No Orders found.</span>
+							</template>
+						</DataTable>
+						<div v-if="itemsData.length" class="flex justify-end mt-4">
+							<OrderConfirmModal @order-confirmed="onSubmit" :items="itemsData"
+								:gross-amount="grossAmount" />
+						</div>
+					</template>
+				</Card>
+			</div>
+		</div>
 	</div>
 </template>

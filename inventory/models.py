@@ -20,6 +20,7 @@ class Product(WebBaseModel):
     qty_purchased = models.PositiveIntegerField(null=True, default=0)
     status = models.BooleanField(default=False)
     unit = models.CharField(choices=UNIT_CHOICES, null=True, blank=True, max_length=100)
+    image = models.ImageField(upload_to='product_images/', null=True, blank=True) 
     
     def __str__(self):
         return  self.name

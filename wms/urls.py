@@ -11,4 +11,6 @@ urlpatterns = [
     path("", TemplateView.as_view(template_name="frontmatter/index.html"), name="home"),
     path('api/accounts/', include('api.v1.accounts.urls')),
     path('api/inventory/', include('api.v1.inventory.urls')),
-] + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
+] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+
+# + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)

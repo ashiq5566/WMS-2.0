@@ -1,0 +1,266 @@
+[
+  {
+    "model": "inventory.payment",
+    "pk": 117,
+    "fields": {
+      "order": null,
+      "company": 14,
+      "amount": 6000,
+      "payment_date": "2024-12-28T16:41:10Z",
+      "payment_method": "CASH"
+    }
+  },
+  {
+    "model": "inventory.payment",
+    "pk": 118,
+    "fields": {
+      "order": null,
+      "company": 14,
+      "amount": 15000,
+      "payment_date": "2024-12-31T16:42:15Z",
+      "payment_method": "CASH"
+    }
+  },
+  {
+    "model": "inventory.payment",
+    "pk": 119,
+    "fields": {
+      "order": null,
+      "company": 14,
+      "amount": 4000,
+      "payment_date": "2025-01-04T16:50:57Z",
+      "payment_method": "CASH"
+    }
+  },
+  {
+    "model": "inventory.payment",
+    "pk": 120,
+    "fields": {
+      "order": null,
+      "company": 14,
+      "amount": 6000,
+      "payment_date": "2025-01-07T16:51:12Z",
+      "payment_method": "CASH"
+    }
+  },
+  {
+    "model": "inventory.payment",
+    "pk": 125,
+    "fields": {
+      "order": null,
+      "company": 15,
+      "amount": 2000,
+      "payment_date": "2024-11-11T18:30:00Z",
+      "payment_method": "CASH"
+    }
+  },
+  {
+    "model": "inventory.payment",
+    "pk": 126,
+    "fields": {
+      "order": null,
+      "company": 15,
+      "amount": 2000,
+      "payment_date": "2024-11-18T18:30:00Z",
+      "payment_method": "CASH"
+    }
+  },
+  {
+    "model": "inventory.payment",
+    "pk": 127,
+    "fields": {
+      "order": null,
+      "company": 15,
+      "amount": 2000,
+      "payment_date": "2024-11-25T18:30:00Z",
+      "payment_method": "CASH"
+    }
+  },
+  {
+    "model": "inventory.payment",
+    "pk": 128,
+    "fields": {
+      "order": null,
+      "company": 15,
+      "amount": 2000,
+      "payment_date": "2024-12-02T18:30:00Z",
+      "payment_method": "CASH"
+    }
+  },
+  {
+    "model": "inventory.payment",
+    "pk": 129,
+    "fields": {
+      "order": null,
+      "company": 15,
+      "amount": 2000,
+      "payment_date": "2024-12-09T18:30:00Z",
+      "payment_method": "CASH"
+    }
+  },
+  {
+    "model": "inventory.payment",
+    "pk": 130,
+    "fields": {
+      "order": null,
+      "company": 15,
+      "amount": 2000,
+      "payment_date": "2024-12-16T18:30:00Z",
+      "payment_method": "CASH"
+    }
+  },
+  {
+    "model": "inventory.payment",
+    "pk": 131,
+    "fields": {
+      "order": null,
+      "company": 15,
+      "amount": 2000,
+      "payment_date": "2024-12-23T18:30:00Z",
+      "payment_method": "CASH"
+    }
+  },
+  {
+    "model": "inventory.payment",
+    "pk": 132,
+    "fields": {
+      "order": null,
+      "company": 15,
+      "amount": 2000,
+      "payment_date": "2024-12-30T18:30:00Z",
+      "payment_method": "CASH"
+    }
+  },
+  {
+    "model": "inventory.payment",
+    "pk": 133,
+    "fields": {
+      "order": null,
+      "company": 15,
+      "amount": 2000,
+      "payment_date": "2025-01-06T18:30:00Z",
+      "payment_method": "CASH"
+    }
+  },
+  {
+    "model": "inventory.payment",
+    "pk": 134,
+    "fields": {
+      "order": null,
+      "company": 16,
+      "amount": 1500,
+      "payment_date": "2024-12-13T18:30:00Z",
+      "payment_method": "CASH"
+    }
+  },
+  {
+    "model": "inventory.payment",
+    "pk": 135,
+    "fields": {
+      "order": null,
+      "company": 16,
+      "amount": 2000,
+      "payment_date": "2024-12-23T18:30:00Z",
+      "payment_method": "CASH"
+    }
+  },
+  {
+    "model": "inventory.payment",
+    "pk": 136,
+    "fields": {
+      "order": null,
+      "company": 16,
+      "amount": 500,
+      "payment_date": "2024-12-30T18:30:00Z",
+      "payment_method": "CASH"
+    }
+  },
+  {
+    "model": "inventory.payment",
+    "pk": 137,
+    "fields": {
+      "order": null,
+      "company": 16,
+      "amount": 2000,
+      "payment_date": "2025-01-03T18:30:00Z",
+      "payment_method": "CASH"
+    }
+  },
+  {
+    "model": "inventory.payment",
+    "pk": 138,
+    "fields": {
+      "order": null,
+      "company": 17,
+      "amount": 1000,
+      "payment_date": "2024-12-03T18:30:00Z",
+      "payment_method": "CASH"
+    }
+  },
+  {
+    "model": "inventory.payment",
+    "pk": 139,
+    "fields": {
+      "order": null,
+      "company": 17,
+      "amount": 2000,
+      "payment_date": "2024-12-16T18:30:00Z",
+      "payment_method": "CASH"
+    }
+  },
+  {
+    "model": "inventory.payment",
+    "pk": 140,
+    "fields": {
+      "order": null,
+      "company": 17,
+      "amount": 1000,
+      "payment_date": "2024-12-20T18:30:00Z",
+      "payment_method": "CASH"
+    }
+  },
+  {
+    "model": "inventory.payment",
+    "pk": 141,
+    "fields": {
+      "order": null,
+      "company": 17,
+      "amount": 1000,
+      "payment_date": "2024-12-23T18:30:00Z",
+      "payment_method": "CASH"
+    }
+  },
+  {
+    "model": "inventory.payment",
+    "pk": 142,
+    "fields": {
+      "order": null,
+      "company": 17,
+      "amount": 1000,
+      "payment_date": "2025-01-03T18:30:00Z",
+      "payment_method": "CASH"
+    }
+  },
+  {
+    "model": "inventory.payment",
+    "pk": 143,
+    "fields": {
+      "order": 64,
+      "company": null,
+      "amount": 2000,
+      "payment_date": "2025-01-06T18:30:00Z",
+      "payment_method": "CASH"
+    }
+  },
+  {
+    "model": "inventory.payment",
+    "pk": 144,
+    "fields": {
+      "order": null,
+      "company": 17,
+      "amount": 2000,
+      "payment_date": "2024-12-09T18:30:00Z",
+      "payment_method": "CASH"
+    }
+  }
+]

@@ -63,13 +63,13 @@ const addPayment = async () => {
 
 <template>
 	<div class="">
-		<div class="flex justify-end">
+		<!-- <div class="flex justify-end">
 			<InputText class="mr-4 w-1/4" type="text" v-model="props.pendingAmount" disabled />
 			<Select v-model="selectedMethod" :options="methods" optionLabel="label" option-value="value"
 				placeholder="Select method" class="mr-4" />
 			<InputText class="mr-4 w-1/4" type="text" v-model="formData.amount" placeholder="Amount" />
 			<Button icon="pi pi-plus" aria-label="Save" @click="addPayment" />
-		</div>
+		</div> -->
 		<DataTable :value="props.payments" tableStyle="min-width: 30rem" scrollHeight="300px">
 			<Column field="id" header="ID#"></Column>
 			<Column field="payment_date" header="Date">
