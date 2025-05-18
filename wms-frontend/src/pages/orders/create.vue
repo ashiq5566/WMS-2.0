@@ -197,12 +197,6 @@ const addProduct = (id) => {
 		formData.value.price_at_time_of_order = product.selling_price
 		formData.value.quantity = 1
 		formData.value.total = formData.value.quantity * product.selling_price
-		// // real time update of stock
-		// if (selectedType.value == 'PO') {
-		// 	selectedProductStock.value = parseInt(selectedProductStock.value) + parseInt(formData.value.quantity)
-		// } else if (selectedType.value == 'SO') {
-		// 	selectedProductStock.value = parseInt(selectedProductStock.value) - parseInt(formData.value.quantity)
-		// }
 
 
 		grossAmount.value = grossAmount.value + formData.value.total;
@@ -267,7 +261,8 @@ onMounted(() => {
 							<Column field="total" header="Total"></Column>
 							<Column class="w-24 !text-end">
 								<template #body="{ data }">
-									<Button icon="pi pi-times" @click="selectRow(data)" severity="secondary" rounded></Button>
+									<Button icon="pi pi-times" @click="selectRow(data)" severity="secondary"
+										rounded></Button>
 								</template>
 							</Column>
 							<template #empty>
@@ -275,7 +270,8 @@ onMounted(() => {
 							</template>
 						</DataTable>
 						<div v-if="itemsData.length" class="flex justify-end mt-4">
-							<OrderConfirmModal @order-confirmed="onSubmit" :items="itemsData" :gross-amount="grossAmount" />
+							<OrderConfirmModal @order-confirmed="onSubmit" :items="itemsData"
+								:gross-amount="grossAmount" />
 						</div>
 					</template>
 				</Card>
