@@ -3,6 +3,7 @@ import { onMounted, ref, watch } from "vue";
 import axios from '@/plugins/axios';
 import { debounce } from 'lodash';
 import { useToast } from "primevue/usetoast";
+import AddProductModal from "@/components/products/AddProductModal.vue";
 
 const products = ref();
 const searchInput = ref('');
@@ -50,7 +51,6 @@ const onRowEditSave = async (event) => {
 
 <template>
 	<div class="">
-		<AddStakeHolderModal @instance-added="reloadTable" />
 		<Card class="mt-4">
 			<template #content>
 				<DataTable v-model:editingRows="editingRows" :value="products" editMode="row" dataKey="id"
@@ -63,6 +63,7 @@ const onRowEditSave = async (event) => {
 								</InputIcon>
 								<InputText v-model="searchInput" placeholder="Keyword Search" />
 							</IconField>
+							<AddProductModal @instance-added="reloadTable" class="ml-4" />
 						</div>
 					</template>
 					<Column field="product_id" header="ID"></Column>
