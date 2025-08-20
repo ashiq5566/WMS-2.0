@@ -43,6 +43,11 @@ const handleSubmit = async () => {
 	}
 };
 
+const cancel = () => {
+	visible.value = false
+	formData.value = JSON.parse(JSON.stringify(blankData))
+}
+
 </script>
 
 <template>
@@ -79,11 +84,10 @@ const handleSubmit = async () => {
 			</div>
 			<div class="flex items-center gap-4 mb-8">
 				<label for="opening_balance" class="font-semibold w-32">Opening Balance</label>
-				<InputText id="opening_balance" v-model="formData.opening_balance" class="flex-auto"
-					autocomplete="off" />
+				<InputText id="opening_balance" v-model="formData.opening_balance" class="flex-auto" autocomplete="off" />
 			</div>
 			<div class="flex justify-end gap-2">
-				<Button type="button" label="Cancel" severity="secondary" @click="visible = false"></Button>
+				<Button type="button" label="Cancel" severity="secondary" @click="cancel"></Button>
 				<Button type="submit" label="Save" @click="handleSubmit()"></Button>
 			</div>
 		</Dialog>

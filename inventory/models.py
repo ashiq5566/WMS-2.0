@@ -22,6 +22,12 @@ class Product(WebBaseModel):
     unit = models.CharField(choices=UNIT_CHOICES, null=True, blank=True, max_length=100)
     image = models.ImageField(upload_to='product_images/', null=True, blank=True) 
     
+    def save(self, *args, **kwargs):
+        if not self.product_id:
+            count = Product.objects.count() + 1
+            self.product_id = f"PR{count}"
+        super().save(*args, **kwargs)
+    
     def __str__(self):
         return  self.name
     
