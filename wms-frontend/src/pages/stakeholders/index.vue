@@ -2,6 +2,7 @@
 import { onMounted, ref, watch } from "vue";
 import axios from '@/plugins/axios';
 import AddStakeHolderModal from "@/components/stakeholders/AddStakeHolderModal.vue";
+import Column from "primevue/column";
 
 const stakeholders = ref();
 const selectedType = ref();
@@ -71,10 +72,10 @@ onMounted(() => {
 				<DataTable :value="stakeholders" tableStyle="min-width: 50rem" sortField="is_deleted" :sortOrder="1">
 					<template #header>
 						<div class="flex justify-end gap-4">
-							<Select v-model="selectedStatus" :options="statusOptions" optionLabel="label" option-value="value"
-								placeholder="Select Status" class="mr-4" filter show-clear />
-							<Select v-model="selectedType" :options="typeOptions" optionLabel="label" option-value="value"
-								placeholder="Select Type" class="mr-4" filter show-clear />
+							<Select v-model="selectedStatus" :options="statusOptions" optionLabel="label"
+								option-value="value" placeholder="Select Status" class="mr-4" filter show-clear />
+							<Select v-model="selectedType" :options="typeOptions" optionLabel="label"
+								option-value="value" placeholder="Select Type" class="mr-4" filter show-clear />
 							<IconField>
 								<InputIcon>
 									<i class="pi pi-search" />
@@ -84,6 +85,8 @@ onMounted(() => {
 							<AddStakeHolderModal @instance-added="reloadTable" />
 						</div>
 					</template>
+					<Column field="stakeholder_id" header="ID">
+					</Column>
 					<Column field="name" header="Name">
 						<template #body="slotProps">
 							<router-link :to="{ name: 'stakeholders-id', params: { id: slotProps.data.id } }">

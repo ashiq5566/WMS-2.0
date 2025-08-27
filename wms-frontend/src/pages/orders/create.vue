@@ -91,35 +91,6 @@ const fetchProducts = async () => {
 		console.error('Error fetching orders:', error);
 	}
 }
-// function addItem to add order items
-const addItem = async () => {
-	if (itemsData.value.some(item => item.product === selectedProduct.value)) {
-		toast.add({ severity: 'error', summary: 'Error', detail: 'Product already added', life: 3000 });
-		return;
-	}
-	try {
-		const product = products.value.find(p => p.id === selectedProduct.value);
-		if (!product || !formData.value.quantity || !formData.value.price_at_time_of_order) {
-			toast.add({ severity: 'error', summary: 'Error', detail: 'Please fill in all fields', life: 3000 });
-			return;
-		}
-		formData.value.product = product.id
-		formData.value.product_name = product.name
-		if (formData.value.quantity > 0 && formData.value.price_at_time_of_order > 0) {
-			// calculate total price of each and save it in variable
-			formData.value.total = formData.value.quantity * formData.value.price_at_time_of_order;
-
-
-		}
-		grossAmount.value = grossAmount.value + formData.value.total;
-		itemsData.value.push(JSON.parse(JSON.stringify(formData.value)));
-		formData.value = JSON.parse(JSON.stringify(blankData));
-		// selectedProduct.value = '';
-
-	} catch (error) {
-		console.error('Error adding item:', error);
-	}
-};
 
 const onSubmit = async (discountAmount, updatedGrossAmount, downPayment, paymentType) => {
 	try {
@@ -194,15 +165,16 @@ const addProduct = (id) => {
 
 		formData.value.product = product.id
 		formData.value.product_name = product.name
-		formData.value.price_at_time_of_order = product.selling_price
+		formData.value.price_at_time_of_order = selectedType.value == 'PO' ? product.price_at_time_of_purchase : product.selling_price
 		formData.value.quantity = 1
-		formData.value.total = formData.value.quantity * product.selling_price
+		formData.value.total = formData.value.quantity * formData.value.price_at_time_of_order
 
 
 		grossAmount.value = grossAmount.value + formData.value.total;
 		const existingItem = itemsData.value.find(item => item.product === formData.value.product);
 		if (existingItem) {
 			existingItem.quantity = parseFloat(existingItem.quantity) + parseFloat(formData.value.quantity);
+			existingItem.total = existingItem.quantity * existingItem.price_at_time_of_order
 		} else {
 			itemsData.value.push(JSON.parse(JSON.stringify(formData.value)));
 		}
@@ -261,8 +233,7 @@ onMounted(() => {
 							<Column field="total" header="Total"></Column>
 							<Column class="w-24 !text-end">
 								<template #body="{ data }">
-									<Button icon="pi pi-times" @click="selectRow(data)" severity="secondary"
-										rounded></Button>
+									<Button icon="pi pi-times" @click="selectRow(data)" severity="secondary" rounded></Button>
 								</template>
 							</Column>
 							<template #empty>
@@ -270,8 +241,7 @@ onMounted(() => {
 							</template>
 						</DataTable>
 						<div v-if="itemsData.length" class="flex justify-end mt-4">
-							<OrderConfirmModal @order-confirmed="onSubmit" :items="itemsData"
-								:gross-amount="grossAmount" />
+							<OrderConfirmModal @order-confirmed="onSubmit" :items="itemsData" :gross-amount="grossAmount" />
 						</div>
 					</template>
 				</Card>

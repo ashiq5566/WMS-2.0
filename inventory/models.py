@@ -88,7 +88,6 @@ class OrderItem(models.Model):
             self.product.qty_purchased += self.quantity
             self.product.qty_available += self.quantity
         elif self.order and self.order.order_type == 'SO':
-            self.product.qty_purchased -= self.quantity
             self.product.qty_available -= self.quantity
         self.product.save()
             
