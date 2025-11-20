@@ -10,7 +10,7 @@
             <!-- Desktop Navigation -->
             <nav class="hidden md:flex gap-8">
                 <NuxtLink to="/" class="nav-link">Home</NuxtLink>
-                <NuxtLink to="/categories" class="nav-link">Categories</NuxtLink>
+                <NuxtLink to="/products" class="nav-link">Products</NuxtLink>
                 <NuxtLink to="/best-sellers" class="nav-link">Best Sellers</NuxtLink>
                 <NuxtLink to="/about" class="nav-link">About</NuxtLink>
                 <NuxtLink to="/contact" class="nav-link">Contact</NuxtLink>
@@ -38,7 +38,7 @@
         <!-- Mobile Menu -->
         <div v-if="open" class="md:hidden bg-white shadow-inner px-6 py-4 space-y-4">
             <NuxtLink to="/" class="mobile-link">Home</NuxtLink>
-            <NuxtLink to="/categories" class="mobile-link">Categories</NuxtLink>
+            <NuxtLink to="/products" class="mobile-link">Products</NuxtLink>
             <NuxtLink to="/best-sellers" class="mobile-link">Best Sellers</NuxtLink>
             <NuxtLink to="/about" class="mobile-link">About</NuxtLink>
             <NuxtLink to="/contact" class="mobile-link">Contact</NuxtLink>
