@@ -28,6 +28,7 @@ import IconField from 'primevue/iconfield'
 import InputIcon from 'primevue/inputicon'
 import DatePicker from 'primevue/datepicker'
 import VueApexCharts from 'vue3-apexcharts'
+import AutoComplete from 'primevue/autocomplete'
 
 const app = createApp(App)
 
@@ -53,5 +54,6 @@ app.component('Tag', Tag)
 app.component('IconField', IconField)
 app.component('InputIcon', InputIcon)
 app.component('DatePicker', DatePicker)
+app.component('AutoComplete', AutoComplete)
 
 app.mount('#app')
