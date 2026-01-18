@@ -12,6 +12,8 @@ from rest_framework.filters import OrderingFilter
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
 from .serializers import *
+from django.utils.timezone import now
+
 
 from inventory.models import *
 
@@ -180,5 +182,29 @@ class PaymentViewSet(viewsets.ModelViewSet):
             queryset = queryset.annotate(month=db_functions.ExtractMonth('payment_date')).filter(month=order_month)
 
         return queryset
+    
+    
+class InvoiceViewSet(viewsets.ModelViewSet):
+    queryset = Invoice.objects.all()
+    serializer_class = InvoiceSerializer
+    
+    def perform_create(self, serializer):
+        # Generate invoice number
+        today = now().strftime('%Y%m%d')
+        last_invoice = Invoice.objects.filter(
+            invoice_number__startswith=f"INV-{today}"
+        ).order_by('-id').first()
+
+        if last_invoice:
+            last_number = int(last_invoice.invoice_number.split('-')[-1])
+            new_number = last_number + 1
+        else:
+            new_number = 1
+
+        invoice_number = f"INV-{today}-{new_number:04d}"
+
+        serializer.save(invoice_number=invoice_number)
+        
+
 
 

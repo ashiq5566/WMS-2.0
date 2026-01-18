@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from accounts.models import Stakeholder
-from inventory.models import Order, OrderItem, Product, Return, ReturnItem, Payment
+from inventory.models import Order, OrderItem, Product, Return, ReturnItem, Payment, Invoice, InvoiceItem
         
         
 class StakeHolderSerializer(serializers.ModelSerializer):
@@ -50,3 +50,43 @@ class PaymentSerializer(serializers.ModelSerializer):
     class Meta:
         model = Payment
         fields = '__all__'
+        
+        
+class InvoiceItemSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = InvoiceItem
+        fields = ['product', 'quantity', 'price', 'subtotal']
+
+
+class InvoiceSerializer(serializers.ModelSerializer):
+    items = InvoiceItemSerializer(many=True)
+
+    class Meta:
+        model = Invoice
+        fields = [
+            'id',
+            'invoice_number',
+            'invoice_type',
+            'customer',
+            'subtotal',
+            'total_amount',
+            'items'
+        ]
+
+    def create(self, validated_data):
+        items_data = validated_data.pop('items')
+
+        invoice = Invoice.objects.create(**validated_data)
+
+        for item in items_data:
+            InvoiceItem.objects.create(
+                invoice=invoice,
+                **item
+            )
+
+            # update stock
+            product = item['product']
+            # product.qty_available -= item['quantity']
+            product.save()
+
+        return invoice

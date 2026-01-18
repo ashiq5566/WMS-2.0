@@ -33,7 +33,7 @@
 
             <Column>
                 <template #body="{ index }">
-                    <Button icon="pi pi-trash" severity="danger" @click="removeItem(index)" />
+                    <i class="pi pi-times text-red-500" @click="removeItem(index)" />
                 </template>
             </Column>
         </DataTable>
@@ -42,12 +42,16 @@
         <div class="text-right text-2xl font-bold mt-4">
             Grand Total: ₹ {{ grandTotal.toFixed(2) }}
         </div>
+
+        <Button label="Save Bill" icon="pi pi-check" class="mt-4" severity="success" @click="saveInvoice" />
+
     </div>
 </template>
 
 <script setup>
 import { ref, computed } from 'vue'
 import axios from '@/plugins/axios'
+import { useToast } from 'primevue/usetoast'
 
 /* ---------------- STATE ---------------- */
 
@@ -55,6 +59,7 @@ const selectedProduct = ref(null)
 const inputQuantity = ref(null)
 const filteredProducts = ref([])
 const billItems = ref([])
+const toast = useToast()
 
 /* ---------------- COMPUTED ---------------- */
 
@@ -80,12 +85,12 @@ const searchProducts = async (event) => {
     }
 }
 
-function onProductSelect(event) {
+const onProductSelect = (event) => {
     selectedProduct.value = event.value
     inputQuantity.value = null
 }
 
-function addToBill() {
+const addToBill = () => {
     if (!selectedProduct.value) {
         alert('Select a product first')
         return
@@ -121,11 +126,52 @@ function addToBill() {
 }
 
 
-function updateSubtotal(item) {
+const updateSubtotal = (item) => {
     item.subtotal = Number(item.price) * Number(item.quantity)
 }
 
-function removeItem(index) {
+const removeItem = (index) => {
     billItems.value.splice(index, 1)
 }
+
+const saveInvoice = async () => {
+    try {
+        // Validation
+        if (!billItems.value.length) {
+            toast.add({ severity: 'error', summary: 'Error', detail: `Error`, life: 3000 });
+            return;
+        }
+
+        const payload = {
+            invoice_type: 'SALE',   // or 'PURCHASE'
+            // customer: selectedCustomerId.value, // if applicable
+            subtotal: grandTotal.value,
+            total_amount: grandTotal.value,
+            items: billItems.value.map(item => ({
+                product: item.product_id,
+                quantity: item.quantity,
+                price: item.price,
+                subtotal: item.subtotal
+            }))
+        };
+
+        console.log('Sending payload:', payload);
+
+        const response = await axios.post('/api/inventory/invoices/', payload);
+
+        console.log('Invoice saved:', response.data);
+
+        // ✅ Reset after success
+        billItems.value = [];
+        selectedProduct.value = null;
+        inputQuantity.value = null;
+
+        toast.add({ severity: 'success', summary: 'Success', detail: `Invoice Added`, life: 3000 });
+
+    } catch (error) {
+        console.error('Invoice save failed:', error.response?.data || error.message);
+        toast.add({ severity: 'error', summary: 'Error', detail: `Failed`, life: 3000 });
+    }
+};
+
 </script>

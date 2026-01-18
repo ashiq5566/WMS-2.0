@@ -187,5 +187,44 @@ class Payment(models.Model):
                             order_instance.order_status='Closed'
                             order_instance.save()
             super().save(*args, **kwargs)
+            
+            
+
+class Invoice(models.Model):
+    INVOICE_TYPE = (
+        ('SALE', 'Sales Invoice'),
+        ('PURCHASE', 'Purchase Invoice'),
+    )
+
+    invoice_number = models.CharField(max_length=50, unique=True, null=True, blank=True)
+    invoice_type = models.CharField(max_length=10, choices=INVOICE_TYPE)
+
+    customer = models.ForeignKey(
+        Stakeholder,
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True
+    )
+
+    subtotal = models.DecimalField(max_digits=12, decimal_places=2)
+    total_amount = models.DecimalField(max_digits=12, decimal_places=2)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return self.invoice_number
+
+
+class InvoiceItem(models.Model):
+    invoice = models.ForeignKey(
+        Invoice,
+        related_name='items',
+        on_delete=models.CASCADE
+    )
+    product = models.ForeignKey(Product, on_delete=models.CASCADE)
+    quantity = models.DecimalField(max_digits=10, decimal_places=2)
+    price = models.DecimalField(max_digits=10, decimal_places=2)
+    subtotal = models.DecimalField(max_digits=12, decimal_places=2)
+
     
 
