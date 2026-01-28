@@ -10,7 +10,7 @@ from rest_framework.response import Response
 from rest_framework import viewsets, filters
 from rest_framework.filters import OrderingFilter
 from rest_framework import status
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated, AllowAny
 from .serializers import *
 
 from inventory.models import *
@@ -102,7 +102,7 @@ class OrderItemViewSet(viewsets.ModelViewSet):
 class ProductViewSet(viewsets.ModelViewSet):
 	queryset = Product.objects.all()
 	serializer_class = ProductSerializer
-	permission_classes = (IsAuthenticated, )
+	permission_classes = (AllowAny, )
 	filter_backends = (DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter)
 	search_fields = ['product_id', 'name', 'status']
 
