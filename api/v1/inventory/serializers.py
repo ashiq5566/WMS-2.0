@@ -60,10 +60,14 @@ class CartItemSerializer(serializers.ModelSerializer):
         decimal_places=2,
         read_only=True
     )
+    image = serializers.ImageField(
+        source="product.image",
+        read_only=True
+    )
 
     class Meta:
         model = CartItem
-        fields = ["id", "product", "product_name", "price", "quantity"]
+        fields = ["id", "product", "product_name", "price", "quantity", 'image']
 
 
 class CartSerializer(serializers.ModelSerializer):

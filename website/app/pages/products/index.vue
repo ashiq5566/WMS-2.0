@@ -59,7 +59,7 @@ const fetchProducts = async (search) => {
 
 const addToCart = async (productId) => {
     try {
-        await $axios.post("/api/inventory/cart/add/", {
+        await $axios.post("/api/inventory/cart/", {
             product_id: productId,
             quantity: 1,
         });
