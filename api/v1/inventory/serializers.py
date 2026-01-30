@@ -1,6 +1,7 @@
 from rest_framework import serializers
 from accounts.models import Stakeholder
-from inventory.models import Order, OrderItem, Product, Return, ReturnItem, Payment, Cart, CartItem
+import json
+from inventory.models import Order, OrderItem, Product, Return, ReturnItem, Payment, Cart, CartItem, ProductSize
         
         
 class StakeHolderSerializer(serializers.ModelSerializer):
@@ -19,11 +20,52 @@ class OrderSerializer(serializers.ModelSerializer):
     class Meta:
         model = Order
         fields = '__all__'
+
+class ProductSizeSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ProductSize
+        fields = ["id", "size", "price", "stock", "is_available"]
         
 class ProductSerializer(serializers.ModelSerializer):
+    sizes = ProductSizeSerializer(many=True, read_only=True)
     class Meta:
         model = Product
         fields = '__all__'
+
+class ProductCreateSerializer(serializers.ModelSerializer):
+    sizes = serializers.CharField(write_only=True)
+
+    class Meta:
+        model = Product
+        fields = [
+            "id",
+            "name",
+            "unit",
+            "selling_price",
+            "image",
+            "sizes",
+        ]
+
+    def create(self, validated_data):
+        # Extract sizes string
+        sizes_data = validated_data.pop("sizes")
+
+        # Convert JSON string → Python list
+        sizes_data = json.loads(sizes_data)
+
+        # Create product
+        product = Product.objects.create(**validated_data)
+
+        # Create sizes
+        for size in sizes_data:
+            ProductSize.objects.create(
+                product=product,
+                size=size["size"],
+                price=size["price"],
+                stock=size["stock"]
+            )
+
+        return product
 
 class OrderItemSerializer(serializers.ModelSerializer):
     product_obj = ProductSerializer(source='product', read_only=True)
@@ -64,10 +106,12 @@ class CartItemSerializer(serializers.ModelSerializer):
         source="product.image",
         read_only=True
     )
+    size = serializers.CharField(source="size.size", read_only=True)
+
 
     class Meta:
         model = CartItem
-        fields = ["id", "product", "product_name", "price", "quantity", 'image']
+        fields = ["id", "product", "product_name", "price", "quantity", 'image', 'size']
 
 
 class CartSerializer(serializers.ModelSerializer):
@@ -76,3 +120,4 @@ class CartSerializer(serializers.ModelSerializer):
     class Meta:
         model = Cart
         fields = ["id", "items"]
+        

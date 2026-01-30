@@ -101,10 +101,14 @@ class OrderItemViewSet(viewsets.ModelViewSet):
     
 class ProductViewSet(viewsets.ModelViewSet):
 	queryset = Product.objects.all()
-	serializer_class = ProductSerializer
 	permission_classes = (AllowAny, )
 	filter_backends = (DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter)
 	search_fields = ['product_id', 'name', 'status']
+ 
+	def get_serializer_class(self):
+		if self.action in ["create", "update", "partial_update"]:
+			return ProductCreateSerializer
+		return ProductSerializer
 
     
 class ReturnViewSet(viewsets.ModelViewSet):
@@ -193,14 +197,16 @@ class CartViewSet(viewsets.ModelViewSet):
 
     def create(self, request):
         product_id = request.data.get("product_id")
-        quantity = request.data.get("quantity", 1)
+        size_id = request.data.get("size_id")
+        quantity = int(request.data.get("quantity", 1))
 
-        if not product_id:
+        if not product_id or not size_id:
             return Response(
-                {"error": "Product ID is required"},
+                {"error": "Product ID and Size ID are required"},
                 status=status.HTTP_400_BAD_REQUEST
             )
 
+        # Validate product
         try:
             product = Product.objects.get(id=product_id)
         except Product.DoesNotExist:
@@ -209,20 +215,31 @@ class CartViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_404_NOT_FOUND
             )
 
-        # TEMP: replace with request.user later
+        # Validate size
+        try:
+            size = ProductSize.objects.get(id=size_id, product=product)
+        except ProductSize.DoesNotExist:
+            return Response(
+                {"error": "Invalid size for this product"},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+        # TEMP (replace later with request.user)
         user = User.objects.first()
 
         cart, _ = Cart.objects.get_or_create(user=user)
 
+        # Check if same product + same size already exists
         cart_item, created = CartItem.objects.get_or_create(
             cart=cart,
-            product=product
+            product=product,
+            size=size
         )
 
         if not created:
-            cart_item.quantity += int(quantity)
+            cart_item.quantity += quantity
         else:
-            cart_item.quantity = int(quantity)
+            cart_item.quantity = quantity
 
         cart_item.save()
 
@@ -230,10 +247,12 @@ class CartViewSet(viewsets.ModelViewSet):
             {
                 "message": "Product added to cart successfully",
                 "product": product.name,
+                "size": size.size,
                 "quantity": cart_item.quantity,
             },
             status=status.HTTP_200_OK
         )
+
 
 class CartItemViewSet(viewsets.ModelViewSet):
     # permission_classes = [IsAuthenticated]

@@ -90,7 +90,8 @@ const onRowEditSave = async (event) => {
 					<Column field="qty_available" header="Stock"></Column>
 					<Column field="qty_purchased" header="Qty Purchased"></Column>
 					<Column field="qty_sold" header="Qty Sold"></Column>
-					<Column :rowEditor="true" style="width: 10%; min-width: 8rem" bodyStyle="text-align:center"></Column>
+					<Column :rowEditor="true" style="width: 10%; min-width: 8rem" bodyStyle="text-align:center">
+					</Column>
 					<template #empty>
 						<span class="flex justify-center">No stakeholders found.</span>
 					</template>
