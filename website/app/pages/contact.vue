@@ -39,8 +39,8 @@
 									📍
 								</div>
 								<p class="text-brand-text">
-									<strong>CulinarySteel HQ</strong> <br />
-									123 Steel Street, Kitchen City, India
+									<strong>KC Home Bazaar</strong> <br />
+									Near Jayagopal pharmacy, police lane, Kottakkal
 								</p>
 							</div>
 
@@ -50,8 +50,8 @@
 									class="w-12 h-12 flex items-center justify-center bg-brand-primary rounded-full text-white text-xl">
 									📞
 								</div>
-								<a href="tel:+911234567890" class="text-brand-text hover:text-brand-primary transition">
-									+91 12345 67890
+								<a href="tel:+918075161117" class="text-brand-text hover:text-brand-primary transition">
+									+91 8075161117
 								</a>
 							</div>
 
@@ -61,8 +61,9 @@
 									class="w-12 h-12 flex items-center justify-center bg-brand-primary rounded-full text-white text-xl">
 									✉️
 								</div>
-								<a href="mailto:support@culinarysteel.com" class="text-brand-text hover:text-brand-primary transition">
-									support@culinarysteel.com
+								<a href="mailto:support@kchomebazaar.com"
+									class="text-brand-text hover:text-brand-primary transition">
+									support@kchomebazaar.com
 								</a>
 							</div>
 
@@ -77,18 +78,20 @@
 
 							<div>
 								<label class="form-label">Name</label>
-								<input v-model="form.name" type="text" class="form-input" placeholder="Your name" required />
+								<input v-model="form.name" type="text" class="form-input" placeholder="Your name"
+									required />
 							</div>
 
 							<div>
 								<label class="form-label">Email</label>
-								<input v-model="form.email" type="email" class="form-input" placeholder="Your email" required />
+								<input v-model="form.email" type="email" class="form-input" placeholder="Your email"
+									required />
 							</div>
 
 							<div>
 								<label class="form-label">Message</label>
-								<textarea v-model="form.message" rows="4" class="form-input" placeholder="Your message..."
-									required></textarea>
+								<textarea v-model="form.message" rows="4" class="form-input"
+									placeholder="Your message..." required></textarea>
 							</div>
 
 							<button
@@ -103,7 +106,8 @@
 
 				<!-- MAP -->
 				<div class="mt-20">
-					<div class="w-full h-72 bg-gray-300 rounded-xl flex items-center justify-center text-brand-textSoft">
+					<div
+						class="w-full h-72 bg-gray-300 rounded-xl flex items-center justify-center text-brand-textSoft">
 						Map Placeholder (Google Maps)
 					</div>
 				</div>

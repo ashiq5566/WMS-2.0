@@ -4,7 +4,7 @@
 
             <!-- Logo / Brand -->
             <NuxtLink to="/" class="text-2xl font-bold text-brand-primary">
-                CulinarySteel
+                KC Home Bazaar
             </NuxtLink>
 
             <!-- Desktop Navigation -->

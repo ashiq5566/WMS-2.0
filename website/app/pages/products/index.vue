@@ -19,10 +19,9 @@
                         </h3>
 
                         <p class="text-brand-accent font-semibold mt-2">
-                            ₹{{ item.selling_price }}
+                            {{ item.selling_price ? `₹ ${item.selling_price}` : 'N/A' }}
                         </p>
-
-                        <button
+                        <button @click="addToCart(item.id)"
                             class="w-full mt-3 bg-brand-primary text-white py-2 rounded-lg hover:bg-brand-primaryLight">
                             Add to Cart
                         </button>
@@ -57,6 +56,20 @@ const fetchProducts = async (search) => {
         console.error('Error fetching products:', error);
     }
 }
+
+const addToCart = async (productId) => {
+    try {
+        await $axios.post("/api/inventory/cart/", {
+            product_id: productId,
+            quantity: 1,
+        });
+
+        alert("Added to cart!");
+    } catch (err) {
+        console.error(err);
+        alert("Please login to add items to cart");
+    }
+};
 
 onMounted(() => {
     fetchProducts()

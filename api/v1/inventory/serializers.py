@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from accounts.models import Stakeholder
-from inventory.models import Order, OrderItem, Product, Return, ReturnItem, Payment
+from inventory.models import Order, OrderItem, Product, Return, ReturnItem, Payment, Cart, CartItem
         
         
 class StakeHolderSerializer(serializers.ModelSerializer):
@@ -50,3 +50,29 @@ class PaymentSerializer(serializers.ModelSerializer):
     class Meta:
         model = Payment
         fields = '__all__'
+        
+
+class CartItemSerializer(serializers.ModelSerializer):
+    product_name = serializers.CharField(source="product.name", read_only=True)
+    price = serializers.DecimalField(
+        source="product.selling_price",
+        max_digits=10,
+        decimal_places=2,
+        read_only=True
+    )
+    image = serializers.ImageField(
+        source="product.image",
+        read_only=True
+    )
+
+    class Meta:
+        model = CartItem
+        fields = ["id", "product", "product_name", "price", "quantity", 'image']
+
+
+class CartSerializer(serializers.ModelSerializer):
+    items = CartItemSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = Cart
+        fields = ["id", "items"]

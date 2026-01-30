@@ -4,7 +4,7 @@ from django_filters.rest_framework import DjangoFilterBackend
 from django.conf import settings
 from django.db.models import Sum, F
 
-from rest_framework.decorators import action
+from rest_framework.decorators import action, api_view
 from rest_framework import viewsets
 from rest_framework.response import Response
 from rest_framework import viewsets, filters
@@ -180,5 +180,62 @@ class PaymentViewSet(viewsets.ModelViewSet):
             queryset = queryset.annotate(month=db_functions.ExtractMonth('payment_date')).filter(month=order_month)
 
         return queryset
+    
+class CartViewSet(viewsets.ModelViewSet):
+    # permission_classes = [IsAuthenticated]
+    queryset = Cart.objects.all()
+    serializer_class = CartSerializer
 
+    def get_queryset(self):
+        user = User.objects.first()  # TEMP
+        queryset = Cart.objects.filter(user=user)
+        return queryset
 
+    def create(self, request):
+        product_id = request.data.get("product_id")
+        quantity = request.data.get("quantity", 1)
+
+        if not product_id:
+            return Response(
+                {"error": "Product ID is required"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        try:
+            product = Product.objects.get(id=product_id)
+        except Product.DoesNotExist:
+            return Response(
+                {"error": "Product not found"},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+        # TEMP: replace with request.user later
+        user = User.objects.first()
+
+        cart, _ = Cart.objects.get_or_create(user=user)
+
+        cart_item, created = CartItem.objects.get_or_create(
+            cart=cart,
+            product=product
+        )
+
+        if not created:
+            cart_item.quantity += int(quantity)
+        else:
+            cart_item.quantity = int(quantity)
+
+        cart_item.save()
+
+        return Response(
+            {
+                "message": "Product added to cart successfully",
+                "product": product.name,
+                "quantity": cart_item.quantity,
+            },
+            status=status.HTTP_200_OK
+        )
+
+class CartItemViewSet(viewsets.ModelViewSet):
+    # permission_classes = [IsAuthenticated]
+    queryset = CartItem.objects.all()
+    serializer_class = CartItemSerializer
