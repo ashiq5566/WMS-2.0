@@ -107,11 +107,12 @@ class CartItemSerializer(serializers.ModelSerializer):
         read_only=True
     )
     size = serializers.CharField(source="size.size", read_only=True)
+    size_price = serializers.CharField(source="size.price", read_only=True)
 
 
     class Meta:
         model = CartItem
-        fields = ["id", "product", "product_name", "price", "quantity", 'image', 'size']
+        fields = ["id", "product", "product_name", "price", "quantity", 'image', 'size', 'size_price']
 
 
 class CartSerializer(serializers.ModelSerializer):

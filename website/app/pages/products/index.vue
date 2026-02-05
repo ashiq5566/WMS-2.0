@@ -24,10 +24,10 @@
 						</p>
 
 						<!-- Stop click from navigating -->
-						<button @click.stop="addToCart(item.id)"
+						<!-- <button @click="addToCart(item.id)"
 							class="w-full mt-3 bg-brand-primary text-white py-2 rounded-lg hover:bg-brand-primaryLight">
 							Add to Cart
-						</button>
+						</button> -->
 					</div>
 				</NuxtLink>
 
