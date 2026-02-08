@@ -43,7 +43,7 @@ const onRowEditSave = async (event) => {
 	formData.value.qty_available = event.newData.qty_available
 	formData.value.price_at_time_of_purchase = event.newData.price_at_time_of_purchase
 
-	const response = await axios.put(`/api/inventory/products/${event.data.id}/`, formData.value);
+	const response = await axios.patch(`/api/inventory/products/${event.data.id}/`, formData.value);
 	toast.add({ severity: 'success', summary: 'Success', detail: `Product Updated SuccessFully`, life: 3000 });
 	fetchProducts()
 };
@@ -90,7 +90,8 @@ const onRowEditSave = async (event) => {
 					<Column field="qty_available" header="Stock"></Column>
 					<Column field="qty_purchased" header="Qty Purchased"></Column>
 					<Column field="qty_sold" header="Qty Sold"></Column>
-					<Column :rowEditor="true" style="width: 10%; min-width: 8rem" bodyStyle="text-align:center"></Column>
+					<Column :rowEditor="true" style="width: 10%; min-width: 8rem" bodyStyle="text-align:center">
+					</Column>
 					<template #empty>
 						<span class="flex justify-center">No stakeholders found.</span>
 					</template>

@@ -27,8 +27,14 @@
 								{{ item.product_name }}
 							</h3>
 
+							<!-- Size -->
+							<p class="text-sm text-gray-500 mt-1">
+								Size: <span class="font-medium">{{ item.size }}</span>
+							</p>
+
+							<!-- Price -->
 							<p class="text-brand-accent font-semibold mt-1">
-								₹ {{ item.price }}
+								₹ {{ item.size_price }}
 							</p>
 
 							<!-- Quantity Controls -->
@@ -39,7 +45,7 @@
 
 								<button @click="updateQty(item, 1)" class="w-8 h-8 border rounded">+</button>
 
-								<button @click="removeItem(item.id)" class="ml-6 text-red-500 hover:underline">
+								<button @click="removeItem(item.id)" class="ml-6 text-red-500 border rounded-xl p-2">
 									Remove
 								</button>
 							</div>
@@ -47,7 +53,7 @@
 
 						<!-- Item Total -->
 						<div class="font-semibold text-lg">
-							₹ {{ item.price * item.quantity }}
+							₹ {{ item.size_price * item.quantity }}
 						</div>
 					</div>
 				</div>
@@ -115,7 +121,7 @@ const removeItem = async (id) => {
 
 const subtotal = computed(() =>
 	cartItems.value.reduce(
-		(sum, item) => sum + item.price * item.quantity,
+		(sum, item) => sum + item.size_price * item.quantity,
 		0
 	)
 );

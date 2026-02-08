@@ -21,6 +21,7 @@ class Product(WebBaseModel):
     status = models.BooleanField(default=False)
     unit = models.CharField(choices=UNIT_CHOICES, null=True, blank=True, max_length=100)
     image = models.ImageField(upload_to='product_images/', null=True, blank=True)
+    description = models.TextField(null=True, blank=True)
     
     def save(self, *args, **kwargs):
         if not self.product_id:
@@ -30,6 +31,21 @@ class Product(WebBaseModel):
     
     def __str__(self):
         return  self.name
+    
+class ProductSize(models.Model):
+    product = models.ForeignKey(
+        Product,
+        related_name="sizes",
+        on_delete=models.CASCADE
+    )
+    size = models.PositiveIntegerField()  # 1,2,3...25
+    price = models.PositiveBigIntegerField()
+    stock = models.PositiveIntegerField(default=0)
+    is_available = models.BooleanField(default=True)
+
+    def __str__(self):
+        return f"{self.product.name} - {self.size}"
+
     
 class Order(WebBaseModel):
     ORDER_TYPE_CHOICES = [
@@ -200,6 +216,7 @@ class Cart(models.Model):
 class CartItem(models.Model):
     cart = models.ForeignKey('Cart', related_name="items", on_delete=models.CASCADE)
     product = models.ForeignKey(Product, on_delete=models.CASCADE)
+    size = models.ForeignKey(ProductSize, on_delete=models.CASCADE, null=True, blank=True)
     quantity = models.PositiveIntegerField(default=1)
 
     def __str__(self):
