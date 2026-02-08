@@ -21,6 +21,7 @@ class Product(WebBaseModel):
     status = models.BooleanField(default=False)
     unit = models.CharField(choices=UNIT_CHOICES, null=True, blank=True, max_length=100)
     image = models.ImageField(upload_to='product_images/', null=True, blank=True)
+    description = models.TextField(null=True, blank=True)
     
     def save(self, *args, **kwargs):
         if not self.product_id:

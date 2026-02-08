@@ -43,7 +43,7 @@ const onRowEditSave = async (event) => {
 	formData.value.qty_available = event.newData.qty_available
 	formData.value.price_at_time_of_purchase = event.newData.price_at_time_of_purchase
 
-	const response = await axios.put(`/api/inventory/products/${event.data.id}/`, formData.value);
+	const response = await axios.patch(`/api/inventory/products/${event.data.id}/`, formData.value);
 	toast.add({ severity: 'success', summary: 'Success', detail: `Product Updated SuccessFully`, life: 3000 });
 	fetchProducts()
 };

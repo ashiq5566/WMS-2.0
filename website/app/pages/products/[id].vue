@@ -13,8 +13,18 @@
 					₹ {{ selectedPrice }}
 				</p>
 
+
+				<!-- Description -->
+				<div v-if="product.description" class="my-4">
+					<h3 class="font-semibold text-lg mb-1">Product Details</h3>
+					<p class="text-gray-600 leading-relaxed">
+						{{ product.description }}
+					</p>
+				</div>
+
+
 				<!-- Size Selector -->
-				<div class="mb-6">
+				<div class="mb-6" v-if="product?.sizes?.length > 0">
 					<h3 class="font-semibold mb-2">Select Size</h3>
 
 					<div class="flex flex-wrap gap-3">
@@ -32,7 +42,8 @@
 				</div>
 
 				<!-- Add to Cart -->
-				<button class="bg-brand-primary text-white px-6 py-3 rounded-lg" :disabled="!selectedSize" @click="addToCart">
+				<button class="bg-brand-primary text-white px-6 py-3 rounded-lg cursor-pointer hover:bg-black"
+					:disabled="!selectedSize" @click="addToCart">
 					Add to Cart
 				</button>
 			</div>
