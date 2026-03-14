@@ -18,12 +18,17 @@
 
             <!-- Actions -->
             <div class="hidden md:flex items-center gap-4">
-                <NuxtLink to="/login"
+                <NuxtLink v-if="!isLoggedIn" to="/login"
                     class="px-4 py-2 text-sm rounded-lg text-brand-primary border border-brand-primary hover:bg-brand-primary hover:text-white transition">
                     Login
                 </NuxtLink>
 
-                <NuxtLink to="/cart"
+                <button v-else @click="logout"
+                    class="px-4 py-2 text-sm rounded-lg text-white bg-red-500 hover:bg-red-600 transition">
+                    Logout
+                </button>
+
+                <NuxtLink v-if="isLoggedIn" to="/cart"
                     class="relative px-4 py-2 text-sm rounded-lg bg-brand-primary text-white hover:bg-brand-primaryLight transition">
                     Cart
                 </NuxtLink>
@@ -55,8 +60,21 @@
 </template>
 
 <script setup>
-import { ref } from "vue";
+import { ref, computed } from "vue";
 const open = ref(false);
+
+
+// Auth state (SSR-safe)
+const access = useCookie("access");
+
+const isLoggedIn = computed(() => !!access.value);
+
+const logout = () => {
+    useCookie("access").value = null;
+    useCookie("refresh").value = null;
+
+    navigateTo("/login");
+};
 </script>
 
 <style scoped>

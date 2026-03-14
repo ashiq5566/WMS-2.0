@@ -34,7 +34,7 @@
 
 							<!-- Price -->
 							<p class="text-brand-accent font-semibold mt-1">
-								₹ {{ item.size_price }}
+								₹ {{ item.size_price || item.price }}
 							</p>
 
 							<!-- Quantity Controls -->
@@ -53,7 +53,7 @@
 
 						<!-- Item Total -->
 						<div class="font-semibold text-lg">
-							₹ {{ item.size_price * item.quantity }}
+							₹ {{ item.size_price ? item.size_price : item.price * item.quantity }}
 						</div>
 					</div>
 				</div>
@@ -121,7 +121,7 @@ const removeItem = async (id) => {
 
 const subtotal = computed(() =>
 	cartItems.value.reduce(
-		(sum, item) => sum + item.size_price * item.quantity,
+		(sum, item) => sum + (item.size_price ? item.size_price : item.price) * item.quantity,
 		0
 	)
 );

@@ -37,6 +37,7 @@ INSTALLED_APPS = [
     'corsheaders',
     'django_vite',
     
+    
     'accounts',
     'inventory',
     'general',
@@ -78,6 +79,7 @@ TEMPLATES = [
 WSGI_APPLICATION = 'wms.wsgi.application'
 AUTH_USER_MODEL = 'accounts.User'
 
+
 # Database
 # https://docs.djangoproject.com/en/5.0/ref/settings/#databases
 
@@ -111,6 +113,8 @@ REST_FRAMEWORK = {
         # "oauth2_provider.contrib.rest_framework.OAuth2Authentication",
         # 'rest_framework.authentication.TokenAuthentication',
         'rest_framework.authentication.SessionAuthentication',
+        "rest_framework_simplejwt.authentication.JWTAuthentication",
+        
     ]
 }
 

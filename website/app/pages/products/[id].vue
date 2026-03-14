@@ -43,7 +43,7 @@
 
 				<!-- Add to Cart -->
 				<button class="bg-brand-primary text-white px-6 py-3 rounded-lg cursor-pointer hover:bg-black"
-					:disabled="!selectedSize" @click="addToCart">
+					@click="addToCart">
 					Add to Cart
 				</button>
 			</div>
@@ -52,6 +52,9 @@
 	</section>
 </template>
 <script setup>
+definePageMeta({
+	middleware: "auth"
+});
 import { ref, onMounted, computed } from "vue"
 const route = useRoute()
 const { $axios } = useNuxtApp()
@@ -75,7 +78,7 @@ const selectSize = (size) => {
 const addToCart = async () => {
 	await $axios.post("/api/inventory/cart/", {
 		product_id: product.value.id,
-		size_id: selectedSize.value.id,
+		size_id: selectedSize.value?.id || null,
 		quantity: 1
 	})
 }

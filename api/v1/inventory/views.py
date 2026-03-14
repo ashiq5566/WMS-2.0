@@ -191,16 +191,16 @@ class CartViewSet(viewsets.ModelViewSet):
     serializer_class = CartSerializer
 
     def get_queryset(self):
-        user = User.objects.first()  # TEMP
-        queryset = Cart.objects.filter(user=user)
+        queryset = Cart.objects.filter(user=self.request.user)
         return queryset
 
     def create(self, request):
         product_id = request.data.get("product_id")
         size_id = request.data.get("size_id")
         quantity = int(request.data.get("quantity", 1))
+        
 
-        if not product_id or not size_id:
+        if not product_id:
             return Response(
                 {"error": "Product ID and Size ID are required"},
                 status=status.HTTP_400_BAD_REQUEST
@@ -214,20 +214,17 @@ class CartViewSet(viewsets.ModelViewSet):
                 {"error": "Product not found"},
                 status=status.HTTP_404_NOT_FOUND
             )
-
-        # Validate size
-        try:
+            
+		# if size_id:
+        #     size = ProductSize.objects.get(id=size_id, product=product)
+        # else:
+        #     size = None
+        if size_id:
             size = ProductSize.objects.get(id=size_id, product=product)
-        except ProductSize.DoesNotExist:
-            return Response(
-                {"error": "Invalid size for this product"},
-                status=status.HTTP_404_NOT_FOUND
-            )
-
-        # TEMP (replace later with request.user)
-        user = User.objects.first()
-
-        cart, _ = Cart.objects.get_or_create(user=user)
+        else:
+            size= None
+        
+        cart, _ = Cart.objects.get_or_create(user=self.request.user)
 
         # Check if same product + same size already exists
         cart_item, created = CartItem.objects.get_or_create(
@@ -247,7 +244,7 @@ class CartViewSet(viewsets.ModelViewSet):
             {
                 "message": "Product added to cart successfully",
                 "product": product.name,
-                "size": size.size,
+                "size": size.size if size else None,
                 "quantity": cart_item.quantity,
             },
             status=status.HTTP_200_OK
