@@ -12,7 +12,7 @@
     "format": "prettier --write src/"
   },
   "dependencies": {
-    "@primevue/themes": "^4.1.0",
+    "@primevue/themes": "4.1.1",
     "apexcharts": "^4.0.0",
     "axios": "^1.7.1",
     "lara-dark": "link:@primevue/themes/lara-dark",
