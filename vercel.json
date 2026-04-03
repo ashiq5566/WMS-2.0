@@ -1,6 +1,5 @@
 {
   "buildCommand": "cd wms-frontend && npm install && npm run build",
-  "installCommand": "uv pip install -r requirements.txt --system",
   "framework": null,
   "build": {
     "env": {
