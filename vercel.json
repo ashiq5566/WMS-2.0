@@ -1,6 +1,10 @@
 {
-  "buildCommand": "npm install && npm run build",
-  "outputDirectory": "wms-frontend/dist",
-  "installCommand": "pip install -r requirements.txt",
-  "framework": null
+  "buildCommand": "cd wms-frontend && npm install && npm run build",
+  "installCommand": "uv pip install -r requirements.txt --system",
+  "framework": null,
+  "build": {
+    "env": {
+      "PYTHON_VERSION": "3.10"
+    }
+  }
 }
