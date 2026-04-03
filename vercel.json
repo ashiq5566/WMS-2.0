@@ -2,5 +2,6 @@
   "installCommand": "uv python install 3.12 && uv venv .venv --python 3.12 && uv pip install -r requirements.txt --python .venv",
   "buildCommand": "cd wms-frontend && npm install && npm run build",
   "outputDirectory": "wms-frontend/dist",
-  "framework": null
+  "framework": null,
+  "rewrites": [{ "source": "/(.*)", "destination": "/index.html" }]
 }
