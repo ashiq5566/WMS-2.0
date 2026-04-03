@@ -1,10 +1,5 @@
 {
-  "installCommand": "uv pip install -r requirements.txt --system",
+  "installCommand": "uv python install 3.12 && uv pip install -r requirements.txt --system --python 3.12",
   "buildCommand": "cd wms-frontend && npm install && npm run build",
-  "framework": null,
-  "build": {
-    "env": {
-      "PYTHON_VERSION": "3.10"
-    }
-  }
+  "framework": null
 }
