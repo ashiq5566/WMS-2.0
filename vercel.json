@@ -3,5 +3,8 @@
   "buildCommand": "cd wms-frontend && npm install && npm run build",
   "outputDirectory": "wms-frontend/dist",
   "framework": null,
-  "rewrites": [{ "source": "/(.*)", "destination": "/index.html" }]
+  "routes": [
+    { "handle": "filesystem" },
+    { "src": "/(.*)", "dest": "/index.html" }
+  ]
 }
