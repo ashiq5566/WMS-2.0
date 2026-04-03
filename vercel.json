@@ -1,0 +1,6 @@
+{
+  "buildCommand": "npm install && npm run build",
+  "outputDirectory": "wms-frontend/dist",
+  "installCommand": "pip install -r requirements.txt",
+  "framework": null
+}
