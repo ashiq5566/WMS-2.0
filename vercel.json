@@ -1,4 +1,5 @@
 {
+  "installCommand": "echo skip",
   "buildCommand": "cd wms-frontend && npm install && npm run build",
   "outputDirectory": "wms-frontend/dist",
   "framework": null,
