@@ -7,7 +7,7 @@ This repository contains the Django backend for a warehouse management system. I
 - Python 3
 - Django 5
 - Django REST Framework
-- SQLite by default
+- PostgreSQL
 - JWT authentication with Simple JWT
 - WhiteNoise for static assets
 
@@ -43,13 +43,24 @@ pip install -r requirements.txt
 pip install djangorestframework-simplejwt
 ```
 
-3. Apply migrations:
+3. Configure PostgreSQL:
+
+```bash
+cp .env.example .env
+docker compose --env-file .env up -d db
+```
+
+The defaults create a local database named `wms` with user and password `wms`.
+Adjust `.env` before starting the service when using different credentials or an
+existing PostgreSQL server. Django loads this file automatically at startup.
+
+4. Apply migrations:
 
 ```bash
 python3 manage.py migrate
 ```
 
-4. Start the development server:
+5. Start the development server:
 
 ```bash
 python3 manage.py runserver
@@ -59,7 +70,7 @@ The API will be available at `http://127.0.0.1:8000/`.
 
 ## Default Configuration
 
-- Database: SQLite (`db.sqlite3`)
+- Database: PostgreSQL (configured with `POSTGRES_*` environment variables)
 - Auth user model: `accounts.User`
 - CORS: open to all origins
 - Media files: served from `/media/`
@@ -143,7 +154,8 @@ The repository includes JSON files that can be used as sample reference data:
 - `DEBUG` is enabled in the current settings.
 - `ALLOWED_HOSTS` is set to `["*"]`.
 - The current settings file contains a hardcoded secret key, which should be replaced for production use.
-- `psycopg2-binary` is listed in dependencies, but PostgreSQL is not configured in `wms/settings.py`.
+- PostgreSQL is required for the default configuration. Start the included Compose
+  service or provide the `POSTGRES_*` variables for another PostgreSQL instance.
 
 ## Useful Commands
 
@@ -153,4 +165,15 @@ python3 manage.py migrate
 python3 manage.py createsuperuser
 python3 manage.py collectstatic
 python3 manage.py test
+```
+
+## Migrating Existing SQLite Data
+
+If you already have data in `db.sqlite3`, export it before switching databases,
+then import it after PostgreSQL migrations have run:
+
+```bash
+python3 manage.py dumpdata --natural-foreign --natural-primary -e contenttypes -e auth.Permission > data.json
+python3 manage.py migrate
+python3 manage.py loaddata data.json
 ```
