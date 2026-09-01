@@ -15,19 +15,21 @@ class Product(WebBaseModel):
     name = models.CharField(max_length=100, null=True, blank=False,unique=True)
     selling_price = models.PositiveBigIntegerField(null=True,blank=True)
     price_at_time_of_purchase = models.PositiveBigIntegerField(null=True,blank=True)
-    qty_available = models.PositiveIntegerField(null=True, default=0)
-    qty_sold = models.PositiveIntegerField(null=True, default=0)
-    qty_purchased = models.PositiveIntegerField(null=True, default=0)
     status = models.BooleanField(default=False)
     unit = models.CharField(choices=UNIT_CHOICES, null=True, blank=True, max_length=100)
     image = models.ImageField(upload_to='product_images/', null=True, blank=True)
     description = models.TextField(null=True, blank=True)
     
     def save(self, *args, **kwargs):
-        if not self.product_id:
-            count = Product.objects.count() + 1
-            self.product_id = f"PR{count}"
         super().save(*args, **kwargs)
+        if not self.product_id:
+            self.product_id = f"PR{self.pk}"
+            type(self).objects.filter(pk=self.pk).update(product_id=self.product_id)
+    
+    @property
+    def qty_available(self):
+        """Calculate available stock from all product sizes"""
+        return sum(size.stock for size in self.sizes.all())
     
     def __str__(self):
         return  self.name
@@ -45,6 +47,37 @@ class ProductSize(models.Model):
 
     def __str__(self):
         return f"{self.product.name} - {self.size}"
+
+    
+class StockMovement(models.Model):
+    """
+    Tracks all inventory movements for audit trail.
+    Similar to SAP/Odoo stock movements.
+    """
+    MOVEMENT_TYPE_CHOICES = [
+        ('PURCHASE', 'Purchase Order Receipt'),
+        ('SALE', 'Sales Order Shipment'),
+        ('RETURN_SALE', 'Sales Return'),
+        ('RETURN_PURCHASE', 'Purchase Return'),
+        ('ADJUSTMENT', 'Stock Adjustment'),
+        ('TRANSFER', 'Internal Transfer'),
+    ]
+    
+    product_size = models.ForeignKey(ProductSize, on_delete=models.CASCADE, related_name='movements')
+    order = models.ForeignKey('Order', on_delete=models.SET_NULL, null=True, blank=True)
+    movement_type = models.CharField(max_length=20, choices=MOVEMENT_TYPE_CHOICES)
+    quantity = models.IntegerField()  # Positive for inbound, negative for outbound
+    reference = models.CharField(max_length=100, null=True, blank=True)  # Order number, reference
+    notes = models.TextField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
+    
+    def __str__(self):
+        return f"{self.product_size} - {self.movement_type} - {self.quantity}"
+    
+    class Meta:
+        ordering = ['-created_at']
+
 
     
 class Order(WebBaseModel):
@@ -91,22 +124,41 @@ class Order(WebBaseModel):
 class OrderItem(models.Model):
     order = models.ForeignKey(Order, on_delete=models.CASCADE, related_name='items', null=True, blank=True)
     product = models.ForeignKey(Product, on_delete=models.CASCADE)
+    product_size = models.ForeignKey(ProductSize, on_delete=models.SET_NULL, null=True, blank=True)
     quantity = models.PositiveIntegerField()
     price_at_time_of_order = models.DecimalField(max_digits=10, decimal_places=2)
     total = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
 
     def __str__(self):
-        return f"{self.quantity} of {self.product.name} for {self.order}"
+        return f"{self.quantity} of {self.product.name} (Size: {self.product_size.size if self.product_size else 'N/A'}) for {self.order}"
     
     def save(self, *args, **kwargs):
-        # Update product quantity if the order type is 'PO' (Purchase Order)
-        if self.order and self.order.order_type == 'PO':
-            self.product.qty_purchased += self.quantity
-            self.product.qty_available += self.quantity
-        elif self.order and self.order.order_type == 'SO':
-            self.product.qty_purchased -= self.quantity
-            self.product.qty_available -= self.quantity
-        self.product.save()
+        """
+        Update ProductSize stock when order is created/saved.
+        This follows ERP patterns like SAP/Odoo.
+        """
+        is_new = self.pk is None
+        
+        if is_new and self.order and self.product_size:
+            if self.order.order_type == 'PO':
+                # Purchase Order: increase stock
+                self.product_size.stock += self.quantity
+                movement_type = 'PURCHASE'
+            elif self.order.order_type == 'SO':
+                # Sales Order: decrease stock
+                self.product_size.stock -= self.quantity
+                movement_type = 'SALE'
+            
+            self.product_size.save()
+            
+            # Create stock movement record for audit trail
+            StockMovement.objects.create(
+                product_size=self.product_size,
+                order=self.order,
+                movement_type=movement_type,
+                quantity=self.quantity if self.order.order_type == 'PO' else -self.quantity,
+                reference=self.order.order_number,
+            )
             
         super().save(*args, **kwargs)
     
@@ -142,6 +194,7 @@ class Return(WebBaseModel):
 class ReturnItem(models.Model):
     return_order = models.ForeignKey(Return, on_delete=models.CASCADE, related_name='items')
     product = models.ForeignKey(Product, on_delete=models.CASCADE)
+    product_size = models.ForeignKey(ProductSize, on_delete=models.SET_NULL, null=True, blank=True)
     quantity = models.PositiveIntegerField()
     price_at_return = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
     total = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
@@ -150,14 +203,32 @@ class ReturnItem(models.Model):
         return f"Return of {self.quantity} of {self.product.name} for Return {self.return_order.id}"
     
     def save(self, *args, **kwargs):
-        # Update product quantity based on return order
-        if self.return_order and self.return_order.return_type == 'PR':
-            self.product.qty_purchased -= self.quantity
-            self.product.qty_available -= self.quantity
-        elif self.return_order and self.return_order.return_type == 'SR':
-            self.product.qty_purchased += self.quantity
-            self.product.qty_available += self.quantity
-        self.product.save()
+        """
+        Handle stock adjustments for returns using StockMovement
+        """
+        is_new = self.pk is None
+        
+        if is_new and self.return_order and self.product_size:
+            if self.return_order.return_type == 'SR':
+                # Sales Return: increase stock
+                self.product_size.stock += self.quantity
+                movement_type = 'RETURN_SALE'
+            elif self.return_order.return_type == 'PR':
+                # Purchase Return: decrease stock
+                self.product_size.stock -= self.quantity
+                movement_type = 'RETURN_PURCHASE'
+            
+            self.product_size.save()
+            
+            # Create stock movement record for audit trail
+            StockMovement.objects.create(
+                product_size=self.product_size,
+                order=self.return_order.original_order,
+                movement_type=movement_type,
+                quantity=self.quantity if self.return_order.return_type == 'SR' else -self.quantity,
+                reference=self.return_order.original_order.order_number,
+                notes=f"Return for {self.return_order.return_type}"
+            )
         
         super().save(*args, **kwargs)
     
@@ -225,4 +296,3 @@ class CartItem(models.Model):
     @property
     def total_price(self):
         return self.product.selling_price * self.quantity
-

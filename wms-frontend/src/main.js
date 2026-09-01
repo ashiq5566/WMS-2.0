@@ -15,6 +15,7 @@ import router from './router'
 import PrimeVue from 'primevue/config'
 import Button from 'primevue/button'
 import InputText from 'primevue/inputtext'
+import InputNumber from 'primevue/inputnumber'
 import Card from 'primevue/card'
 import Dialog from 'primevue/dialog'
 import Select from 'primevue/select'
@@ -42,6 +43,7 @@ app.use(ToastService)
 app.use(VueApexCharts)
 app.component('Button', Button)
 app.component('InputText', InputText)
+app.component('InputNumber', InputNumber)
 app.component('Card', Card)
 app.component('Drawer', Drawer)
 app.component('Dialog', Dialog)

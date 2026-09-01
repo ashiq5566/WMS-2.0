@@ -1,7 +1,8 @@
 from rest_framework import serializers
 from accounts.models import Stakeholder
 import json
-from inventory.models import Order, OrderItem, Product, Return, ReturnItem, Payment, Cart, CartItem, ProductSize
+from django.db import transaction
+from inventory.models import Order, OrderItem, Product, Return, ReturnItem, Payment, Cart, CartItem, ProductSize, StockMovement
         
         
 class StakeHolderSerializer(serializers.ModelSerializer):
@@ -28,12 +29,19 @@ class ProductSizeSerializer(serializers.ModelSerializer):
         
 class ProductSerializer(serializers.ModelSerializer):
     sizes = ProductSizeSerializer(many=True, read_only=True)
+    qty_available = serializers.SerializerMethodField()
+    
     class Meta:
         model = Product
         fields = '__all__'
+    
+    def get_qty_available(self, obj):
+        """Calculate available stock from all product sizes"""
+        return sum(size.stock for size in obj.sizes.all())
 
 class ProductCreateSerializer(serializers.ModelSerializer):
     sizes = serializers.CharField(write_only=True)
+    qty_available = serializers.SerializerMethodField()
 
     class Meta:
         model = Product
@@ -42,30 +50,59 @@ class ProductCreateSerializer(serializers.ModelSerializer):
             "name",
             "unit",
             "selling_price",
+            "price_at_time_of_purchase",
+            "qty_available",
             "image",
             "sizes",
         ]
 
+    def get_qty_available(self, obj):
+        """Calculate available stock from all product sizes"""
+        return sum(size.stock for size in obj.sizes.all())
+
+    def validate_sizes(self, value):
+        try:
+            sizes = json.loads(value)
+        except (TypeError, json.JSONDecodeError):
+            raise serializers.ValidationError('Sizes must be a JSON array.')
+
+        if not isinstance(sizes, list):
+            raise serializers.ValidationError('Sizes must be a JSON array.')
+
+        validated_sizes = []
+        for size in sizes:
+            serializer = ProductSizeSerializer(data=size)
+            serializer.is_valid(raise_exception=True)
+            validated_sizes.append(serializer.validated_data)
+
+        return validated_sizes
+
     def create(self, validated_data):
-        # Extract sizes string
-        sizes_data = validated_data.pop("sizes")
+        sizes_data = validated_data.pop('sizes')
 
-        # Convert JSON string → Python list
-        sizes_data = json.loads(sizes_data)
-
-        # Create product
-        product = Product.objects.create(**validated_data)
-
-        # Create sizes
-        for size in sizes_data:
-            ProductSize.objects.create(
-                product=product,
-                size=size["size"],
-                price=size["price"],
-                stock=size["stock"]
-            )
+        with transaction.atomic():
+            product = Product.objects.create(**validated_data)
+            ProductSize.objects.bulk_create([
+                ProductSize(
+                    product=product,
+                    size=size['size'],
+                    price=size['price'],
+                    stock=size['stock'],
+                )
+                for size in sizes_data
+            ])
 
         return product
+
+class StockMovementSerializer(serializers.ModelSerializer):
+    product_name = serializers.SerializerMethodField()
+    
+    class Meta:
+        model = StockMovement
+        fields = ['id', 'product_size', 'product_name', 'order', 'movement_type', 'quantity', 'reference', 'notes', 'created_at', 'created_by']
+    
+    def get_product_name(self, obj):
+        return f"{obj.product_size.product.name} - Size {obj.product_size.size}"
 
 class OrderItemSerializer(serializers.ModelSerializer):
     product_obj = ProductSerializer(source='product', read_only=True)
