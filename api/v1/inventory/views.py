@@ -52,6 +52,21 @@ class OrdersViewSet(viewsets.ModelViewSet):
 				order_serializer = self.get_serializer(data=order_data)
 				order_serializer.is_valid(raise_exception=True)
 				order = order_serializer.save()
+				
+				# For Sales Orders, validate stock availability
+				if order.order_type == 'SO':
+					for item_data in items_data:
+						product_size_id = item_data.get('product_size')
+						quantity = item_data.get('quantity')
+						
+						# Get the ProductSize and check stock
+						product_size = ProductSize.objects.get(id=product_size_id)
+						if product_size.stock < quantity:
+							raise ValueError(
+								f"Insufficient stock for {product_size.product.name} (Size {product_size.size}). "
+								f"Available: {product_size.stock}, Requested: {quantity}"
+							)
+				
 				# Create the order items
 				print("Order saved", order, items_data)
 				created_items = []
@@ -69,6 +84,8 @@ class OrdersViewSet(viewsets.ModelViewSet):
 
 				return Response(response_data, status=status.HTTP_201_CREATED)
 
+		except ValueError as e:
+				return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
 		except Exception as e:
 				return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
 	

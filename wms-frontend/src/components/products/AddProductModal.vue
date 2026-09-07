@@ -5,15 +5,28 @@ import axios from "@/plugins/axios";
 const visible = ref(false);
 const emit = defineEmits(["instance-added"]);
 
-const imageInput = ref(null);
+const imageInput = ref<HTMLInputElement | null>(null);
 
-const formData = ref({
+interface SizeRow {
+	size: string;
+	price: string;
+	stock: string;
+	selling_price: string;
+}
+
+const formData = ref<{
+	name: string;
+	unit: string;
+	selling_price: string;
+	sizes: SizeRow[];
+}>({
 	name: "",
 	unit: "",
+	selling_price: "",
 	sizes: []
 });
 
-const sizeRow = () => ({
+const sizeRow = (): SizeRow => ({
 	size: "",
 	price: "",
 	stock: "",
@@ -24,7 +37,7 @@ const addSize = () => {
 	formData.value.sizes.push(sizeRow());
 };
 
-const removeSize = (index) => {
+const removeSize = (index: number) => {
 	formData.value.sizes.splice(index, 1);
 };
 
@@ -38,7 +51,7 @@ const handleSubmit = async () => {
 		// Append sizes
 		data.append("sizes", JSON.stringify(formData.value.sizes))
 
-		if (imageInput.value?.files[0]) {
+		if (imageInput.value && imageInput.value.files && imageInput.value.files[0]) {
 			data.append("image", imageInput.value.files[0]);
 		}
 
@@ -50,6 +63,7 @@ const handleSubmit = async () => {
 		formData.value = {
 			name: "",
 			unit: "",
+			selling_price: "",
 			sizes: []
 		};
 
@@ -65,7 +79,7 @@ const handleSubmit = async () => {
 		<div class="flex justify-end">
 			<Button label="Add" @click="visible = true" />
 		</div>
-		<Dialog v-model:visible="visible" modal header="Add Product" style="width: 45rem">
+		<Dialog :visible="visible" @update:visible="visible = $event" modal header="Add Product" style="width: 45rem">
 
 			<div class="space-y-4">
 
@@ -93,10 +107,11 @@ const handleSubmit = async () => {
 				<div>
 					<h3 class="font-semibold mb-2">Sizes</h3>
 
-					<div v-for="(size, index) in formData.sizes" :key="index" class="grid grid-cols-4 gap-3 mb-2">
+					<div v-for="(size, index) in formData.sizes" :key="index" class="grid grid-cols-5 gap-3 mb-2">
 						<InputText v-model="size.size" placeholder="Size" />
 						<InputText v-model="size.price" placeholder="Price" />
 						<InputText v-model="size.stock" placeholder="Stock" />
+						<InputText v-model="size.selling_price" placeholder="Selling Price" />
 
 						<Button icon="pi pi-trash" severity="danger" @click="removeSize(index)" />
 					</div>

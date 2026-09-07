@@ -15,15 +15,21 @@ const stakeholderOptions = ref([]);
 const selectedProductUnit = ref('');
 const selectedProductStock = ref('');
 const orderDate = ref('');
+const showSizeModal = ref(false);
+const selectedProductData = ref(null);
+const selectedSize = ref(null);
+const sizeQuantity = ref(1);
 
 const blankData =
 {
 	product: '',
 	product_name: '',
+	size: '',
 	quantity: '',
 	price_at_time_of_order: '',
 	total: '',
 	unit: '',
+	stock: '',
 };
 const formData = ref(JSON.parse(JSON.stringify(blankData)));
 
@@ -71,14 +77,9 @@ const fetchOrders = async () => {
 }
 
 const selectRow = (data) => {
-	const removedProduct = data.product_name
-	itemsData.value = itemsData.value.filter(item => item.product !== data.product);
-	toast.add({ severity: 'info', summary: 'Info', detail: `${removedProduct} is Removed Succesfully`, life: 3000 });
-	if (selectedType.value === 'PO') {
-		selectedProductStock.value = parseInt(selectedProductStock.value) - parseInt(data.quantity)
-	} else if (selectedType.value == 'SO') {
-		selectedProductStock.value = parseInt(selectedProductStock.value) + parseInt(data.quantity)
-	}
+	const removedProduct = `${data.product_name} (${data.size})`
+	itemsData.value = itemsData.value.filter(item => !(item.product === data.product && item.size === data.size));
+	toast.add({ severity: 'info', summary: 'Info', detail: `${removedProduct} is Removed Successfully`, life: 3000 });
 };
 
 
@@ -179,9 +180,12 @@ watch(itemsData, (newValue) => {
 }, { deep: true });
 
 const onUpdateQty = (data) => {
-	const item = itemsData.value.find(p => p.product === data.product)
-	item.quantity = data.quantity
-	item.total = data.quantity * data.price_at_time_of_order;
+	const item = itemsData.value.find(p => p.product === data.product && p.size === data.size)
+	if (item) {
+		item.quantity = Number(data.quantity) || 0;
+		item.price_at_time_of_order = Number(item.price_at_time_of_order) || 0;
+		item.total = item.quantity * item.price_at_time_of_order;
+	}
 }
 
 const addProduct = (id) => {
@@ -191,26 +195,89 @@ const addProduct = (id) => {
 	}
 	try {
 		const product = products.value.find(p => p.id === id);
-
-		formData.value.product = product.id
-		formData.value.product_name = product.name
-		formData.value.price_at_time_of_order = product.selling_price
-		formData.value.quantity = 1
-		formData.value.total = formData.value.quantity * product.selling_price
-
-
-		grossAmount.value = grossAmount.value + formData.value.total;
-		const existingItem = itemsData.value.find(item => item.product === formData.value.product);
-		if (existingItem) {
-			existingItem.quantity = parseFloat(existingItem.quantity) + parseFloat(formData.value.quantity);
-		} else {
-			itemsData.value.push(JSON.parse(JSON.stringify(formData.value)));
+		if (!product || !product.sizes || product.sizes.length === 0) {
+			toast.add({ severity: 'error', summary: 'Error', detail: 'Product has no sizes available', life: 3000 });
+			return;
 		}
-
-		formData.value = JSON.parse(JSON.stringify(blankData));
+		selectedProductData.value = product;
+		selectedSize.value = null;
+		sizeQuantity.value = 1;
+		showSizeModal.value = true;
 
 	} catch (error) {
-		console.error('Error adding item:', error);
+		console.error('Error opening size modal:', error);
+	}
+}
+
+const addProductWithSize = () => {
+	if (!selectedSize.value || !sizeQuantity.value) {
+		toast.add({ severity: 'error', summary: 'Error', detail: 'Please select size and quantity', life: 3000 });
+		return;
+	}
+
+	try {
+		const product = selectedProductData.value;
+		const size = selectedSize.value;
+		const pricePerUnit = Number(size.price) || 0;
+		const quantity = Number(sizeQuantity.value) || 0;
+
+		// Validate stock for Sales Orders (SO)
+		if (selectedType.value === 'SO') {
+			if (size.stock < quantity) {
+				toast.add({
+					severity: 'error',
+					summary: 'Insufficient Stock',
+					detail: `Available stock for ${product.name} (Size ${size.size}): ${size.stock}, Requested: ${quantity}`,
+					life: 3000
+				});
+				return;
+			}
+		}
+
+		const itemKey = `${product.id}-${size.size}`;
+		const existingItem = itemsData.value.find(item => item.product === product.id && item.size === size.size);
+
+		if (existingItem) {
+			// For SO, validate total quantity against available stock
+			if (selectedType.value === 'SO') {
+				const newTotalQuantity = Number(existingItem.quantity) + quantity;
+				if (size.stock < newTotalQuantity) {
+					toast.add({
+						severity: 'error',
+						summary: 'Insufficient Stock',
+						detail: `Available stock for ${product.name} (Size ${size.size}): ${size.stock}, Total Requested: ${newTotalQuantity}`,
+						life: 3000
+					});
+					return;
+				}
+			}
+			existingItem.quantity = Number(existingItem.quantity) + quantity;
+			existingItem.price_at_time_of_order = Number(existingItem.price_at_time_of_order) || 0;
+			existingItem.total = existingItem.quantity * existingItem.price_at_time_of_order;
+		} else {
+			const newItem = {
+				product: product.id,
+				product_name: product.name,
+				product_size: size.id,  // Add ProductSize ID for backend
+				size: size.size,
+				quantity: quantity,
+				price_at_time_of_order: pricePerUnit,
+				total: quantity * pricePerUnit,
+				unit: product.unit,
+				stock: size.stock,
+			};
+			itemsData.value.push(newItem);
+		}
+
+		showSizeModal.value = false;
+		selectedSize.value = null;
+		sizeQuantity.value = 1;
+		selectedProductData.value = null;
+		toast.add({ severity: 'success', summary: 'Success', detail: 'Item added to order', life: 3000 });
+
+	} catch (error) {
+		console.error('Error adding item with size:', error);
+		toast.add({ severity: 'error', summary: 'Error', detail: 'Error adding item', life: 3000 });
 	}
 }
 
@@ -242,34 +309,104 @@ onMounted(() => {
 					</div>
 				</div>
 			</div>
+
+			<!-- Size Selection Modal -->
+			<Dialog :visible="showSizeModal" @update:visible="showSizeModal = $event" modal
+				:header="`Select Size for ${selectedProductData?.name}`" style="width: 40rem">
+				<div v-if="selectedProductData" class="space-y-4">
+					<div>
+						<label class="block font-semibold mb-2">Available Sizes</label>
+						<div class="grid grid-cols-1 gap-2">
+							<div v-for="size in selectedProductData.sizes" :key="size.size"
+								class="border p-3 rounded cursor-pointer hover:bg-gray-100"
+								:class="{ 'bg-blue-100 border-blue-500': selectedSize?.size === size.size }"
+								@click="selectedSize = size">
+								<div class="flex justify-between items-center">
+									<div>
+										<p class="font-semibold">Size: {{ size.size }}</p>
+										<p class="text-sm text-gray-600">Price: ₹{{ size.price }} | Stock: {{ size.stock
+											}}</p>
+									</div>
+									<span v-if="selectedSize?.size === size.size"
+										class="text-blue-600 font-bold">✓</span>
+								</div>
+							</div>
+						</div>
+					</div>
+
+					<div>
+						<label class="block font-semibold mb-2">Quantity</label>
+						<InputNumber v-model="sizeQuantity" :min="1"
+							:max="selectedType === 'SO' ? Math.max(0, selectedSize?.stock - (itemsData.find(item => item.product === selectedProductData?.id && item.size === selectedSize?.size)?.quantity || 0)) : (selectedSize?.stock || 999)"
+							placeholder="Enter quantity" class="w-full" />
+						<p v-if="selectedType === 'SO'" class="text-sm text-gray-500 mt-1">
+							Available: {{Math.max(0, selectedSize?.stock - (itemsData.find(item => item.product ===
+								selectedProductData?.id && item.size === selectedSize?.size)?.quantity || 0)) }}
+						</p>
+					</div>
+
+					<div v-if="selectedSize" class="bg-gray-50 p-3 rounded">
+						<p><strong>Total Price:</strong> ₹{{ (Number(selectedSize.price) *
+							Number(sizeQuantity)).toFixed(2) }}</p>
+					</div>
+
+					<div class="flex justify-end gap-2">
+						<Button label="Cancel" severity="secondary" @click="showSizeModal = false" />
+						<Button label="Add to Order" @click="addProductWithSize" :disabled="!selectedSize" />
+					</div>
+				</div>
+			</Dialog>
+
 			<div>
 				<Card>
 					<template #content>
-						<DataTable :value="itemsData" tableStyle="min-width: 50rem">
-							<Column field="product" header="Product">
+						<DataTable :value="itemsData" tableStyle="min-width: 80rem" scrollable
+							scroll-direction="horizontal">
+							<Column field="product" header="Product" style="width: 20%">
 								<template #body="slotProps">
 									<span>{{ slotProps.data.product_name }}</span>
 								</template>
 							</Column>
-							<Column field="quantity" header="Quantity">
+							<Column field="size" header="Size" style="width: 12%">
 								<template #body="slotProps">
-									<input type="number" v-model="slotProps.data.quantity" style="width: 100px"
+									<span>{{ slotProps.data.size }}</span>
+								</template>
+							</Column>
+							<Column field="stock" header="Available Stock" style="width: 15%">
+								<template #body="slotProps">
+									<span>{{ slotProps.data.stock }}</span>
+								</template>
+							</Column>
+							<Column field="quantity" header="Quantity" style="width: 12%">
+								<template #body="slotProps">
+									<input type="number" v-model.number="slotProps.data.quantity" style="width: 100%"
 										class="p-inputtext p-component" @input="onUpdateQty(slotProps.data)" />
 								</template>
 							</Column>
-							<Column field="price_at_time_of_order" header="Unit Price"></Column>
-							<Column field="total" header="Total"></Column>
-							<Column class="w-24 !text-end">
+							<Column field="price_at_time_of_order" header="Unit Price" style="width: 13%">
+								<template #body="slotProps">
+									<span>₹{{ Number(slotProps.data.price_at_time_of_order).toFixed(2) }}</span>
+								</template>
+							</Column>
+							<Column field="total" header="Total Price" style="width: 13%">
+								<template #body="slotProps">
+									<span>₹{{ Number(slotProps.data.total).toFixed(2) }}</span>
+								</template>
+							</Column>
+							<Column style="width: 8%; text-align: right">
 								<template #body="{ data }">
-									<Button icon="pi pi-times" @click="selectRow(data)" severity="secondary"
-										rounded></Button>
+									<Button icon="pi pi-times" @click="selectRow(data)" severity="secondary" rounded
+										text></Button>
 								</template>
 							</Column>
 							<template #empty>
 								<span class="flex justify-center">No Orders found.</span>
 							</template>
 						</DataTable>
-						<div v-if="itemsData.length" class="flex justify-end mt-4">
+						<div v-if="itemsData.length" class="flex justify-end mt-4 gap-4">
+							<div class="text-right">
+								<p class="font-semibold text-lg">Gross Amount: ₹{{ Number(grossAmount).toFixed(2) }}</p>
+							</div>
 							<OrderConfirmModal @order-confirmed="onSubmit" :items="itemsData"
 								:gross-amount="grossAmount" />
 						</div>
