@@ -1,8 +1,13 @@
 from django.test import TestCase
 import json
+from django.utils import timezone
+from rest_framework import status
+from rest_framework.test import APIClient
 
 from api.v1.inventory.serializers import ProductCreateSerializer
-from inventory.models import Order, OrderItem, Product, ProductSize, Return, ReturnItem, StockMovement
+from inventory.models import Order, OrderItem, Product, ProductSize, Return, ReturnItem, StockMovement, Payment
+
+
 
 
 class StockMovementTests(TestCase):
@@ -115,3 +120,782 @@ class ProductCreationTests(TestCase):
 
         # qty_available should be 0 since no sizes
         self.assertEqual(product.qty_available, 0)
+
+    def test_product_update_without_sizes(self):
+        """Test updating product details without providing sizes (row editing)"""
+        product = Product.objects.create(name='Update Test', selling_price=100, price_at_time_of_purchase=50)
+        serializer = ProductCreateSerializer(instance=product, data={
+            'name': 'Update Test Renamed',
+            'selling_price': 120,
+            'price_at_time_of_purchase': 60
+        }, partial=True)
+        self.assertTrue(serializer.is_valid(), serializer.errors)
+        updated = serializer.save()
+        self.assertEqual(updated.name, 'Update Test Renamed')
+        self.assertEqual(updated.selling_price, 120)
+        self.assertEqual(updated.price_at_time_of_purchase, 60)
+
+
+from rest_framework.test import APIClient
+from accounts.models import User, Stakeholder
+
+
+class OrderFlowAndCancellationTests(TestCase):
+    def setUp(self):
+        self.client = APIClient()
+        self.user = User.objects.create_user(username='orderuser', password='password123')
+        self.client.force_authenticate(user=self.user)
+        self.customer = Stakeholder.objects.create(name='Test Customer', type='Customer')
+        self.supplier = Stakeholder.objects.create(name='Test Supplier', type='Supplier')
+        self.product = Product.objects.create(name='Widget Product', selling_price=150)
+        self.size1 = ProductSize.objects.create(product=self.product, size=1, price=100, stock=20)
+
+    def test_create_sales_order_deducts_stock(self):
+        payload = {
+            'order': {
+                'order_type': 'SO',
+                'stakeholder': self.customer.id,
+                'gross_amount': 300,
+                'discount': 0,
+                'net_amount': 300
+            },
+            'items': [
+                {
+                    'product': self.product.id,
+                    'product_size': self.size1.id,
+                    'quantity': 5,
+                    'price_at_time_of_order': 60,
+                    'total': 300
+                }
+            ]
+        }
+        res = self.client.post('/api/inventory/orders/', payload, format='json')
+        self.assertEqual(res.status_code, 201)
+        self.size1.refresh_from_db()
+        self.assertEqual(self.size1.stock, 15)
+
+    def test_create_sales_order_insufficient_stock_fails(self):
+        payload = {
+            'order': {
+                'order_type': 'SO',
+                'stakeholder': self.customer.id,
+                'gross_amount': 3000,
+                'discount': 0,
+                'net_amount': 3000
+            },
+            'items': [
+                {
+                    'product': self.product.id,
+                    'product_size': self.size1.id,
+                    'quantity': 50,  # exceeds available 20
+                    'price_at_time_of_order': 60,
+                    'total': 3000
+                }
+            ]
+        }
+        res = self.client.post('/api/inventory/orders/', payload, format='json')
+        self.assertEqual(res.status_code, 400)
+        self.assertIn('Insufficient stock', str(res.data))
+        self.size1.refresh_from_db()
+        self.assertEqual(self.size1.stock, 20)  # Stock untouched
+
+    def test_cancel_sales_order_restores_stock(self):
+        # Create SO
+        payload = {
+            'order': {
+                'order_type': 'SO',
+                'stakeholder': self.customer.id,
+                'gross_amount': 200,
+                'discount': 0,
+                'net_amount': 200
+            },
+            'items': [
+                {
+                    'product': self.product.id,
+                    'product_size': self.size1.id,
+                    'quantity': 8,
+                    'price_at_time_of_order': 25,
+                    'total': 200
+                }
+            ]
+        }
+        res = self.client.post('/api/inventory/orders/', payload, format='json')
+        self.assertEqual(res.status_code, 201)
+        order_id = res.data['order']['id']
+        self.size1.refresh_from_db()
+        self.assertEqual(self.size1.stock, 12)
+
+        # Cancel SO
+        cancel_res = self.client.post(f'/api/inventory/orders/{order_id}/cancel/')
+        self.assertEqual(cancel_res.status_code, 200)
+        self.size1.refresh_from_db()
+        # Stock restored from 12 back to 20
+        self.assertEqual(self.size1.stock, 20)
+        order = Order.objects.get(id=order_id)
+        self.assertEqual(order.order_status, 'Cancelled')
+
+    def test_cancel_purchase_order_deducts_stock(self):
+        # Create PO
+        payload = {
+            'order': {
+                'order_type': 'PO',
+                'stakeholder': self.supplier.id,
+                'gross_amount': 500,
+                'discount': 0,
+                'net_amount': 500
+            },
+            'items': [
+                {
+                    'product': self.product.id,
+                    'product_size': self.size1.id,
+                    'quantity': 10,
+                    'price_at_time_of_order': 50,
+                    'total': 500
+                }
+            ]
+        }
+        res = self.client.post('/api/inventory/orders/', payload, format='json')
+        self.assertEqual(res.status_code, 201)
+        order_id = res.data['order']['id']
+        self.size1.refresh_from_db()
+        self.assertEqual(self.size1.stock, 30)  # 20 + 10 = 30
+
+        # Cancel PO
+        cancel_res = self.client.post(f'/api/inventory/orders/{order_id}/cancel/')
+        self.assertEqual(cancel_res.status_code, 200)
+        self.size1.refresh_from_db()
+        # Stock deducted from 30 back to 20
+        self.assertEqual(self.size1.stock, 20)
+        order = Order.objects.get(id=order_id)
+        self.assertEqual(order.order_status, 'Cancelled')
+
+
+class ReturnFlowAPITests(TestCase):
+    def setUp(self):
+        self.client = APIClient()
+        self.user = User.objects.create_user(username='returnuser', password='password123')
+        self.client.force_authenticate(user=self.user)
+        self.customer = Stakeholder.objects.create(name='Return Customer', type='Customer')
+        self.supplier = Stakeholder.objects.create(name='Return Supplier', type='Supplier')
+        self.product = Product.objects.create(name='Returnable Product', selling_price=100)
+        self.size = ProductSize.objects.create(product=self.product, size=1, price=100, stock=20)
+
+    def test_sales_return_increases_stock_and_creates_stock_movement(self):
+        # 1. Create SO for 10 units
+        so_payload = {
+            'order': {
+                'order_type': 'SO',
+                'stakeholder': self.customer.id,
+                'gross_amount': 1000,
+                'discount': 0,
+                'net_amount': 1000
+            },
+            'items': [
+                {
+                    'product': self.product.id,
+                    'product_size': self.size.id,
+                    'quantity': 10,
+                    'price_at_time_of_order': 100,
+                    'total': 1000
+                }
+            ]
+        }
+        res = self.client.post('/api/inventory/orders/', so_payload, format='json')
+        self.assertEqual(res.status_code, 201)
+        order_id = res.data['order']['id']
+        self.size.refresh_from_db()
+        self.assertEqual(self.size.stock, 10)  # 20 - 10 = 10
+
+        # 2. Return 4 units
+        ret_payload = {
+            'return': {
+                'original_order': order_id,
+                'return_type': 'SR',
+                'total_amount': 400
+            },
+            'items': [
+                {
+                    'product': self.product.id,
+                    'product_size': self.size.id,
+                    'quantity': 4,
+                    'price_at_return': 100,
+                    'total': 400
+                }
+            ]
+        }
+        ret_res = self.client.post('/api/inventory/returns/', ret_payload, format='json')
+        self.assertEqual(ret_res.status_code, 201)
+
+        # 3. Stock increases from 10 back to 14
+        self.size.refresh_from_db()
+        self.assertEqual(self.size.stock, 14)
+
+        # 4. Order financial balance updated safely
+        order = Order.objects.get(id=order_id)
+        self.assertEqual(order.total_amount, 600)
+        self.assertEqual(order.pending_amount, 600)
+
+        # 5. Stock movement created
+        movement = StockMovement.objects.filter(product_size=self.size, movement_type='RETURN_SALE').latest('id')
+        self.assertEqual(movement.quantity, 4)
+
+    def test_purchase_return_decreases_stock_and_creates_stock_movement(self):
+        # 1. Create PO for 10 units
+        po_payload = {
+            'order': {
+                'order_type': 'PO',
+                'stakeholder': self.supplier.id,
+                'gross_amount': 1000,
+                'discount': 0,
+                'net_amount': 1000
+            },
+            'items': [
+                {
+                    'product': self.product.id,
+                    'product_size': self.size.id,
+                    'quantity': 10,
+                    'price_at_time_of_order': 100,
+                    'total': 1000
+                }
+            ]
+        }
+        res = self.client.post('/api/inventory/orders/', po_payload, format='json')
+        self.assertEqual(res.status_code, 201)
+        order_id = res.data['order']['id']
+        self.size.refresh_from_db()
+        self.assertEqual(self.size.stock, 30)  # 20 + 10 = 30
+
+        # 2. Return 5 units to supplier
+        ret_payload = {
+            'return': {
+                'original_order': order_id,
+                'return_type': 'PR',
+                'total_amount': 500
+            },
+            'items': [
+                {
+                    'product': self.product.id,
+                    'product_size': self.size.id,
+                    'quantity': 5,
+                    'price_at_return': 100,
+                    'total': 500
+                }
+            ]
+        }
+        ret_res = self.client.post('/api/inventory/returns/', ret_payload, format='json')
+        self.assertEqual(ret_res.status_code, 201)
+
+        # 3. Stock decreases from 30 to 25
+        self.size.refresh_from_db()
+        self.assertEqual(self.size.stock, 25)
+
+        # 4. Stock movement created
+        movement = StockMovement.objects.filter(product_size=self.size, movement_type='RETURN_PURCHASE').latest('id')
+        self.assertEqual(movement.quantity, -5)
+
+    def test_return_over_order_quantity_rejected(self):
+        po_payload = {
+            'order': {
+                'order_type': 'PO',
+                'stakeholder': self.supplier.id,
+                'gross_amount': 500,
+                'discount': 0,
+                'net_amount': 500
+            },
+            'items': [
+                {
+                    'product': self.product.id,
+                    'product_size': self.size.id,
+                    'quantity': 5,
+                    'price_at_time_of_order': 100,
+                    'total': 500
+                }
+            ]
+        }
+        res = self.client.post('/api/inventory/orders/', po_payload, format='json')
+        order_id = res.data['order']['id']
+
+        # Attempt to return 6 units when order had only 5
+        ret_payload = {
+            'return': {
+                'original_order': order_id,
+                'return_type': 'PR',
+                'total_amount': 600
+            },
+            'items': [
+                {
+                    'product': self.product.id,
+                    'product_size': self.size.id,
+                    'quantity': 6,
+                    'price_at_return': 100,
+                    'total': 600
+                }
+            ]
+        }
+        ret_res = self.client.post('/api/inventory/returns/', ret_payload, format='json')
+        self.assertEqual(ret_res.status_code, 400)
+        self.assertIn('Max returnable', ret_res.data['error'])
+
+    def test_cumulative_returns_exceeding_order_quantity_rejected(self):
+        po_payload = {
+            'order': {
+                'order_type': 'PO',
+                'stakeholder': self.supplier.id,
+                'gross_amount': 500,
+                'discount': 0,
+                'net_amount': 500
+            },
+            'items': [
+                {
+                    'product': self.product.id,
+                    'product_size': self.size.id,
+                    'quantity': 5,
+                    'price_at_time_of_order': 100,
+                    'total': 500
+                }
+            ]
+        }
+        res = self.client.post('/api/inventory/orders/', po_payload, format='json')
+        order_id = res.data['order']['id']
+
+        # First return of 3 units succeeds
+        ret_payload_1 = {
+            'return': {
+                'original_order': order_id,
+                'return_type': 'PR',
+                'total_amount': 300
+            },
+            'items': [
+                {
+                    'product': self.product.id,
+                    'product_size': self.size.id,
+                    'quantity': 3,
+                    'price_at_return': 100,
+                    'total': 300
+                }
+            ]
+        }
+        ret_res_1 = self.client.post('/api/inventory/returns/', ret_payload_1, format='json')
+        self.assertEqual(ret_res_1.status_code, 201)
+
+        # Second return of 3 units should fail (3 + 3 = 6 > 5)
+        ret_payload_2 = {
+            'return': {
+                'original_order': order_id,
+                'return_type': 'PR',
+                'total_amount': 300
+            },
+            'items': [
+                {
+                    'product': self.product.id,
+                    'product_size': self.size.id,
+                    'quantity': 3,
+                    'price_at_return': 100,
+                    'total': 300
+                }
+            ]
+        }
+        ret_res_2 = self.client.post('/api/inventory/returns/', ret_payload_2, format='json')
+        self.assertEqual(ret_res_2.status_code, 400)
+        self.assertIn('Max returnable', ret_res_2.data['error'])
+
+    def test_purchase_return_insufficient_stock_rejected(self):
+        # Set stock to 2
+        self.size.stock = 2
+        self.size.save()
+
+        # Create PO for 5 units (stock becomes 7)
+        po_payload = {
+            'order': {
+                'order_type': 'PO',
+                'stakeholder': self.supplier.id,
+                'gross_amount': 500,
+                'discount': 0,
+                'net_amount': 500
+            },
+            'items': [
+                {
+                    'product': self.product.id,
+                    'product_size': self.size.id,
+                    'quantity': 5,
+                    'price_at_time_of_order': 100,
+                    'total': 500
+                }
+            ]
+        }
+        res = self.client.post('/api/inventory/orders/', po_payload, format='json')
+        order_id = res.data['order']['id']
+
+        # Now simulate warehouse stock being drained down to 1 by sales or adjustments
+        self.size.stock = 1
+        self.size.save()
+
+        # Try to return 3 units to supplier
+        ret_payload = {
+            'return': {
+                'original_order': order_id,
+                'return_type': 'PR',
+                'total_amount': 300
+            },
+            'items': [
+                {
+                    'product': self.product.id,
+                    'product_size': self.size.id,
+                    'quantity': 3,
+                    'price_at_return': 100,
+                    'total': 300
+                }
+            ]
+        }
+        ret_res = self.client.post('/api/inventory/returns/', ret_payload, format='json')
+        self.assertEqual(ret_res.status_code, 400)
+        self.assertIn('Insufficient warehouse stock', ret_res.data['error'])
+
+    def test_return_on_cancelled_order_rejected(self):
+        po_payload = {
+            'order': {
+                'order_type': 'PO',
+                'stakeholder': self.supplier.id,
+                'gross_amount': 500,
+                'discount': 0,
+                'net_amount': 500
+            },
+            'items': [
+                {
+                    'product': self.product.id,
+                    'product_size': self.size.id,
+                    'quantity': 5,
+                    'price_at_time_of_order': 100,
+                    'total': 500
+                }
+            ]
+        }
+        res = self.client.post('/api/inventory/orders/', po_payload, format='json')
+        order_id = res.data['order']['id']
+
+        # Cancel the order
+        self.client.post(f'/api/inventory/orders/{order_id}/cancel/')
+
+        # Attempt to return
+        ret_payload = {
+            'return': {
+                'original_order': order_id,
+                'return_type': 'PR',
+                'total_amount': 200
+            },
+            'items': [
+                {
+                    'product': self.product.id,
+                    'product_size': self.size.id,
+                    'quantity': 2,
+                    'price_at_return': 100,
+                    'total': 200
+                }
+            ]
+        }
+        ret_res = self.client.post('/api/inventory/returns/', ret_payload, format='json')
+        self.assertEqual(ret_res.status_code, 400)
+        self.assertIn('Cannot process return for a cancelled order', ret_res.data['error'])
+
+    def test_draft_return_does_not_alter_stock_until_approved(self):
+        so_payload = {
+            'order': {
+                'order_type': 'SO',
+                'stakeholder': self.customer.id,
+                'gross_amount': 1000,
+                'discount': 0,
+                'net_amount': 1000
+            },
+            'items': [
+                {
+                    'product': self.product.id,
+                    'product_size': self.size.id,
+                    'quantity': 10,
+                    'price_at_time_of_order': 100,
+                    'total': 1000
+                }
+            ]
+        }
+        res = self.client.post('/api/inventory/orders/', so_payload, format='json')
+        order_id = res.data['order']['id']
+        self.size.refresh_from_db()
+        self.assertEqual(self.size.stock, 10)  # 20 - 10 = 10
+
+        # Submit Draft return
+        draft_payload = {
+            'return': {
+                'original_order': order_id,
+                'return_type': 'SR',
+                'return_status': 'Draft',
+                'total_amount': 300
+            },
+            'items': [
+                {
+                    'product': self.product.id,
+                    'product_size': self.size.id,
+                    'quantity': 3,
+                    'price_at_return': 100,
+                    'total': 300
+                }
+            ]
+        }
+        draft_res = self.client.post('/api/inventory/returns/', draft_payload, format='json')
+        self.assertEqual(draft_res.status_code, 201)
+        return_id = draft_res.data['return']['id']
+
+        # Verify stock and order balances were NOT altered during Draft stage
+        self.size.refresh_from_db()
+        self.assertEqual(self.size.stock, 10)
+        order = Order.objects.get(id=order_id)
+        self.assertEqual(order.total_amount, 1000)
+
+        # Now approve return
+        app_res = self.client.post(f'/api/inventory/returns/{return_id}/approve/')
+        self.assertEqual(app_res.status_code, 200)
+
+        # After approval: stock is restored and order balance adjusted
+        self.size.refresh_from_db()
+        self.assertEqual(self.size.stock, 13)
+        order.refresh_from_db()
+        self.assertEqual(order.total_amount, 700)
+        self.assertEqual(order.pending_amount, 700)
+
+    def test_damaged_sales_return_quarantine_handling(self):
+        so_payload = {
+            'order': {
+                'order_type': 'SO',
+                'stakeholder': self.customer.id,
+                'gross_amount': 500,
+                'discount': 0,
+                'net_amount': 500
+            },
+            'items': [
+                {
+                    'product': self.product.id,
+                    'product_size': self.size.id,
+                    'quantity': 5,
+                    'price_at_time_of_order': 100,
+                    'total': 500
+                }
+            ]
+        }
+        res = self.client.post('/api/inventory/orders/', so_payload, format='json')
+        order_id = res.data['order']['id']
+        self.size.refresh_from_db()
+        self.assertEqual(self.size.stock, 15)  # 20 - 5 = 15
+
+        # Return 2 units with condition 'Damaged'
+        ret_payload = {
+            'return': {
+                'original_order': order_id,
+                'return_type': 'SR',
+                'total_amount': 200
+            },
+            'items': [
+                {
+                    'product': self.product.id,
+                    'product_size': self.size.id,
+                    'quantity': 2,
+                    'price_at_return': 100,
+                    'total': 200,
+                    'condition': 'Damaged',
+                    'reason': 'Damaged in transit'
+                }
+            ]
+        }
+        ret_res = self.client.post('/api/inventory/returns/', ret_payload, format='json')
+        self.assertEqual(ret_res.status_code, 201)
+
+        # Sellable stock must NOT increase for damaged goods
+        self.size.refresh_from_db()
+        self.assertEqual(self.size.stock, 15)
+
+        # But financial credit is still provided to customer
+        order = Order.objects.get(id=order_id)
+        self.assertEqual(order.total_amount, 300)
+
+    def test_duplicate_item_lines_in_return_payload_rejected(self):
+        po_payload = {
+            'order': {
+                'order_type': 'PO',
+                'stakeholder': self.supplier.id,
+                'gross_amount': 500,
+                'discount': 0,
+                'net_amount': 500
+            },
+            'items': [
+                {
+                    'product': self.product.id,
+                    'product_size': self.size.id,
+                    'quantity': 5,
+                    'price_at_time_of_order': 100,
+                    'total': 500
+                }
+            ]
+        }
+        res = self.client.post('/api/inventory/orders/', po_payload, format='json')
+        order_id = res.data['order']['id']
+
+        # Duplicate product_size in items
+        ret_payload = {
+            'return': {
+                'original_order': order_id,
+                'return_type': 'PR',
+                'total_amount': 200
+            },
+            'items': [
+                {
+                    'product': self.product.id,
+                    'product_size': self.size.id,
+                    'quantity': 1,
+                    'price_at_return': 100,
+                    'total': 100
+                },
+                {
+                    'product': self.product.id,
+                    'product_size': self.size.id,
+                    'quantity': 1,
+                    'price_at_return': 100,
+                    'total': 100
+                }
+            ]
+        }
+        ret_res = self.client.post('/api/inventory/returns/', ret_payload, format='json')
+        self.assertEqual(ret_res.status_code, 400)
+        self.assertIn('Duplicate product variant', ret_res.data['error'])
+
+
+class PaymentAndFinancialTests(TestCase):
+    def setUp(self):
+        self.client = APIClient()
+        self.user = User.objects.create_user(username='fin_admin', password='password123', user_type='admin')
+        self.client.force_authenticate(user=self.user)
+        self.customer = Stakeholder.objects.create(name='Fin Customer', type='Customer')
+        self.supplier = Stakeholder.objects.create(name='Fin Supplier', type='Supplier')
+
+        self.so_order = Order.objects.create(
+            order_number='SO-FIN-001',
+            stakeholder=self.customer,
+            order_type='SO',
+            order_status='Issued',
+            net_amount=1000,
+            total_amount=1000,
+            pending_amount=1000,
+            date_added=timezone.now()
+        )
+
+        self.po_order = Order.objects.create(
+            order_number='PO-FIN-001',
+            stakeholder=self.supplier,
+            order_type='PO',
+            order_status='Issued',
+            net_amount=2500,
+            total_amount=2500,
+            pending_amount=2500,
+            date_added=timezone.now()
+        )
+
+
+    def test_inbound_payment_auto_number_and_deduction(self):
+        """Inbound customer payment auto-generates REC-XXXXX and decrements pending_amount"""
+        payload = {
+            'order': self.so_order.id,
+            'amount': 400,
+            'payment_date': timezone.now().isoformat(),
+            'payment_method': 'CASH',
+            'reference': 'CASH-REC-01'
+        }
+        res = self.client.post('/api/inventory/payments/', payload, format='json')
+        self.assertEqual(res.status_code, status.HTTP_201_CREATED)
+        self.assertTrue(res.data['payment_number'].startswith('REC-'))
+        self.assertEqual(res.data['payment_type'], 'INBOUND')
+
+        self.so_order.refresh_from_db()
+        self.assertEqual(self.so_order.pending_amount, 600)
+        self.assertEqual(self.so_order.order_status, 'Issued')
+
+    def test_payment_full_liquidation_closes_order(self):
+        """Fully paying off pending balance automatically transitions order to Closed"""
+        payload = {
+            'order': self.so_order.id,
+            'amount': 1000,
+            'payment_date': timezone.now().isoformat(),
+            'payment_method': 'BANK',
+            'reference': 'NEFT-123456'
+        }
+        res = self.client.post('/api/inventory/payments/', payload, format='json')
+        self.assertEqual(res.status_code, status.HTTP_201_CREATED)
+
+        self.so_order.refresh_from_db()
+        self.assertEqual(self.so_order.pending_amount, 0)
+        self.assertEqual(self.so_order.order_status, 'Closed')
+
+    def test_overpayment_rejected(self):
+        """Submitting payment exceeding order pending balance is rejected"""
+        payload = {
+            'order': self.so_order.id,
+            'amount': 1500,  # exceeds 1000
+            'payment_date': timezone.now().isoformat(),
+            'payment_method': 'CARD'
+        }
+        res = self.client.post('/api/inventory/payments/', payload, format='json')
+        self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn('amount', res.data)
+
+        self.so_order.refresh_from_db()
+        self.assertEqual(self.so_order.pending_amount, 1000)
+
+    def test_outbound_supplier_payment(self):
+        """PO payments are classified as OUTBOUND and numbered PAY-XXXXX"""
+        payload = {
+            'order': self.po_order.id,
+            'amount': 2500,
+            'payment_date': timezone.now().isoformat(),
+            'payment_method': 'BANK',
+            'reference': 'RTGS-9988'
+        }
+        res = self.client.post('/api/inventory/payments/', payload, format='json')
+        self.assertEqual(res.status_code, status.HTTP_201_CREATED)
+        self.assertTrue(res.data['payment_number'].startswith('PAY-'))
+        self.assertEqual(res.data['payment_type'], 'OUTBOUND')
+
+        self.po_order.refresh_from_db()
+        self.assertEqual(self.po_order.pending_amount, 0)
+        self.assertEqual(self.po_order.order_status, 'Closed')
+
+    def test_financial_summary_analytics_endpoint(self):
+        """Financial summary endpoint returns complete executive metrics"""
+        # Create an inbound payment
+        Payment.objects.create(
+            order=self.so_order,
+            amount=500,
+            payment_date=timezone.now(),
+            payment_method='CASH',
+            payment_type='INBOUND',
+            status='Completed'
+        )
+        # Create an outbound payment
+        Payment.objects.create(
+            order=self.po_order,
+            amount=1000,
+            payment_date=timezone.now(),
+            payment_method='BANK',
+            payment_type='OUTBOUND',
+            status='Completed'
+        )
+
+        res = self.client.get('/api/inventory/payments/financial_summary/')
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertIn('total_revenue', res.data)
+        self.assertIn('total_received', res.data)
+        self.assertIn('total_paid', res.data)
+        self.assertIn('net_cash_flow', res.data)
+        self.assertIn('outstanding_receivables', res.data)
+        self.assertIn('outstanding_payables', res.data)
+        self.assertIn('monthly_trends', res.data)
+        self.assertEqual(res.data['total_received'], 500)
+        self.assertEqual(res.data['total_paid'], 1000)
+        self.assertEqual(res.data['net_cash_flow'], -500)
+
+
+

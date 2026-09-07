@@ -119,6 +119,10 @@ class Order(WebBaseModel):
       if self.pk is None:
         self.total_amount = self.net_amount
         self.pending_amount = self.net_amount
+      if not self.order_number:
+        import uuid
+        prefix = self.order_type if self.order_type else 'ORD'
+        self.order_number = f"{prefix}-{uuid.uuid4().hex[:8].upper()}"
       super().save(*args, **kwargs)
         
 class OrderItem(models.Model):
@@ -167,69 +171,105 @@ class Return(WebBaseModel):
         ('PR', 'Purchase Return'),
         ('SR', 'Sales Return'),
     ]
+    RETURN_STATUS_CHOICES = [
+        ('Draft', 'Draft'),
+        ('Pending Approval', 'Pending Approval'),
+        ('Approved', 'Approved'),
+        ('Rejected', 'Rejected'),
+        ('Processed', 'Processed'),
+        ('Completed', 'Completed'),
+    ]
 
     return_type = models.CharField(max_length=2, choices=RETURN_TYPE_CHOICES)
+    return_status = models.CharField(max_length=20, choices=RETURN_STATUS_CHOICES, default='Completed')
     original_order = models.ForeignKey('Order', on_delete=models.CASCADE, related_name='returns')
     date = models.DateField(auto_now_add=True)
     total_amount = models.DecimalField(max_digits=12, decimal_places=2, blank=True, null=True)
-    
+    reason = models.TextField(blank=True, null=True)
+    stock_adjusted = models.BooleanField(default=False)
+
     def __str__(self):
-        return f" return for Order {self.original_order.id} on {self.date}"
-    
+        return f"Return for Order {self.original_order.id} ({self.return_status}) on {self.date}"
+
     def save(self, *args, **kwargs):
         # Start an atomic transaction
         with transaction.atomic():
-            # Check if the instance is being created (pk is None means it’s new)
-            if self.pk is None:
-                # Update the Order instance by subtracting the return total_amount
-                Order.objects.filter(pk=self.original_order.pk).update(
-                    total_amount=F('total_amount') - self.total_amount,
-                    pending_amount=F('pending_amount') - self.total_amount
+            # Check if status warrants inventory/financial adjustments and has not yet been applied
+            is_approved = self.return_status in ['Approved', 'Processed', 'Completed']
+            if is_approved and not self.stock_adjusted:
+                order = Order.objects.select_for_update().get(pk=self.original_order.pk)
+                ret_amount = int(self.total_amount or 0)
+                new_total = max(0, (order.total_amount or 0) - ret_amount)
+                new_pending = max(0, (order.pending_amount or 0) - ret_amount)
+                Order.objects.filter(pk=order.pk).update(
+                    total_amount=new_total,
+                    pending_amount=new_pending
                 )
+                self.stock_adjusted = True
 
-            # Save the Return instance
             super().save(*args, **kwargs)
-    
+
 
 class ReturnItem(models.Model):
+    CONDITION_CHOICES = [
+        ('Good', 'Good'),
+        ('Damaged', 'Damaged'),
+        ('Expired', 'Expired'),
+        ('Defective', 'Defective'),
+        ('Wrong Item', 'Wrong Item'),
+    ]
+
     return_order = models.ForeignKey(Return, on_delete=models.CASCADE, related_name='items')
     product = models.ForeignKey(Product, on_delete=models.CASCADE)
     product_size = models.ForeignKey(ProductSize, on_delete=models.SET_NULL, null=True, blank=True)
     quantity = models.PositiveIntegerField()
     price_at_return = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
     total = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
-    
+    condition = models.CharField(max_length=20, choices=CONDITION_CHOICES, default='Good')
+    reason = models.CharField(max_length=255, blank=True, null=True)
+
     def __str__(self):
-        return f"Return of {self.quantity} of {self.product.name} for Return {self.return_order.id}"
-    
+        return f"Return of {self.quantity} of {self.product.name} ({self.condition}) for Return {self.return_order.id}"
+
     def save(self, *args, **kwargs):
         """
-        Handle stock adjustments for returns using StockMovement
+        Handle stock adjustments for returns using StockMovement and condition validation
         """
         is_new = self.pk is None
-        
-        if is_new and self.return_order and self.product_size:
+        if is_new and self.quantity and self.price_at_return and self.total is None:
+            self.total = self.quantity * self.price_at_return
+
+        is_approved = self.return_order and self.return_order.return_status in ['Approved', 'Processed', 'Completed']
+
+        if is_new and is_approved and self.product_size:
             if self.return_order.return_type == 'SR':
-                # Sales Return: increase stock
-                self.product_size.stock += self.quantity
-                movement_type = 'RETURN_SALE'
+                # Sales Return: only restock sellable goods (Good, Wrong Item)
+                # Damaged, Expired, Defective goods go into quarantine without inflating sellable stock
+                if self.condition in ['Good', 'Wrong Item']:
+                    self.product_size.stock += self.quantity
+                    self.product_size.save()
+                    movement_type = 'RETURN_SALE'
+                    qty_delta = self.quantity
+                else:
+                    movement_type = 'RETURN_SALE'
+                    qty_delta = 0  # Quarantined / Written-off
             elif self.return_order.return_type == 'PR':
-                # Purchase Return: decrease stock
+                # Purchase Return: decrease stock from warehouse
                 self.product_size.stock -= self.quantity
+                self.product_size.save()
                 movement_type = 'RETURN_PURCHASE'
-            
-            self.product_size.save()
-            
+                qty_delta = -self.quantity
+
             # Create stock movement record for audit trail
             StockMovement.objects.create(
                 product_size=self.product_size,
                 order=self.return_order.original_order,
                 movement_type=movement_type,
-                quantity=self.quantity if self.return_order.return_type == 'SR' else -self.quantity,
+                quantity=qty_delta,
                 reference=self.return_order.original_order.order_number,
-                notes=f"Return for {self.return_order.return_type}"
+                notes=f"Return {self.return_order.return_type} ({self.condition}) - {self.reason or 'Processed'}"
             )
-        
+
         super().save(*args, **kwargs)
     
     
@@ -241,39 +281,114 @@ class Payment(models.Model):
         ('OTHER', 'Other'),
     ]
 
+    PAYMENT_TYPE_CHOICES = [
+        ('INBOUND', 'Customer Receipt'),
+        ('OUTBOUND', 'Supplier Payment'),
+        ('REFUND', 'Refund / Credit'),
+    ]
+
+    STATUS_CHOICES = [
+        ('Completed', 'Completed'),
+        ('Pending', 'Pending'),
+        ('Failed', 'Failed'),
+        ('Cancelled', 'Cancelled'),
+    ]
+
+    payment_number = models.CharField(max_length=100, null=True, blank=True, unique=True)
+    payment_type = models.CharField(max_length=20, choices=PAYMENT_TYPE_CHOICES, default='INBOUND')
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='Completed')
+    reference = models.CharField(max_length=100, null=True, blank=True)
+    notes = models.TextField(null=True, blank=True)
     order = models.ForeignKey(Order, on_delete=models.CASCADE, related_name='payments', null=True, blank=True)
     company = models.ForeignKey(Stakeholder, on_delete=models.CASCADE, null=True, blank=True)
     amount = models.PositiveIntegerField(null=True, blank=True)
     payment_date = models.DateTimeField()
     payment_method = models.CharField(max_length=10, choices=PAYMENT_METHOD_CHOICES, default='CASH')
-    
+    created_at = models.DateTimeField(auto_now_add=True, null=True)
+    updated_at = models.DateTimeField(auto_now=True, null=True)
+
     def __str__(self):
-        return f"Payment of {self.amount} for Order {self.company.name} on {self.payment_date}"
-    
-    
-    #when a payment instance is created with a amount minus the amount from order model field pending amount
+        partner = self.company.name if self.company else (self.order.stakeholder.name if self.order and self.order.stakeholder else "General")
+        return f"{self.payment_number or 'Payment'} - ₹{self.amount} ({partner})"
+
     def save(self, *args, **kwargs):
         with transaction.atomic():
-            if self.order is not None:
-                order_instance = Order.objects.get(pk=self.order.pk)
-                order_instance.pending_amount=self.order.pending_amount - self.amount
-                order_instance.save()
-            elif self.order is None:
-                if self.company is not None:
-                    if self.company.opening_balance > 0:
-                        self.company.opening_balance -= self.amount
+            is_new = self.pk is None
+
+            # Validate positive amount
+            if self.amount is None or self.amount <= 0:
+                raise ValueError("Payment amount must be greater than zero.")
+
+            # Invert or infer payment type if not explicitly set
+            if self.order:
+                if self.order.order_type == 'PO':
+                    self.payment_type = 'OUTBOUND'
+                elif not self.payment_type or self.payment_type == 'OUTBOUND':
+                    self.payment_type = 'INBOUND'
+            elif self.company and not self.payment_type:
+                if self.company.type == 'Supplier':
+                    self.payment_type = 'OUTBOUND'
+                else:
+                    self.payment_type = 'INBOUND'
+
+            # Auto-generate payment_number if empty
+            if not self.payment_number:
+                prefix = 'PAY-' if self.payment_type == 'OUTBOUND' else ('REF-' if self.payment_type == 'REFUND' else 'REC-')
+                last_pay = Payment.objects.filter(payment_number__startswith=prefix).order_by('-id').first()
+                next_seq = 1
+                if last_pay and last_pay.payment_number and '-' in last_pay.payment_number:
+                    try:
+                        parts = last_pay.payment_number.split('-')
+                        next_seq = int(parts[-1]) + 1
+                    except (ValueError, IndexError):
+                        next_seq = (last_pay.id or 0) + 1
+                elif last_pay and last_pay.id:
+                    next_seq = last_pay.id + 1
+                else:
+                    next_seq = Payment.objects.count() + 1
+                self.payment_number = f"{prefix}{next_seq:05d}"
+
+            # Ensure company is linked from order
+            if not self.company and self.order and self.order.stakeholder:
+                self.company = self.order.stakeholder
+
+            # Only deduct balances on newly created payments
+            if is_new and self.status == 'Completed':
+                if self.order is not None:
+                    order_instance = Order.objects.select_for_update().get(pk=self.order.pk)
+                    if self.amount > order_instance.pending_amount:
+                        raise ValueError(f"Payment amount (₹{self.amount}) exceeds outstanding order balance (₹{order_instance.pending_amount}).")
+                    order_instance.pending_amount = max(0, order_instance.pending_amount - self.amount)
+                    if order_instance.pending_amount == 0:
+                        order_instance.order_status = 'Closed'
+                    order_instance.save()
+                elif self.company is not None:
+                    if (self.company.opening_balance or 0) > 0:
+                        deduct = min(self.company.opening_balance, self.amount)
+                        self.company.opening_balance -= deduct
                         self.company.save()
+                        rem = self.amount - deduct
+                        if rem > 0:
+                            order_instance = Order.objects.select_for_update().filter(stakeholder=self.company, pending_amount__gt=0).order_by('date_added').first()
+                            if order_instance:
+                                alloc = min(order_instance.pending_amount, rem)
+                                order_instance.pending_amount = max(0, order_instance.pending_amount - alloc)
+                                if order_instance.pending_amount == 0:
+                                    order_instance.order_status = 'Closed'
+                                order_instance.save()
+                                self.order = order_instance
                     else:
-                        order_instance = Order.objects.filter(stakeholder=self.company, order_status='Issued').order_by('date_added').first()
-                        order_instance.pending_amount=order_instance.pending_amount - self.amount
-                        self.order = order_instance
-                        order_instance.save()
-                    
-                        order_instance.refresh_from_db()
-                        if order_instance.pending_amount == 0:
-                            order_instance.order_status='Closed'
+                        order_instance = Order.objects.select_for_update().filter(stakeholder=self.company, pending_amount__gt=0).order_by('date_added').first()
+                        if order_instance:
+                            alloc = min(order_instance.pending_amount, self.amount)
+                            order_instance.pending_amount = max(0, order_instance.pending_amount - alloc)
+                            if order_instance.pending_amount == 0:
+                                order_instance.order_status = 'Closed'
                             order_instance.save()
+                            self.order = order_instance
+
             super().save(*args, **kwargs)
+
     
     
 class Cart(models.Model):

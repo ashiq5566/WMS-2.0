@@ -1,97 +1,211 @@
 <script setup lang="ts">
-import { ref } from "vue";
-import axios from '@/plugins/axios.js';
+import { ref, reactive } from "vue";
+import axios from "@/plugins/axios";
+import { useToast } from "primevue/usetoast";
+import { validateStakeholder } from "@/utils/stakeholderCalculations";
 
-const emit = defineEmits(['instance-added']);
+const emit = defineEmits(["instance-added"]);
+const toast = useToast();
 const visible = ref(false);
+const loading = ref(false);
+const formErrors = ref<Record<string, string>>({});
 
-const blankData = {
-	name: '',
-	address: '',
-	mobile: '',
-	email: '',
-	company_name: '',
-	type: '',
+const initialData = {
+	name: "",
+	address: "",
+	mobile: "",
+	email: "",
+	company_name: "",
+	type: "Customer" as "Customer" | "Supplier",
+	city: "",
+	tax_id: "",
+	credit_limit: 0,
 	opening_balance: 0,
 };
-const formData = ref(JSON.parse(JSON.stringify(blankData)));
 
-const typeOptions = ref([
-	{ name: 'Customer', value: 'Customer' },
-	{ name: 'Supplier', value: 'Supplier' }
-]);
+const formData = reactive({ ...initialData });
+
+const typeOptions = [
+	{ label: "Customer", value: "Customer" },
+	{ label: "Supplier", value: "Supplier" },
+];
 
 const handleSubmit = async () => {
+	formErrors.value = validateStakeholder(formData);
+	if (Object.keys(formErrors.value).length > 0) {
+		toast.add({
+			severity: "warn",
+			summary: "Validation Warning",
+			detail: "Please fill in required fields correctly.",
+			life: 3000,
+		});
+		return;
+	}
+
 	try {
-		const data = new FormData();
-		data.append('name', formData.value.name);
-		data.append('address', formData.value.address);
-		data.append('mobile', formData.value.mobile);
-		data.append('email', formData.value.email);
-		data.append('company_name', formData.value.company_name);
-		data.append('type', formData.value.type);
-		data.append('opening_balance', formData.value.opening_balance);
-
-		const response = await axios.post('/api/accounts/stakeholders/', data);
-		console.log(response);
+		loading.value = true;
+		await axios.post("/api/accounts/stakeholders/", formData);
+		toast.add({
+			severity: "success",
+			summary: "Success",
+			detail: `Stakeholder "${formData.name}" added successfully.`,
+			life: 3000,
+		});
 		visible.value = false;
-		emit('instance-added');
-		formData.value = JSON.parse(JSON.stringify(blankData));
-
-	} catch (error) {
-		console.error('Creation failed:', error);
+		emit("instance-added");
+		Object.assign(formData, initialData);
+		formErrors.value = {};
+	} catch (error: any) {
+		console.error("Creation failed:", error);
+		const errResponse = error.response?.data;
+		if (errResponse && typeof errResponse === "object") {
+			const serverErrors: Record<string, string> = {};
+			for (const [k, v] of Object.entries(errResponse)) {
+				serverErrors[k] = Array.isArray(v) ? v.join(" ") : String(v);
+			}
+			formErrors.value = serverErrors;
+		}
+		toast.add({
+			severity: "error",
+			summary: "Creation Failed",
+			detail: error.response?.data?.error || "Could not register stakeholder.",
+			life: 4000,
+		});
+	} finally {
+		loading.value = false;
 	}
 };
 
 const cancel = () => {
-	visible.value = false
-	formData.value = JSON.parse(JSON.stringify(blankData))
-}
-
+	visible.value = false;
+	Object.assign(formData, initialData);
+	formErrors.value = {};
+};
 </script>
 
 <template>
-	<div class="">
-		<div class="flex justify-end">
-			<Button label="Add" @click="visible = true" />
-		</div>
-		<Dialog v-model:visible="visible" modal header="Add Stakeholders" :style="{ width: '40rem' }">
-			<div class="flex items-center gap-4 mb-4">
-				<label for="name" class="font-semibold w-32">Name</label>
-				<InputText id="name" v-model="formData.name" class="flex-auto" autocomplete="off" />
-			</div>
-			<div class="flex items-center gap-4 mb-4">
-				<label for="address" class="font-semibold w-32">Address</label>
-				<InputText id="address" v-model="formData.address" class="flex-auto" autocomplete="off" />
-			</div>
-			<div class="flex items-center gap-4 mb-4">
-				<label for="mobile" class="font-semibold w-32">Phone</label>
-				<InputText id="mobile" v-model="formData.mobile" class="flex-auto" autocomplete="off" />
-			</div>
-			<div class="flex items-center gap-4 mb-8">
-				<label for="email" class="font-semibold w-32">Email</label>
-				<InputText id="email" v-model="formData.email" class="flex-auto" autocomplete="off" />
-			</div>
-			<div class="flex items-center gap-4 mb-8">
-				<label for="type" class="font-semibold w-32">Type</label>
-				<Select v-model=formData.type :options="typeOptions" optionLabel="name" optionValue="value"
-					placeholder="Select a Type" class="w-[450px]" />
+	<div>
+		<Button
+			label="Quick Add"
+			icon="pi pi-user-plus"
+			severity="secondary"
+			outlined
+			class="p-button-sm"
+			@click="visible = true"
+		/>
 
+		<Dialog
+			v-model:visible="visible"
+			modal
+			header="Quick Register Stakeholder"
+			:style="{ width: '36rem' }"
+			class="p-fluid"
+		>
+			<div class="space-y-4 pt-2">
+				<!-- Name -->
+				<div>
+					<label for="modal-name" class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+						Stakeholder Name <span class="text-rose-500">*</span>
+					</label>
+					<InputText
+						id="modal-name"
+						v-model="formData.name"
+						placeholder="Individual or business name"
+						:class="{ 'p-invalid': formErrors.name }"
+					/>
+					<small v-if="formErrors.name" class="text-rose-500 text-xs mt-0.5 block">{{ formErrors.name }}</small>
+				</div>
+
+				<!-- Type -->
+				<div>
+					<label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+						Stakeholder Type <span class="text-rose-500">*</span>
+					</label>
+					<Select
+						v-model="formData.type"
+						:options="typeOptions"
+						optionLabel="label"
+						optionValue="value"
+						placeholder="Select Type"
+					/>
+				</div>
+
+				<!-- Company Name -->
+				<div>
+					<label for="modal-company" class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+						Company / Trade Name
+					</label>
+					<InputText id="modal-company" v-model="formData.company_name" placeholder="Legal registered entity" />
+				</div>
+
+				<!-- Phone & Email Grid -->
+				<div class="grid grid-cols-2 gap-3">
+					<div>
+						<label for="modal-phone" class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+							Phone / Mobile
+						</label>
+						<InputText
+							id="modal-phone"
+							v-model="formData.mobile"
+							placeholder="+91 98765 43210"
+							:class="{ 'p-invalid': formErrors.mobile }"
+						/>
+						<small v-if="formErrors.mobile" class="text-rose-500 text-xs mt-0.5 block">{{ formErrors.mobile }}</small>
+					</div>
+					<div>
+						<label for="modal-email" class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+							Email
+						</label>
+						<InputText
+							id="modal-email"
+							v-model="formData.email"
+							type="email"
+							placeholder="name@business.com"
+							:class="{ 'p-invalid': formErrors.email }"
+						/>
+						<small v-if="formErrors.email" class="text-rose-500 text-xs mt-0.5 block">{{ formErrors.email }}</small>
+					</div>
+				</div>
+
+				<!-- Address & City -->
+				<div class="grid grid-cols-3 gap-3">
+					<div class="col-span-2">
+						<label for="modal-address" class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+							Address
+						</label>
+						<InputText id="modal-address" v-model="formData.address" placeholder="Street address" />
+					</div>
+					<div>
+						<label for="modal-city" class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+							City
+						</label>
+						<InputText id="modal-city" v-model="formData.city" placeholder="City" />
+					</div>
+				</div>
+
+				<!-- Opening Balance -->
+				<div>
+					<label for="modal-balance" class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+						Opening Debt Balance (INR)
+					</label>
+					<InputNumber
+						id="modal-balance"
+						v-model="formData.opening_balance"
+						mode="currency"
+						currency="INR"
+						locale="en-IN"
+					/>
+				</div>
 			</div>
-			<div class="flex items-center gap-4 mb-8">
-				<label for="company_name" class="font-semibold w-32">Company Name</label>
-				<InputText id="company_name" v-model="formData.company_name" class="flex-auto" autocomplete="off" />
-			</div>
-			<div class="flex items-center gap-4 mb-8">
-				<label for="opening_balance" class="font-semibold w-32">Opening Balance</label>
-				<InputText id="opening_balance" v-model="formData.opening_balance" class="flex-auto" autocomplete="off" />
-			</div>
-			<div class="flex justify-end gap-2">
-				<Button type="button" label="Cancel" severity="secondary" @click="cancel"></Button>
-				<Button type="submit" label="Save" @click="handleSubmit()"></Button>
-			</div>
+
+			<template #footer>
+				<div class="flex justify-end gap-2 pt-2">
+					<Button type="button" label="Cancel" severity="secondary" outlined @click="cancel" />
+					<Button type="submit" label="Save Stakeholder" :loading="loading" @click="handleSubmit" />
+				</div>
+			</template>
 		</Dialog>
 	</div>
 </template>
 
-<style></style>
+<style scoped></style>
