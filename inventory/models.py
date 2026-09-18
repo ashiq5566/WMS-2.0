@@ -42,6 +42,7 @@ class ProductSize(models.Model):
     )
     size = models.PositiveIntegerField()  # 1,2,3...25
     price = models.PositiveBigIntegerField()
+    price_at_time_of_purchase = models.PositiveBigIntegerField(null=True, blank=True)
     stock = models.PositiveIntegerField(default=0)
     is_available = models.BooleanField(default=True)
 

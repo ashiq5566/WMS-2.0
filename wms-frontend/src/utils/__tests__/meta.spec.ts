@@ -17,6 +17,7 @@ describe('Meta & Page Title Utility', () => {
     expect(resolveRouteMeta('/orders').title).toBe('Orders Management');
     expect(resolveRouteMeta('/orders/create').title).toBe('Create Order');
     expect(resolveRouteMeta('/payments').title).toBe('Financial Dashboard & Payments');
+    expect(resolveRouteMeta('/profit').title).toBe('Profit & Margin Analytics');
     expect(resolveRouteMeta('/returns').title).toBe('Returns & RMA Management');
     expect(resolveRouteMeta('/returns/create').title).toBe('Create Return (RMA)');
     expect(resolveRouteMeta('/stakeholders').title).toBe('Stakeholder Directory (MDM)');

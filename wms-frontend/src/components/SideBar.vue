@@ -84,7 +84,8 @@ const navSections = [
     title: 'Directory & Finance',
     items: [
       { path: '/stakeholders', name: 'Stakeholders', icon: 'pi pi-users' },
-      { path: '/payments', name: 'Payments', icon: 'pi pi-wallet' }
+      { path: '/payments', name: 'Payments', icon: 'pi pi-wallet' },
+      { path: '/profit', name: 'Profit & Margins', icon: 'pi pi-chart-line' }
     ]
   }
 ];

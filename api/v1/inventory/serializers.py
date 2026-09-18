@@ -82,7 +82,7 @@ class OrderSerializer(serializers.ModelSerializer):
 class ProductSizeSerializer(serializers.ModelSerializer):
     class Meta:
         model = ProductSize
-        fields = ["id", "size", "price", "stock", "is_available"]
+        fields = ["id", "size", "price", "price_at_time_of_purchase", "stock", "is_available"]
         
 class ProductSerializer(serializers.ModelSerializer):
     sizes = ProductSizeSerializer(many=True, read_only=True)
@@ -149,6 +149,7 @@ class ProductCreateSerializer(serializers.ModelSerializer):
                         product=product,
                         size=size['size'],
                         price=size['price'],
+                        price_at_time_of_purchase=size.get('price_at_time_of_purchase'),
                         stock=size['stock'],
                         is_available=size.get('is_available', True),
                     )
@@ -172,6 +173,7 @@ class ProductCreateSerializer(serializers.ModelSerializer):
                         product=instance,
                         size=size['size'],
                         price=size['price'],
+                        price_at_time_of_purchase=size.get('price_at_time_of_purchase'),
                         stock=size['stock'],
                         is_available=size.get('is_available', True),
                     )

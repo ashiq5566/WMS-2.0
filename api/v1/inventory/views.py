@@ -2,7 +2,7 @@ from django.db import transaction
 from django.db.models import functions as db_functions
 from django_filters.rest_framework import DjangoFilterBackend
 from django.conf import settings
-from django.db.models import Sum, F
+from django.db.models import Sum, F, Q
 
 from rest_framework.decorators import action, api_view
 from rest_framework import viewsets
@@ -632,3 +632,332 @@ class CartItemViewSet(viewsets.ModelViewSet):
     # permission_classes = [IsAuthenticated]
     queryset = CartItem.objects.all()
     serializer_class = CartItemSerializer
+
+
+class ProfitAnalyticsViewSet(viewsets.ViewSet):
+    """
+    Dedicated Profit Tracking & Margin Analytics API
+    Provides real-time profitability metrics based on purchase cost vs. selling price,
+    sales volume, and sales return deductions.
+    """
+    permission_classes = (IsAuthenticated,)
+
+    def list(self, request):
+        from django.utils import timezone
+        import datetime
+
+        now = timezone.now()
+        start_date = request.query_params.get('start_date')
+        end_date = request.query_params.get('end_date')
+        date_range = request.query_params.get('date_range')
+        stakeholder_id = request.query_params.get('stakeholder_id')
+        product_id = request.query_params.get('product_id')
+        search_query = request.query_params.get('search', '').strip()
+
+        # Handle preset date ranges
+        if date_range == 'today':
+            start_date = now.date().isoformat()
+            end_date = now.date().isoformat()
+        elif date_range == 'this_month':
+            start_date = now.replace(day=1).date().isoformat()
+            end_date = now.date().isoformat()
+        elif date_range == 'last_month':
+            first_this_month = now.replace(day=1)
+            last_month_end = first_this_month - datetime.timedelta(days=1)
+            last_month_start = last_month_end.replace(day=1)
+            start_date = last_month_start.date().isoformat()
+            end_date = last_month_end.date().isoformat()
+        elif date_range == 'this_year':
+            start_date = now.replace(month=1, day=1).date().isoformat()
+            end_date = now.date().isoformat()
+
+        # 1. Base Query: Only fulfilled / valid Sales Orders (exclude Cancelled and Draft)
+        orders_qs = Order.objects.filter(order_type='SO').exclude(order_status__in=['Cancelled', 'Draft'])
+
+        if start_date:
+            orders_qs = orders_qs.filter(
+                Q(order_date__date__gte=start_date) | Q(order_date__isnull=True, date_added__date__gte=start_date)
+            )
+        if end_date:
+            orders_qs = orders_qs.filter(
+                Q(order_date__date__lte=end_date) | Q(order_date__isnull=True, date_added__date__lte=end_date)
+            )
+        if stakeholder_id:
+            orders_qs = orders_qs.filter(stakeholder_id=stakeholder_id)
+
+        # 2. Fetch Order Items
+        items_qs = OrderItem.objects.filter(order__in=orders_qs).select_related(
+            'order', 'product', 'product_size', 'order__stakeholder'
+        )
+        if product_id:
+            items_qs = items_qs.filter(product_id=product_id)
+
+        # 3. Fetch Completed Sales Returns associated with these orders
+        returns_qs = Return.objects.filter(
+            original_order__in=orders_qs,
+            return_type='SR',
+            return_status__in=['Approved', 'Processed', 'Completed']
+        )
+        return_items_qs = ReturnItem.objects.filter(return_order__in=returns_qs).select_related(
+            'return_order', 'return_order__original_order', 'product', 'product_size'
+        )
+        if product_id:
+            return_items_qs = return_items_qs.filter(product_id=product_id)
+
+        # Helper for unit purchase cost
+        def resolve_unit_cost(prod, size_obj):
+            if size_obj and size_obj.price_at_time_of_purchase is not None:
+                return float(size_obj.price_at_time_of_purchase)
+            if prod and prod.price_at_time_of_purchase is not None:
+                return float(prod.price_at_time_of_purchase)
+            return 0.0
+
+        # Build returns map by (product_id, size_id) and by order_id
+        returns_by_sku = {}
+        returns_by_order = {}
+        total_returned_revenue = 0.0
+        total_returned_cogs = 0.0
+        total_returned_units = 0
+
+        for r_item in return_items_qs:
+            p_id = r_item.product_id
+            s_id = r_item.product_size_id
+            sku_key = (p_id, s_id)
+            ord_id = r_item.return_order.original_order_id
+
+            qty = r_item.quantity or 0
+            price_ret = float(r_item.price_at_return or 0)
+            ret_rev = float(r_item.total) if r_item.total is not None else (qty * price_ret)
+            unit_cost = resolve_unit_cost(r_item.product, r_item.product_size)
+            ret_cogs = qty * unit_cost
+
+            total_returned_revenue += ret_rev
+            total_returned_cogs += ret_cogs
+            total_returned_units += qty
+
+            if sku_key not in returns_by_sku:
+                returns_by_sku[sku_key] = {'qty': 0, 'revenue': 0.0, 'cogs': 0.0}
+            returns_by_sku[sku_key]['qty'] += qty
+            returns_by_sku[sku_key]['revenue'] += ret_rev
+            returns_by_sku[sku_key]['cogs'] += ret_cogs
+
+            if ord_id not in returns_by_order:
+                returns_by_order[ord_id] = {'qty': 0, 'revenue': 0.0, 'cogs': 0.0}
+            returns_by_order[ord_id]['qty'] += qty
+            returns_by_order[ord_id]['revenue'] += ret_rev
+            returns_by_order[ord_id]['cogs'] += ret_cogs
+
+        # 4. Aggregate by Product / SKU
+        sku_map = {}
+        for item in items_qs:
+            p_id = item.product_id
+            s_id = item.product_size_id
+            sku_key = (p_id, s_id)
+
+            qty = item.quantity or 0
+            unit_sell_price = float(item.price_at_time_of_order or 0)
+            rev = float(item.total) if item.total is not None else (qty * unit_sell_price)
+            unit_cost = resolve_unit_cost(item.product, item.product_size)
+            cogs = qty * unit_cost
+
+            if sku_key not in sku_map:
+                sku_map[sku_key] = {
+                    'product_id': f"PR{item.product.pk}",
+                    'raw_product_id': item.product.id,
+                    'product_name': item.product.name,
+                    'size_id': s_id,
+                    'size': item.product_size.size if item.product_size else 'Standard',
+                    'unit': item.product.unit or 'Pieces',
+                    'gross_quantity': 0,
+                    'gross_revenue': 0.0,
+                    'gross_cogs': 0.0,
+                    'unit_cost': unit_cost,
+                    'selling_price': unit_sell_price,
+                }
+            sku_map[sku_key]['gross_quantity'] += qty
+            sku_map[sku_key]['gross_revenue'] += rev
+            sku_map[sku_key]['gross_cogs'] += cogs
+
+        # Process by_product array with returns applied
+        by_product = []
+        for sku_key, sku_data in sku_map.items():
+            ret_data = returns_by_sku.get(sku_key, {'qty': 0, 'revenue': 0.0, 'cogs': 0.0})
+            net_qty = sku_data['gross_quantity'] - ret_data['qty']
+            net_rev = max(0.0, sku_data['gross_revenue'] - ret_data['revenue'])
+            net_cogs = max(0.0, sku_data['gross_cogs'] - ret_data['cogs'])
+            gross_profit = net_rev - net_cogs
+            margin_pct = round((gross_profit / net_rev) * 100, 1) if net_rev > 0 else 0.0
+
+            row = {
+                'product_id': sku_data['product_id'],
+                'raw_product_id': sku_data['raw_product_id'],
+                'product_name': sku_data['product_name'],
+                'size_id': sku_data['size_id'],
+                'size': sku_data['size'],
+                'unit': sku_data['unit'],
+                'units_sold': net_qty,
+                'units_returned': ret_data['qty'],
+                'avg_selling_price': round(sku_data['selling_price'], 2),
+                'cost_price': round(sku_data['unit_cost'], 2),
+                'total_revenue': round(net_rev, 2),
+                'total_cogs': round(net_cogs, 2),
+                'gross_profit': round(gross_profit, 2),
+                'profit_margin_pct': margin_pct,
+                'is_profitable': gross_profit >= 0,
+            }
+
+            # Search filter on product level
+            if search_query:
+                q_lower = search_query.lower()
+                matches = (
+                    q_lower in row['product_name'].lower() or
+                    q_lower in row['product_id'].lower() or
+                    q_lower in str(row['size']).lower()
+                )
+                if not matches:
+                    continue
+
+            by_product.append(row)
+
+        by_product.sort(key=lambda x: x['gross_profit'], reverse=True)
+
+        # 5. Aggregate by Order
+        order_map = {}
+        for item in items_qs:
+            ord_obj = item.order
+            ord_id = ord_obj.id
+
+            qty = item.quantity or 0
+            unit_sell_price = float(item.price_at_time_of_order or 0)
+            rev = float(item.total) if item.total is not None else (qty * unit_sell_price)
+            unit_cost = resolve_unit_cost(item.product, item.product_size)
+            cogs = qty * unit_cost
+
+            if ord_id not in order_map:
+                order_map[ord_id] = {
+                    'order_id': ord_id,
+                    'order_number': ord_obj.order_number or f"SO-{ord_id}",
+                    'order_date': (ord_obj.order_date or ord_obj.date_added).isoformat() if (ord_obj.order_date or ord_obj.date_added) else None,
+                    'stakeholder_name': ord_obj.stakeholder.name if ord_obj.stakeholder else 'Direct Customer',
+                    'order_status': ord_obj.order_status,
+                    'items_count': 0,
+                    'gross_revenue': 0.0,
+                    'gross_cogs': 0.0,
+                }
+            order_map[ord_id]['items_count'] += 1
+            order_map[ord_id]['gross_revenue'] += rev
+            order_map[ord_id]['gross_cogs'] += cogs
+
+        by_order = []
+        for ord_id, ord_data in order_map.items():
+            ret_data = returns_by_order.get(ord_id, {'qty': 0, 'revenue': 0.0, 'cogs': 0.0})
+            net_rev = max(0.0, ord_data['gross_revenue'] - ret_data['revenue'])
+            net_cogs = max(0.0, ord_data['gross_cogs'] - ret_data['cogs'])
+            gross_profit = net_rev - net_cogs
+            margin_pct = round((gross_profit / net_rev) * 100, 1) if net_rev > 0 else 0.0
+
+            row = {
+                'order_id': ord_data['order_id'],
+                'order_number': ord_data['order_number'],
+                'order_date': ord_data['order_date'],
+                'stakeholder_name': ord_data['stakeholder_name'],
+                'order_status': ord_data['order_status'],
+                'items_count': ord_data['items_count'],
+                'total_revenue': round(net_rev, 2),
+                'total_cogs': round(net_cogs, 2),
+                'gross_profit': round(gross_profit, 2),
+                'profit_margin_pct': margin_pct,
+                'is_profitable': gross_profit >= 0,
+            }
+
+            if search_query:
+                q_lower = search_query.lower()
+                matches = (
+                    q_lower in row['order_number'].lower() or
+                    q_lower in row['stakeholder_name'].lower()
+                )
+                if not matches:
+                    continue
+
+            by_order.append(row)
+
+        by_order.sort(key=lambda x: x['order_date'] or '', reverse=True)
+
+        # 6. Overall Summary KPIs
+        total_gross_rev = sum(item['gross_revenue'] for item in sku_map.values())
+        total_gross_cogs = sum(item['gross_cogs'] for item in sku_map.values())
+        net_total_revenue = max(0.0, total_gross_rev - total_returned_revenue)
+        net_total_cogs = max(0.0, total_gross_cogs - total_returned_cogs)
+        net_gross_profit = net_total_revenue - net_total_cogs
+        overall_margin_pct = round((net_gross_profit / net_total_revenue) * 100, 1) if net_total_revenue > 0 else 0.0
+
+        total_net_units = sum(p['units_sold'] for p in by_product)
+        profitable_count = sum(1 for p in by_product if p['is_profitable'])
+        loss_count = sum(1 for p in by_product if not p['is_profitable'])
+
+        # 7. Monthly Trends (last 6 months)
+        monthly_trends = []
+        month_names = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+        for i in range(5, -1, -1):
+            target_month = (now.month - i - 1) % 12 + 1
+            target_year = now.year if (now.month - i) > 0 else now.year - 1
+            label = f"{month_names[target_month - 1]} {str(target_year)[2:]}"
+
+            m_orders = Order.objects.filter(
+                order_type='SO'
+            ).filter(
+                Q(order_date__year=target_year, order_date__month=target_month) |
+                Q(order_date__isnull=True, date_added__year=target_year, date_added__month=target_month)
+            ).exclude(order_status__in=['Cancelled', 'Draft'])
+
+            m_items = OrderItem.objects.filter(order__in=m_orders).select_related('product', 'product_size')
+            m_rev = 0.0
+            m_cogs = 0.0
+            for it in m_items:
+                q = it.quantity or 0
+                pr = float(it.price_at_time_of_order or 0)
+                m_rev += float(it.total) if it.total is not None else (q * pr)
+                c = resolve_unit_cost(it.product, it.product_size)
+                m_cogs += q * c
+
+            # Deduct returns in this month
+            m_returns = Return.objects.filter(
+                original_order__in=m_orders,
+                return_type='SR',
+                return_status__in=['Approved', 'Processed', 'Completed']
+            )
+            m_ret_items = ReturnItem.objects.filter(return_order__in=m_returns).select_related('product', 'product_size')
+            for r in m_ret_items:
+                rq = r.quantity or 0
+                rp = float(r.price_at_return or 0)
+                m_rev = max(0.0, m_rev - (float(r.total) if r.total is not None else rq * rp))
+                m_cogs = max(0.0, m_cogs - (rq * resolve_unit_cost(r.product, r.product_size)))
+
+            m_profit = m_rev - m_cogs
+            m_margin = round((m_profit / m_rev) * 100, 1) if m_rev > 0 else 0.0
+
+            monthly_trends.append({
+                'month': label,
+                'revenue': round(m_rev, 2),
+                'cogs': round(m_cogs, 2),
+                'gross_profit': round(m_profit, 2),
+                'margin_pct': m_margin,
+            })
+
+        return Response({
+            'kpi': {
+                'total_revenue': round(net_total_revenue, 2),
+                'total_cogs': round(net_total_cogs, 2),
+                'gross_profit': round(net_gross_profit, 2),
+                'profit_margin_pct': overall_margin_pct,
+                'total_orders_count': len(by_order),
+                'total_items_sold': total_net_units,
+                'total_returned_units': total_returned_units,
+                'total_returned_revenue': round(total_returned_revenue, 2),
+                'profitable_products_count': profitable_count,
+                'loss_products_count': loss_count,
+            },
+            'by_product': by_product,
+            'by_order': by_order,
+            'monthly_trends': monthly_trends,
+        }, status=status.HTTP_200_OK)

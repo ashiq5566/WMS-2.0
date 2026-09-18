@@ -44,6 +44,10 @@ export const ROUTE_TITLES: Record<string, RouteMetaInfo> = {
     title: 'Financial Dashboard & Payments',
     description: 'Real-time money movement ledger tracking cash inflows, supplier disbursements, and settlement analytics.',
   },
+  '/profit': {
+    title: 'Profit & Margin Analytics',
+    description: 'Track real-time profitability, cost of goods sold (COGS), gross profit, and margin percentages across products and orders.',
+  },
   '/returns': {
     title: 'Returns & RMA Management',
     description: 'Process customer returns (SR) and vendor purchase returns (PR) with stock restoration and ledger balance adjustments.',

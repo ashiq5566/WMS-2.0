@@ -1049,5 +1049,241 @@ class PaymentAndFinancialTests(TestCase):
         self.assertEqual(size_short.stock, 2)
 
 
+class ProfitAnalyticsTests(TestCase):
+    def setUp(self):
+        self.client = APIClient()
+        self.user = User.objects.create_user(username='profit_analyst', password='password123', user_type='admin')
+        self.client.force_authenticate(user=self.user)
+        self.customer1 = Stakeholder.objects.create(name='Acme Retail', type='Customer')
+        self.customer2 = Stakeholder.objects.create(name='Beta Stores', type='Customer')
+
+        # Product with base purchase cost of 60, selling price of 100
+        self.product = Product.objects.create(
+            name='Analytics Shoe',
+            selling_price=100,
+            price_at_time_of_purchase=60,
+            unit='Pieces'
+        )
+        # Size 8: fallback to base product cost (price_at_time_of_purchase=None)
+        self.size8 = ProductSize.objects.create(
+            product=self.product,
+            size=8,
+            price=100,
+            stock=50,
+            price_at_time_of_purchase=None
+        )
+        # Size 9: explicit size-level cost of 70 (higher than base 60)
+        self.size9 = ProductSize.objects.create(
+            product=self.product,
+            size=9,
+            price=120,
+            stock=50,
+            price_at_time_of_purchase=70
+        )
+
+    def test_profit_analytics_base_product_cost_fallback(self):
+        """When size price_at_time_of_purchase is null, COGS falls back to Product.price_at_time_of_purchase"""
+        order = Order.objects.create(
+            order_number='SO-PROFIT-01',
+            stakeholder=self.customer1,
+            order_type='SO',
+            order_status='Delivered',
+            gross_amount=1000,
+            discount=0,
+            net_amount=1000,
+            order_date=timezone.now()
+        )
+        # 10 units of size 8 at 100/unit = 1000 revenue. Unit cost = 60 (fallback). COGS = 600. Gross Profit = 400. Margin = 40.0%
+        OrderItem.objects.create(
+            order=order,
+            product=self.product,
+            product_size=self.size8,
+            quantity=10,
+            price_at_time_of_order=100,
+            total=1000
+        )
+
+        res = self.client.get('/api/inventory/profit-analytics/')
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        kpi = res.data['kpi']
+        self.assertEqual(kpi['total_revenue'], 1000.0)
+        self.assertEqual(kpi['total_cogs'], 600.0)
+        self.assertEqual(kpi['gross_profit'], 400.0)
+        self.assertEqual(kpi['profit_margin_pct'], 40.0)
+
+    def test_profit_analytics_size_specific_cost(self):
+        """When size has price_at_time_of_purchase, it overrides base product cost"""
+        order = Order.objects.create(
+            order_number='SO-PROFIT-02',
+            stakeholder=self.customer1,
+            order_type='SO',
+            order_status='Closed',
+            gross_amount=1200,
+            discount=0,
+            net_amount=1200,
+            order_date=timezone.now()
+        )
+        # 10 units of size 9 at 120/unit = 1200 revenue. Unit cost = 70. COGS = 700. Gross Profit = 500. Margin = 41.7%
+        OrderItem.objects.create(
+            order=order,
+            product=self.product,
+            product_size=self.size9,
+            quantity=10,
+            price_at_time_of_order=120,
+            total=1200
+        )
+
+        res = self.client.get('/api/inventory/profit-analytics/')
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        kpi = res.data['kpi']
+        self.assertEqual(kpi['total_revenue'], 1200.0)
+        self.assertEqual(kpi['total_cogs'], 700.0)
+        self.assertEqual(kpi['gross_profit'], 500.0)
+        self.assertEqual(kpi['profit_margin_pct'], 41.7)
+
+    def test_profit_analytics_sales_returns_deduction(self):
+        """Sales Returns deduct refunded quantities, refunded revenue, and COGS from net profit"""
+        order = Order.objects.create(
+            order_number='SO-PROFIT-03',
+            stakeholder=self.customer1,
+            order_type='SO',
+            order_status='Issued',
+            gross_amount=1000,
+            discount=0,
+            net_amount=1000,
+            order_date=timezone.now()
+        )
+        # Sold 10 units of size 8: Revenue = 1000, COGS = 600
+        OrderItem.objects.create(
+            order=order,
+            product=self.product,
+            product_size=self.size8,
+            quantity=10,
+            price_at_time_of_order=100,
+            total=1000
+        )
+
+        # Process return for 2 units: Refunded Rev = 200, Returned COGS = 120
+        ret = Return.objects.create(
+            original_order=order,
+            return_type='SR',
+            return_status='Completed',
+            total_amount=200,
+            stock_adjusted=True
+        )
+        ReturnItem.objects.create(
+            return_order=ret,
+            product=self.product,
+            product_size=self.size8,
+            quantity=2,
+            price_at_return=100,
+            total=200,
+            condition='Good'
+        )
+
+        res = self.client.get('/api/inventory/profit-analytics/')
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        kpi = res.data['kpi']
+        # Net Revenue = 1000 - 200 = 800
+        # Net COGS = 600 - 120 = 480
+        # Net Gross Profit = 800 - 480 = 320
+        # Net Margin = (320 / 800) * 100 = 40.0%
+        self.assertEqual(kpi['total_revenue'], 800.0)
+        self.assertEqual(kpi['total_cogs'], 480.0)
+        self.assertEqual(kpi['gross_profit'], 320.0)
+        self.assertEqual(kpi['profit_margin_pct'], 40.0)
+        self.assertEqual(kpi['total_returned_units'], 2)
+        self.assertEqual(kpi['total_returned_revenue'], 200.0)
+
+    def test_profit_analytics_negative_profit_discount(self):
+        """When sold below purchase cost, negative gross profit and negative margin are safely handled"""
+        order = Order.objects.create(
+            order_number='SO-LOSS-01',
+            stakeholder=self.customer1,
+            order_type='SO',
+            order_status='Closed',
+            gross_amount=400,
+            discount=0,
+            net_amount=400,
+            order_date=timezone.now()
+        )
+        # Sold 10 units at 40/unit (clearance), while purchase cost was 60/unit
+        # Revenue = 400, COGS = 600, Gross Profit = -200, Margin = (-200 / 400) * 100 = -50.0%
+        OrderItem.objects.create(
+            order=order,
+            product=self.product,
+            product_size=self.size8,
+            quantity=10,
+            price_at_time_of_order=40,
+            total=400
+        )
+
+        res = self.client.get('/api/inventory/profit-analytics/')
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        kpi = res.data['kpi']
+        self.assertEqual(kpi['total_revenue'], 400.0)
+        self.assertEqual(kpi['total_cogs'], 600.0)
+        self.assertEqual(kpi['gross_profit'], -200.0)
+        self.assertEqual(kpi['profit_margin_pct'], -50.0)
+        self.assertEqual(kpi['loss_products_count'], 1)
+        self.assertEqual(kpi['profitable_products_count'], 0)
+
+    def test_profit_analytics_date_range_and_customer_filtering(self):
+        """Filters by date range and stakeholder ID correctly restrict aggregated metrics"""
+        import datetime
+        now = timezone.now()
+        yesterday = now - datetime.timedelta(days=1)
+        last_week = now - datetime.timedelta(days=7)
+
+        # Order 1: yesterday, Customer 1
+        ord1 = Order.objects.create(
+            order_number='SO-FILTER-01',
+            stakeholder=self.customer1,
+            order_type='SO',
+            order_status='Delivered',
+            gross_amount=500,
+            net_amount=500,
+            order_date=yesterday
+        )
+        OrderItem.objects.create(
+            order=ord1,
+            product=self.product,
+            product_size=self.size8,
+            quantity=5,
+            price_at_time_of_order=100,
+            total=500
+        )
+
+        # Order 2: last week, Customer 2
+        ord2 = Order.objects.create(
+            order_number='SO-FILTER-02',
+            stakeholder=self.customer2,
+            order_type='SO',
+            order_status='Delivered',
+            gross_amount=800,
+            net_amount=800,
+            order_date=last_week
+        )
+        OrderItem.objects.create(
+            order=ord2,
+            product=self.product,
+            product_size=self.size8,
+            quantity=8,
+            price_at_time_of_order=100,
+            total=800
+        )
+
+        # 1. Filter by Customer 1
+        res_cust1 = self.client.get(f'/api/inventory/profit-analytics/?stakeholder_id={self.customer1.id}')
+        self.assertEqual(res_cust1.status_code, status.HTTP_200_OK)
+        self.assertEqual(res_cust1.data['kpi']['total_revenue'], 500.0)
+
+        # 2. Filter by date range (only yesterday)
+        res_date = self.client.get(f'/api/inventory/profit-analytics/?start_date={yesterday.date().isoformat()}&end_date={yesterday.date().isoformat()}')
+        self.assertEqual(res_date.status_code, status.HTTP_200_OK)
+        self.assertEqual(res_date.data['kpi']['total_revenue'], 500.0)
+
+
+
 
 
