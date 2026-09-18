@@ -5,6 +5,7 @@ import { useRouter } from 'vue-router'
 const router = useRouter()
 
 const axiosInstance = axios.create({
+  baseURL: import.meta.env.VITE_API_URL || '',
   xsrfCookieName: 'csrftoken',
   xsrfHeaderName: 'X-CSRFToken'
 })

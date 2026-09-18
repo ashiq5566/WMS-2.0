@@ -21,8 +21,11 @@ DEBUG = True
 ALLOWED_HOSTS = ['*']
 
 CSRF_TRUSTED_ORIGINS = [
-    'http://localhost:5173',  # Your Vue.js development URL
-    'http://127.0.0.1:5173',  # Add if you also access via IP
+    'http://localhost:5173',  # Vue.js dev server
+    'http://127.0.0.1:5173',
+    'http://localhost:8000',  # Django dev server
+    'http://127.0.0.1:8000',
+    'https://*.vercel.app',   # Vercel deployments
 ]
 
 
@@ -84,16 +87,42 @@ AUTH_USER_MODEL = 'accounts.User'
 # Database
 # https://docs.djangoproject.com/en/5.0/ref/settings/#databases
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': os.environ.get('POSTGRES_DB', 'wms'),
-        'USER': os.environ.get('POSTGRES_USER', 'wms'),
-        'PASSWORD': os.environ.get('POSTGRES_PASSWORD', 'wms'),
-        'HOST': os.environ.get('POSTGRES_HOST', '127.0.0.1'),
-        'PORT': os.environ.get('POSTGRES_PORT', '5432'),
+DATABASE_URL = os.environ.get('DATABASE_URL')
+
+if DATABASE_URL:
+    try:
+        import dj_database_url
+        DATABASES = {
+            'default': dj_database_url.parse(DATABASE_URL, conn_max_age=600, ssl_require=True)
+        }
+    except ImportError:
+        from urllib.parse import urlparse, parse_qs
+        parsed = urlparse(DATABASE_URL)
+        sslmode = parse_qs(parsed.query).get('sslmode', ['require'])[0]
+        DATABASES = {
+            'default': {
+                'ENGINE': 'django.db.backends.postgresql',
+                'NAME': parsed.path.lstrip('/'),
+                'USER': parsed.username or '',
+                'PASSWORD': parsed.password or '',
+                'HOST': parsed.hostname or '',
+                'PORT': parsed.port or 5432,
+                'OPTIONS': {
+                    'sslmode': sslmode,
+                },
+            }
+        }
+else:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.postgresql',
+            'NAME': os.environ.get('POSTGRES_DB', 'wms'),
+            'USER': os.environ.get('POSTGRES_USER', 'wms'),
+            'PASSWORD': os.environ.get('POSTGRES_PASSWORD', 'wms'),
+            'HOST': os.environ.get('POSTGRES_HOST', '127.0.0.1'),
+            'PORT': os.environ.get('POSTGRES_PORT', '5432'),
+        }
     }
-}
 
 import sys
 if os.environ.get('USE_SQLITE', 'False').lower() in ('true', '1') or 'test' in sys.argv:
@@ -143,10 +172,11 @@ USE_I18N = True
 USE_TZ = True
 
 DJANGO_VITE = {
-   "default": {
-       "dev_mode": False,
-       "static_url_prefix": "wms-frontend",
-   }
+    "default": {
+        "dev_mode": False,
+        "static_url_prefix": "wms-frontend",
+        "manifest_path": os.path.join(BASE_DIR, "static", "wms-frontend", "manifest.json") if DEBUG else os.path.join(BASE_DIR, "var/static_root", "wms-frontend", "manifest.json"),
+    }
 }
 
 

@@ -1,10 +1,6 @@
 {
-  "installCommand": "echo skip",
-  "buildCommand": "cd wms-frontend && npm install && npm run build",
-  "outputDirectory": "wms-frontend/dist",
-  "framework": null,
-  "routes": [
-    { "handle": "filesystem" },
-    { "src": "/(.*)", "dest": "/index.html" }
+  "rewrites": [
+    { "source": "/(.*)", "destination": "/index.html" }
   ]
 }
+
