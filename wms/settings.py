@@ -180,6 +180,9 @@ DJANGO_VITE = {
 
 
 
+WHITENOISE_ROOT = os.path.join(BASE_DIR, 'wms-frontend', 'dist')
+WHITENOISE_INDEX_FILE = True
+
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.0/howto/static-files/
 
@@ -190,7 +193,8 @@ MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
 
 STATICFILES_DIRS = [
-    os.path.join(BASE_DIR, "static"),  # Serve all built Vue files
+    os.path.join(BASE_DIR, "static"),
+    os.path.join(BASE_DIR, "wms-frontend", "dist"),
 ]
 
 # Default primary key field type
