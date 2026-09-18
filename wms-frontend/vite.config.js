@@ -22,10 +22,10 @@ export default defineConfig({
     target: 'es2015',
     chunkSizeWarningLimit: 5000,
     rollupOptions: {
-      input: {
-        // main: resolve('./src/main.ts')
-        main: path.resolve(__dirname, './src/main.js') // Fix this line
-      },
+      input:
+        process.env.BUILD_ENV === 'django'
+          ? { main: path.resolve(__dirname, './src/main.js') }
+          : { main: path.resolve(__dirname, './index.html') },
       output: {
         chunkFileNames: undefined
       }
