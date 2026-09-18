@@ -13,9 +13,11 @@ import {
 	getPaymentMethodInfo,
 	type PaymentRecord,
 } from "@/utils/paymentCalculations";
+import { useTheme } from "@/utils/theme";
 
 const router = useRouter();
 const toast = useToast();
+const { isDarkMode } = useTheme();
 
 // State
 const payments = ref<PaymentRecord[]>([]);
@@ -145,44 +147,73 @@ const navigateToDetail = (id: number) => {
 // ApexCharts Options for Cash Flow Visualization
 const cashFlowChartOptions = computed(() => {
 	const categories = summary.value.monthly_trends.map((t) => t.month);
+	const textColor = isDarkMode.value ? '#94a3b8' : '#64748b';
+	const borderColor = isDarkMode.value ? '#1e293b' : '#f1f5f9';
+
 	return {
 		chart: {
 			type: "bar",
 			height: 280,
 			toolbar: { show: false },
 			fontFamily: "inherit",
+			background: "transparent",
+			animations: {
+				enabled: true,
+				easing: 'easeinout',
+				speed: 650,
+				animateGradually: { enabled: true, delay: 100 }
+			}
+		},
+		theme: {
+			mode: isDarkMode.value ? "dark" : "light",
 		},
 		plotOptions: {
 			bar: {
 				horizontal: false,
-				columnWidth: "45%",
-				borderRadius: 4,
+				columnWidth: "46%",
+				borderRadius: 6,
+				borderRadiusApplication: 'end',
 			},
 		},
-		colors: ["#10b981", "#f59e0b", "#3b82f6"],
+		colors: ["#10b981", "#f59e0b", "#6366f1"],
 		dataLabels: { enabled: false },
 		stroke: { show: true, width: 2, colors: ["transparent"] },
 		xaxis: {
 			categories: categories.length ? categories : ["No Data"],
-			labels: { style: { colors: "#64748b", fontSize: "11px" } },
+			labels: { style: { colors: textColor, fontSize: "11px", fontFamily: "inherit" } },
+			axisBorder: { show: false },
+			axisTicks: { show: false }
 		},
 		yaxis: {
 			labels: {
 				formatter: (val: number) => "₹" + (val >= 1000 ? (val / 1000).toFixed(0) + "k" : val),
-				style: { colors: "#64748b", fontSize: "11px" },
+				style: { colors: textColor, fontSize: "11px", fontFamily: "inherit" },
 			},
 		},
 		tooltip: {
+			theme: isDarkMode.value ? "dark" : "light",
+			style: { fontSize: "12px", fontFamily: "inherit" },
 			y: { formatter: (val: number) => formatCurrency(val) },
 		},
 		legend: {
 			position: "top",
 			horizontalAlign: "right",
-			labels: { colors: "#64748b" },
+			fontSize: '12px',
+			fontFamily: 'inherit',
+			labels: { colors: textColor },
+			markers: {
+				radius: 12,
+				offsetX: -2
+			},
+			itemMargin: {
+				horizontal: 8,
+				vertical: 4
+			}
 		},
 		grid: {
-			borderColor: "#e2e8f0",
+			borderColor: borderColor,
 			strokeDashArray: 4,
+			padding: { top: 0, right: 10, bottom: 0, left: 10 }
 		},
 	};
 });
@@ -380,20 +411,26 @@ onMounted(() => {
 		<!-- Visual Analytics Section: Cash Flow Chart & Real-Time Status Overview -->
 		<div class="grid grid-cols-1 lg:grid-cols-3 gap-5">
 			<!-- Chart Card: Cash Flow Trends -->
-			<Card class="lg:col-span-2 shadow-sm border border-slate-200/80 dark:border-slate-800 rounded-xl">
+			<Card class="lg:col-span-2 shadow-sm border border-slate-200/80 dark:border-slate-800 rounded-2xl overflow-hidden transition-all duration-200 hover:shadow-md">
 				<template #title>
 					<div class="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
-						<div class="flex items-center gap-2">
-							<i class="pi pi-chart-bar text-blue-500 text-sm"></i>
-							<span class="text-sm font-bold text-slate-900 dark:text-white">Cash Flow Trend (Inflows vs. Outflows)</span>
+						<div class="flex items-center gap-2.5">
+							<div class="w-8 h-8 rounded-xl bg-blue-500/10 dark:bg-blue-500/15 text-blue-600 dark:text-blue-400 ring-1 ring-blue-500/20 flex items-center justify-center text-sm shadow-sm">
+								<i class="pi pi-chart-bar"></i>
+							</div>
+							<div>
+								<span class="text-sm font-bold text-slate-900 dark:text-white block leading-tight">Cash Flow Trend</span>
+								<span class="text-[11px] text-slate-500 dark:text-slate-400 font-normal">Monthly inflows vs. outflows comparison</span>
+							</div>
 						</div>
-						<span class="text-xs text-slate-400">Past 6 Months</span>
+						<span class="text-xs font-medium px-2.5 py-1 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400">Past 6 Months</span>
 					</div>
 				</template>
 				<template #content>
 					<div class="pt-2">
 						<apexchart
 							v-if="summary.monthly_trends.length"
+							:key="isDarkMode ? 'dark' : 'light'"
 							type="bar"
 							height="270"
 							:options="cashFlowChartOptions"

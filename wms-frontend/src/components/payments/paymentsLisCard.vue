@@ -67,7 +67,14 @@ const addPayment = async () => {
 </script>
 
 <template>
-	<div class="space-y-4">
+	<div class="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800/80 shadow-sm rounded-2xl p-5 space-y-4">
+		<div class="flex items-center justify-between text-sm font-bold text-slate-900 dark:text-white pb-3 border-b border-slate-100 dark:border-slate-800">
+			<div class="flex items-center gap-2">
+				<i class="pi pi-credit-card text-emerald-600"></i>
+				<span>Payment History ({{ props.payments?.length || 0 }})</span>
+			</div>
+		</div>
+
 		<DataTable :value="props.payments" tableStyle="min-width: 28rem" scrollHeight="320px" class="p-datatable-sm">
 			<Column field="payment_number" header="Payment #">
 				<template #body="slotProps">

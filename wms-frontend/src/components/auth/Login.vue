@@ -6,38 +6,19 @@ import store from '../../stores/stores.js';
 import Password from 'primevue/password';
 import Checkbox from 'primevue/checkbox';
 import Message from 'primevue/message';
+import { useTheme } from '@/utils/theme';
 
 const router = useRouter();
+const { isDarkMode, toggleTheme: toggleDarkMode, initTheme } = useTheme();
 
 const username = ref('');
 const password = ref('');
 const rememberMe = ref(false);
 const isLoading = ref(false);
 const errorMessage = ref('');
-const isDarkMode = ref(false);
-
-const toggleDarkMode = () => {
-  isDarkMode.value = !isDarkMode.value;
-  if (isDarkMode.value) {
-    document.documentElement.classList.add('dark', 'my-app-dark');
-    localStorage.setItem('theme', 'dark');
-  } else {
-    document.documentElement.classList.remove('dark', 'my-app-dark');
-    localStorage.setItem('theme', 'light');
-  }
-};
 
 onMounted(() => {
-  const savedTheme = localStorage.getItem('theme');
-  const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
-  if (savedTheme === 'dark' || (!savedTheme && prefersDark)) {
-    isDarkMode.value = true;
-    document.documentElement.classList.add('dark', 'my-app-dark');
-  } else {
-    isDarkMode.value = false;
-    document.documentElement.classList.remove('dark', 'my-app-dark');
-  }
-
+  initTheme();
   const savedUser = localStorage.getItem('saved_username');
   if (savedUser) {
     username.value = savedUser;

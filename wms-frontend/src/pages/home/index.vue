@@ -187,7 +187,17 @@
 		</div>
 
 		<!-- Section 3: Visual Analytics (Charts Grid) -->
-		<div class="space-y-6">
+		<div class="space-y-4">
+			<div class="flex items-center justify-between px-1">
+				<div class="flex items-center gap-2">
+					<div class="w-2.5 h-2.5 rounded-full bg-indigo-500"></div>
+					<h2 class="text-base font-semibold text-slate-900 dark:text-white">
+						Visual Analytics & Financial Health
+					</h2>
+				</div>
+				<span class="text-xs text-slate-400 dark:text-slate-500 font-medium">Interactive intelligence</span>
+			</div>
+
 			<!-- Row 1: Stock Availability & Monthly Turnover -->
 			<div class="grid grid-cols-1 xl:grid-cols-2 gap-5">
 				<stockChart class="w-full" />

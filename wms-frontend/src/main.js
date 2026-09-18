@@ -34,6 +34,10 @@ import RadioButton from 'primevue/radiobutton'
 import Checkbox from 'primevue/checkbox'
 import Textarea from 'primevue/textarea'
 import VueApexCharts from 'vue3-apexcharts'
+import { initTheme } from './utils/theme'
+
+// Synchronize dark/light theme on startup
+initTheme()
 
 const app = createApp(App)
 
@@ -41,7 +45,10 @@ app.use(createPinia())
 app.use(router)
 app.use(PrimeVue, {
   theme: {
-    preset: Aura
+    preset: Aura,
+    options: {
+      darkModeSelector: '.dark'
+    }
   }
 })
 app.use(ToastService)

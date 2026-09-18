@@ -11,6 +11,7 @@ describe('Meta & Page Title Utility', () => {
   });
 
   it('should correctly resolve static route meta', () => {
+    expect(resolveRouteMeta('/').title).toBe('Dashboard');
     expect(resolveRouteMeta('/home').title).toBe('Dashboard');
     expect(resolveRouteMeta('/stocks').title).toBe('Stock & Inventory Control');
     expect(resolveRouteMeta('/orders').title).toBe('Orders Management');

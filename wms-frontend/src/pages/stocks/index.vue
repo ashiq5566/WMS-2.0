@@ -398,8 +398,7 @@ const calculateMargin = (cost: number | null, selling: number | null) => {
 		</div>
 
 		<!-- Main Inventory Table Card -->
-		<Card class="!bg-white dark:!bg-slate-900 !border !border-slate-200/80 dark:!border-slate-800/80 !shadow-sm !rounded-2xl !overflow-hidden">
-			<template #content>
+		<div class="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800/80 shadow-sm rounded-2xl p-5 overflow-hidden">
 				<!-- Filters and Search Toolbar -->
 				<div class="flex flex-col lg:flex-row lg:items-center justify-between gap-3 pb-5 border-b border-slate-100 dark:border-slate-800/80">
 					<!-- Search Input -->
@@ -702,8 +701,7 @@ const calculateMargin = (cost: number | null, selling: number | null) => {
 						</div>
 					</template>
 				</DataTable>
-			</template>
-		</Card>
+		</div>
 
 		<!-- Size Variant Detail Modal -->
 		<Dialog

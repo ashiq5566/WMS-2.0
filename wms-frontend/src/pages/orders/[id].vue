@@ -226,130 +226,122 @@ onMounted(async () => {
 		<!-- Top Row: Details & Line Items -->
 		<div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
 			<!-- Order Details Card (5 cols) -->
-			<Card class="lg:col-span-5 !bg-white dark:!bg-slate-900 !border !border-slate-200/80 dark:!border-slate-800/80 !shadow-sm !rounded-2xl">
-				<template #title>
-					<div class="flex items-center gap-2 text-sm font-bold text-slate-900 dark:text-white pb-3 border-b border-slate-100 dark:border-slate-800">
-						<i class="pi pi-file-edit text-indigo-600"></i>
-						<span>Order Header & Financials</span>
-					</div>
-				</template>
-				<template #content>
-					<div class="space-y-4 pt-2 text-xs">
-						<div class="grid grid-cols-2 gap-3 p-3 bg-slate-50 dark:bg-slate-800/50 rounded-xl">
-							<div>
-								<span class="text-slate-400 block mb-0.5">Stakeholder:</span>
-								<strong class="text-slate-900 dark:text-white">{{ order.stakeholder_obj?.name }}</strong>
-								<span class="text-[10px] text-slate-400 block">{{ order.stakeholder_obj?.type }}</span>
-							</div>
-							<div>
-								<span class="text-slate-400 block mb-0.5">Order Date:</span>
-								<strong class="text-slate-900 dark:text-white">
-									{{ moment(order.date_added || order.created_at).format('DD MMM YYYY') }}
-								</strong>
-								<span class="text-[10px] text-slate-400 block">
-									{{ moment(order.date_added || order.created_at).format('hh:mm A') }}
-								</span>
-							</div>
+			<div class="lg:col-span-5 bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800/80 shadow-sm rounded-2xl p-5">
+				<div class="flex items-center gap-2 text-sm font-bold text-slate-900 dark:text-white pb-3 border-b border-slate-100 dark:border-slate-800">
+					<i class="pi pi-file-edit text-indigo-600"></i>
+					<span>Order Header & Financials</span>
+				</div>
+				<div class="space-y-4 pt-2 text-xs">
+					<div class="grid grid-cols-2 gap-3 p-3 bg-slate-50 dark:bg-slate-800/50 rounded-xl">
+						<div>
+							<span class="text-slate-400 block mb-0.5">Stakeholder:</span>
+							<strong class="text-slate-900 dark:text-white">{{ order.stakeholder_obj?.name }}</strong>
+							<span class="text-[10px] text-slate-400 block">{{ order.stakeholder_obj?.type }}</span>
 						</div>
+						<div>
+							<span class="text-slate-400 block mb-0.5">Order Date:</span>
+							<strong class="text-slate-900 dark:text-white">
+								{{ moment(order.date_added || order.created_at).format('DD MMM YYYY') }}
+							</strong>
+							<span class="text-[10px] text-slate-400 block">
+								{{ moment(order.date_added || order.created_at).format('hh:mm A') }}
+							</span>
+						</div>
+					</div>
 
-						<!-- Financial Breakdown -->
-						<div class="space-y-2 pt-2 border-t border-slate-100 dark:border-slate-800 text-xs">
-							<div class="flex justify-between text-slate-600 dark:text-slate-400">
-								<span>Gross Subtotal:</span>
-								<span class="font-semibold text-slate-900 dark:text-white">{{ formatCurrency(order.gross_amount) }}</span>
-							</div>
-							<div class="flex justify-between text-slate-600 dark:text-slate-400">
-								<span>Discount Applied:</span>
-								<span class="font-semibold text-rose-500">- {{ formatCurrency(order.discount) }}</span>
-							</div>
-							<div class="flex justify-between text-slate-900 dark:text-white font-bold text-sm pt-1 border-t border-slate-100 dark:border-slate-800">
-								<span>Net Payable:</span>
-								<span class="text-indigo-600 dark:text-indigo-400">{{ formatCurrency(order.net_amount) }}</span>
-							</div>
-							<div v-if="order.total_amount !== order.net_amount" class="flex justify-between text-slate-500 pt-1">
-								<span>Post-Return Value:</span>
-								<span class="font-semibold">{{ formatCurrency(order.total_amount) }}</span>
-							</div>
-							<div class="flex justify-between font-bold pt-2 border-t border-slate-100 dark:border-slate-800">
-								<span class="text-amber-600 dark:text-amber-400">Outstanding Balance:</span>
-								<span class="text-amber-600 dark:text-amber-400">{{ formatCurrency(order.pending_amount) }}</span>
-							</div>
+					<!-- Financial Breakdown -->
+					<div class="space-y-2 pt-2 border-t border-slate-100 dark:border-slate-800 text-xs">
+						<div class="flex justify-between text-slate-600 dark:text-slate-400">
+							<span>Gross Subtotal:</span>
+							<span class="font-semibold text-slate-900 dark:text-white">{{ formatCurrency(order.gross_amount) }}</span>
+						</div>
+						<div class="flex justify-between text-slate-600 dark:text-slate-400">
+							<span>Discount Applied:</span>
+							<span class="font-semibold text-rose-500">- {{ formatCurrency(order.discount) }}</span>
+						</div>
+						<div class="flex justify-between text-slate-900 dark:text-white font-bold text-sm pt-1 border-t border-slate-100 dark:border-slate-800">
+							<span>Net Payable:</span>
+							<span class="text-indigo-600 dark:text-indigo-400">{{ formatCurrency(order.net_amount) }}</span>
+						</div>
+						<div v-if="order.total_amount !== order.net_amount" class="flex justify-between text-slate-500 pt-1">
+							<span>Post-Return Value:</span>
+							<span class="font-semibold">{{ formatCurrency(order.total_amount) }}</span>
+						</div>
+						<div class="flex justify-between font-bold pt-2 border-t border-slate-100 dark:border-slate-800">
+							<span class="text-amber-600 dark:text-amber-400">Outstanding Balance:</span>
+							<span class="text-amber-600 dark:text-amber-400">{{ formatCurrency(order.pending_amount) }}</span>
 						</div>
 					</div>
-				</template>
-			</Card>
+				</div>
+			</div>
 
 			<!-- Line Items Card (7 cols) -->
-			<Card class="lg:col-span-7 !bg-white dark:!bg-slate-900 !border !border-slate-200/80 dark:!border-slate-800/80 !shadow-sm !rounded-2xl">
-				<template #title>
-					<div class="flex items-center justify-between text-sm font-bold text-slate-900 dark:text-white pb-3 border-b border-slate-100 dark:border-slate-800">
-						<div class="flex items-center gap-2">
-							<i class="pi pi-list text-indigo-600"></i>
-							<span>Order Items ({{ orderItems.length }})</span>
-						</div>
-						<Tag
-							v-if="canCreateReturn"
-							severity="success"
-							:value="`${totalReturnableUnits} units returnable`"
-							class="!text-[10px]"
-						/>
+			<div class="lg:col-span-7 bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800/80 shadow-sm rounded-2xl p-5">
+				<div class="flex items-center justify-between text-sm font-bold text-slate-900 dark:text-white pb-3 border-b border-slate-100 dark:border-slate-800">
+					<div class="flex items-center gap-2">
+						<i class="pi pi-list text-indigo-600"></i>
+						<span>Order Items ({{ orderItems.length }})</span>
 					</div>
-				</template>
-				<template #content>
-					<div class="overflow-x-auto border border-slate-200/80 dark:border-slate-800 rounded-xl mt-2">
-						<table class="w-full text-xs text-left">
-							<thead class="bg-slate-50 dark:bg-slate-800 font-semibold text-slate-600 dark:text-slate-300 border-b border-slate-200/80 dark:border-slate-800">
-								<tr>
-									<th class="p-2.5">Product & Size</th>
-									<th class="p-2.5 text-center w-16">Ordered</th>
-									<th class="p-2.5 text-center w-16">Returned</th>
-									<th class="p-2.5 text-center w-20">Returnable</th>
-									<th class="p-2.5 text-right w-20">Rate</th>
-									<th class="p-2.5 text-right w-24">Line Total</th>
-								</tr>
-							</thead>
-							<tbody class="divide-y divide-slate-100 dark:divide-slate-800">
-								<tr v-for="item in orderItems" :key="item.id" class="hover:bg-slate-50/50 dark:hover:bg-slate-800/30">
-									<td class="p-2.5">
-										<div class="font-semibold text-slate-900 dark:text-white">
-											{{ item.product_obj?.name }}
-										</div>
-										<div class="text-[11px] text-slate-400">
-											<span v-if="item.product_size_obj">Size {{ item.product_size_obj.size }}</span>
-											<span v-else>Standard Item</span>
-										</div>
-									</td>
-									<td class="p-2.5 text-center font-medium text-slate-800 dark:text-slate-200">
-										{{ item.quantity }}
-									</td>
-									<td class="p-2.5 text-center">
-										<span :class="(returnedMap[item.product_size || item.product_size_obj?.id] || 0) > 0 ? 'text-rose-500 font-bold' : 'text-slate-400'">
-											{{ returnedMap[item.product_size || item.product_size_obj?.id] || 0 }}
-										</span>
-									</td>
-									<td class="p-2.5 text-center">
-										<span
-											class="px-1.5 py-0.5 rounded text-[11px] font-semibold"
-											:class="Math.max(0, item.quantity - (returnedMap[item.product_size || item.product_size_obj?.id] || 0)) > 0 ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400' : 'bg-slate-100 text-slate-400 dark:bg-slate-800'"
-										>
-											{{ Math.max(0, item.quantity - (returnedMap[item.product_size || item.product_size_obj?.id] || 0)) }}
-										</span>
-									</td>
-									<td class="p-2.5 text-right text-slate-600 dark:text-slate-300">
-										{{ formatCurrency(item.price_at_time_of_order) }}
-									</td>
-									<td class="p-2.5 text-right font-bold text-slate-900 dark:text-white">
-										{{ formatCurrency(item.total) }}
-									</td>
-								</tr>
-								<tr v-if="orderItems.length === 0">
-									<td colspan="6" class="p-6 text-center text-slate-400 italic">No line items attached.</td>
-								</tr>
-							</tbody>
-						</table>
-					</div>
-				</template>
-			</Card>
+					<Tag
+						v-if="canCreateReturn"
+						severity="success"
+						:value="`${totalReturnableUnits} units returnable`"
+						class="!text-[10px]"
+					/>
+				</div>
+				<div class="overflow-x-auto border border-slate-200/80 dark:border-slate-800 rounded-xl mt-3">
+					<table class="w-full text-xs text-left">
+						<thead class="bg-slate-50 dark:bg-slate-800 font-semibold text-slate-600 dark:text-slate-300 border-b border-slate-200/80 dark:border-slate-800">
+							<tr>
+								<th class="p-2.5">Product & Size</th>
+								<th class="p-2.5 text-center w-16">Ordered</th>
+								<th class="p-2.5 text-center w-16">Returned</th>
+								<th class="p-2.5 text-center w-20">Returnable</th>
+								<th class="p-2.5 text-right w-20">Rate</th>
+								<th class="p-2.5 text-right w-24">Line Total</th>
+							</tr>
+						</thead>
+						<tbody class="divide-y divide-slate-100 dark:divide-slate-800">
+							<tr v-for="item in orderItems" :key="item.id" class="hover:bg-slate-50/50 dark:hover:bg-slate-800/30">
+								<td class="p-2.5">
+									<div class="font-semibold text-slate-900 dark:text-white">
+										{{ item.product_obj?.name }}
+									</div>
+									<div class="text-[11px] text-slate-400">
+										<span v-if="item.product_size_obj">Size {{ item.product_size_obj.size }}</span>
+										<span v-else>Standard Item</span>
+									</div>
+								</td>
+								<td class="p-2.5 text-center font-medium text-slate-800 dark:text-slate-200">
+									{{ item.quantity }}
+								</td>
+								<td class="p-2.5 text-center">
+									<span :class="(returnedMap[item.product_size || item.product_size_obj?.id] || 0) > 0 ? 'text-rose-500 font-bold' : 'text-slate-400'">
+										{{ returnedMap[item.product_size || item.product_size_obj?.id] || 0 }}
+									</span>
+								</td>
+								<td class="p-2.5 text-center">
+									<span
+										class="px-1.5 py-0.5 rounded text-[11px] font-semibold"
+										:class="Math.max(0, item.quantity - (returnedMap[item.product_size || item.product_size_obj?.id] || 0)) > 0 ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400' : 'bg-slate-100 text-slate-400 dark:bg-slate-800'"
+									>
+										{{ Math.max(0, item.quantity - (returnedMap[item.product_size || item.product_size_obj?.id] || 0)) }}
+									</span>
+								</td>
+								<td class="p-2.5 text-right text-slate-600 dark:text-slate-300">
+									{{ formatCurrency(item.price_at_time_of_order) }}
+								</td>
+								<td class="p-2.5 text-right font-bold text-slate-900 dark:text-white">
+									{{ formatCurrency(item.total) }}
+								</td>
+							</tr>
+							<tr v-if="orderItems.length === 0">
+								<td colspan="6" class="p-6 text-center text-slate-400 italic">No line items attached.</td>
+							</tr>
+						</tbody>
+					</table>
+				</div>
+			</div>
 		</div>
 
 		<!-- Bottom Row: Payments & Returns -->
@@ -366,65 +358,61 @@ onMounted(async () => {
 			</div>
 
 			<!-- Returns (5 cols) -->
-			<Card class="lg:col-span-5 !bg-white dark:!bg-slate-900 !border !border-slate-200/80 dark:!border-slate-800/80 !shadow-sm !rounded-2xl">
-				<template #title>
-					<div class="flex items-center justify-between text-sm font-bold text-slate-900 dark:text-white pb-3 border-b border-slate-100 dark:border-slate-800">
-						<div class="flex items-center gap-2">
-							<i class="pi pi-undo text-rose-500"></i>
-							<span>Return Logistics (RMA)</span>
-						</div>
-						<Button
-							v-if="canCreateReturn"
-							label="Create Return"
-							icon="pi pi-plus"
-							size="small"
-							text
-							class="!text-xs !py-1 !px-2"
-							@click="navigateToCreateReturn"
-						/>
+			<div class="lg:col-span-5 bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800/80 shadow-sm rounded-2xl p-5">
+				<div class="flex items-center justify-between text-sm font-bold text-slate-900 dark:text-white pb-3 border-b border-slate-100 dark:border-slate-800">
+					<div class="flex items-center gap-2">
+						<i class="pi pi-undo text-rose-500"></i>
+						<span>Return Logistics (RMA)</span>
 					</div>
-				</template>
-				<template #content>
-					<div v-if="returnOrders.length > 0" class="space-y-3 pt-2 text-xs">
-						<div
-							v-for="ret in returnOrders"
-							:key="ret.id"
-							class="p-3 bg-slate-50 dark:bg-slate-800/50 border border-slate-200/80 dark:border-slate-800 rounded-xl space-y-2"
-						>
-							<div class="flex items-center justify-between">
-								<router-link
-									:to="{ name: 'returns-id', params: { id: ret.id } }"
-									class="font-mono font-bold text-indigo-600 dark:text-indigo-400 hover:underline flex items-center gap-1"
-								>
-									<span>RMA-{{ String(ret.id).padStart(4, '0') }}</span>
-									<i class="pi pi-external-link text-[10px]"></i>
-								</router-link>
-								<div class="flex items-center gap-1.5">
-									<Tag
-										:severity="getReturnTypeSeverity(ret.return_type)"
-										:value="ret.return_type === 'SR' ? 'Sales Return' : 'Purchase Return'"
-										class="!text-[10px]"
-									/>
-									<Tag
-										:severity="getReturnStatusSeverity(ret.return_status || 'Completed')"
-										:value="ret.return_status || 'Completed'"
-										class="!text-[10px]"
-									/>
-								</div>
-							</div>
-							<div class="flex items-center justify-between text-slate-500 dark:text-slate-400 pt-1">
-								<span>{{ moment(ret.date_added || ret.date).format('DD MMM YYYY') }}</span>
-								<span class="font-bold text-slate-900 dark:text-white text-sm">
-									{{ formatCurrency(ret.total_amount) }}
-								</span>
+					<Button
+						v-if="canCreateReturn"
+						label="Create Return"
+						icon="pi pi-plus"
+						size="small"
+						text
+						class="!text-xs !py-1 !px-2"
+						@click="navigateToCreateReturn"
+					/>
+				</div>
+				<div v-if="returnOrders.length > 0" class="space-y-3 pt-3 text-xs">
+					<div
+						v-for="ret in returnOrders"
+						:key="ret.id"
+						class="p-3 bg-slate-50 dark:bg-slate-800/50 border border-slate-200/80 dark:border-slate-800 rounded-xl space-y-2"
+					>
+						<div class="flex items-center justify-between">
+							<router-link
+								:to="{ name: 'returns-id', params: { id: ret.id } }"
+								class="font-mono font-bold text-indigo-600 dark:text-indigo-400 hover:underline flex items-center gap-1"
+							>
+								<span>RMA-{{ String(ret.id).padStart(4, '0') }}</span>
+								<i class="pi pi-external-link text-[10px]"></i>
+							</router-link>
+							<div class="flex items-center gap-1.5">
+								<Tag
+									:severity="getReturnTypeSeverity(ret.return_type)"
+									:value="ret.return_type === 'SR' ? 'Sales Return' : 'Purchase Return'"
+									class="!text-[10px]"
+								/>
+								<Tag
+									:severity="getReturnStatusSeverity(ret.return_status || 'Completed')"
+									:value="ret.return_status || 'Completed'"
+									class="!text-[10px]"
+								/>
 							</div>
 						</div>
+						<div class="flex items-center justify-between text-slate-500 dark:text-slate-400 pt-1">
+							<span>{{ moment(ret.date_added || ret.date).format('DD MMM YYYY') }}</span>
+							<span class="font-bold text-slate-900 dark:text-white text-sm">
+								{{ formatCurrency(ret.total_amount) }}
+							</span>
+						</div>
 					</div>
-					<div v-else class="p-8 text-center text-xs text-slate-400">
-						No returns processed against this order.
-					</div>
-				</template>
-			</Card>
+				</div>
+				<div v-else class="p-8 text-center text-xs text-slate-400">
+					No returns processed against this order.
+				</div>
+			</div>
 		</div>
 
 		<!-- Cancellation Dialog -->

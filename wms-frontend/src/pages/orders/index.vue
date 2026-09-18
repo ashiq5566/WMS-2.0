@@ -402,9 +402,8 @@ const executeCancellation = async () => {
 			</div>
 		</div>
 
-		<!-- Main Orders Card & DataTable -->
-		<Card class="!bg-white dark:!bg-slate-900 !border !border-slate-200/80 dark:!border-slate-800/80 !shadow-sm !rounded-2xl !overflow-hidden">
-			<template #content>
+		<!-- Main Orders Table Container -->
+		<div class="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800/80 shadow-sm rounded-2xl p-5 overflow-hidden">
 				<!-- Filters and Search Toolbar -->
 				<div class="flex flex-col xl:flex-row xl:items-center justify-between gap-3 pb-5 border-b border-slate-100 dark:border-slate-800/80">
 					<!-- Search Input -->
@@ -656,8 +655,7 @@ const executeCancellation = async () => {
 						</div>
 					</template>
 				</DataTable>
-			</template>
-		</Card>
+		</div>
 
 		<!-- Order Cancellation Confirmation Dialog -->
 		<Dialog

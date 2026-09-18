@@ -7,11 +7,20 @@ import store from '../stores/stores.js';
 
 const router = useRouter();
 const route = useRoute();
-const props = defineProps(['visible']);
-const emit = defineEmits(['update:visible']);
+const props = defineProps({
+  visible: {
+    type: Boolean,
+    default: false
+  },
+  collapsed: {
+    type: Boolean,
+    default: false
+  }
+});
+const emit = defineEmits(['update:visible', 'update:collapsed']);
 
 const internalVisible = ref(props.visible);
-const isCollapsed = ref(false);
+const isCollapsed = ref(props.collapsed || false);
 
 watch(
   () => props.visible,
@@ -24,6 +33,13 @@ watch(internalVisible, (newValue) => {
   emit('update:visible', newValue);
 });
 
+watch(
+  () => props.collapsed,
+  (newValue) => {
+    isCollapsed.value = newValue;
+  }
+);
+
 const handleLogout = async () => {
   store.methods.logout();
   router.push('/login');
@@ -35,6 +51,7 @@ const handleNavClick = () => {
 
 const toggleCollapse = () => {
   isCollapsed.value = !isCollapsed.value;
+  emit('update:collapsed', isCollapsed.value);
 };
 
 const userDisplayName = computed(() => {
@@ -74,7 +91,7 @@ const navSections = [
 
 const isItemActive = (itemPath) => {
   if (itemPath === '/home') {
-    return route.path === '/home';
+    return route.path === '/home' || route.path === '/';
   }
   return route.path === itemPath || route.path.startsWith(itemPath + '/');
 };
