@@ -17,7 +17,6 @@ SECRET_KEY = 'django-insecure-z6)4jj0l-liq((ry0358lkztn#_v7keyxx$m5kbyv5d#qg41%)
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
-
 ALLOWED_HOSTS = ['*']
 
 CSRF_TRUSTED_ORIGINS = [
