@@ -893,9 +893,161 @@ class PaymentAndFinancialTests(TestCase):
         self.assertIn('outstanding_receivables', res.data)
         self.assertIn('outstanding_payables', res.data)
         self.assertIn('monthly_trends', res.data)
+        self.assertIn('sales_settlement_pct', res.data)
+        self.assertIn('purchase_settlement_pct', res.data)
+        self.assertIn('settlement_breakdown', res.data)
         self.assertEqual(res.data['total_received'], 500)
         self.assertEqual(res.data['total_paid'], 1000)
         self.assertEqual(res.data['net_cash_flow'], -500)
+
+    def test_fifo_unallocated_payment_with_opening_balance(self):
+        """Unallocated payment first drains opening_balance then applies remainder to oldest order"""
+        stakeholder = Stakeholder.objects.create(name='FIFO OB Customer', type='Customer', opening_balance=500)
+        oldest_order = Order.objects.create(
+            order_number='SO-FIFO-001',
+            stakeholder=stakeholder,
+            order_type='SO',
+            order_status='Issued',
+            net_amount=1000,
+            total_amount=1000,
+            pending_amount=1000,
+            date_added=timezone.now()
+        )
+
+        # Payment of 700: 500 covers opening_balance, 200 decrements oldest order
+        payment = Payment.objects.create(
+            company=stakeholder,
+            order=None,
+            amount=700,
+            payment_date=timezone.now(),
+            payment_method='CASH',
+            status='Completed'
+        )
+
+        stakeholder.refresh_from_db()
+        self.assertEqual(stakeholder.opening_balance, 0)
+        oldest_order.refresh_from_db()
+        self.assertEqual(oldest_order.pending_amount, 800)
+        self.assertEqual(oldest_order.order_status, 'Issued')
+        self.assertEqual(payment.order, oldest_order)
+
+    def test_fifo_unallocated_payment_without_opening_balance_closes_order(self):
+        """Unallocated payment with zero opening balance applies to oldest order and closes it when fully paid"""
+        stakeholder = Stakeholder.objects.create(name='FIFO Zero OB Customer', type='Customer', opening_balance=0)
+        import datetime
+        now = timezone.now()
+        order_old = Order.objects.create(
+            order_number='SO-FIFO-OLD',
+            stakeholder=stakeholder,
+            order_type='SO',
+            order_status='Issued',
+            net_amount=600,
+            total_amount=600,
+            pending_amount=600,
+            date_added=now - datetime.timedelta(days=2)
+        )
+        order_new = Order.objects.create(
+            order_number='SO-FIFO-NEW',
+            stakeholder=stakeholder,
+            order_type='SO',
+            order_status='Issued',
+            net_amount=400,
+            total_amount=400,
+            pending_amount=400,
+            date_added=now
+        )
+
+        # Pay 600 unallocated
+        payment = Payment.objects.create(
+            company=stakeholder,
+            order=None,
+            amount=600,
+            payment_date=now,
+            payment_method='BANK',
+            status='Completed'
+        )
+
+        order_old.refresh_from_db()
+        order_new.refresh_from_db()
+        self.assertEqual(order_old.pending_amount, 0)
+        self.assertEqual(order_old.order_status, 'Closed')
+        self.assertEqual(order_new.pending_amount, 400)
+        self.assertEqual(order_new.order_status, 'Issued')
+        self.assertEqual(payment.order, order_old)
+
+    def test_return_financial_reconciliation_clamping(self):
+        """Return deduction safely clamps order total_amount and pending_amount to 0 to prevent underflow"""
+        order = Order.objects.create(
+            order_number='SO-CLAMP-001',
+            stakeholder=self.customer,
+            order_type='SO',
+            order_status='Issued',
+            net_amount=500,
+            date_added=timezone.now()
+        )
+        # Simulate partial payment having been made earlier
+        Order.objects.filter(id=order.id).update(pending_amount=300)
+
+        # Process return with total_amount 400 (exceeds pending 300)
+        ret = Return.objects.create(
+            original_order=order,
+            return_type='SR',
+            return_status='Completed',
+            total_amount=400,
+            stock_adjusted=False
+        )
+
+        order.refresh_from_db()
+        self.assertEqual(order.total_amount, 100)  # max(0, 500 - 400) = 100
+        self.assertEqual(order.pending_amount, 0)   # max(0, 300 - 400) clamped to 0
+
+    def test_insufficient_stock_aborts_transaction_and_rolls_back(self):
+        """When multi-line SO has insufficient stock on later item, entire transaction rolls back cleanly"""
+        product = Product.objects.create(name='Atomic Rollback Product', selling_price=100)
+        size_ok = ProductSize.objects.create(product=product, size=1, price=100, stock=10)
+        size_short = ProductSize.objects.create(product=product, size=2, price=100, stock=2)
+
+        initial_order_count = Order.objects.count()
+        initial_orderitem_count = OrderItem.objects.count()
+
+        payload = {
+            'order': {
+                'order_type': 'SO',
+                'stakeholder': self.customer.id,
+                'gross_amount': 500,
+                'discount': 0,
+                'net_amount': 500
+            },
+            'items': [
+                {
+                    'product': product.id,
+                    'product_size': size_ok.id,
+                    'quantity': 3,
+                    'price_at_time_of_order': 100,
+                    'total': 300
+                },
+                {
+                    'product': product.id,
+                    'product_size': size_short.id,
+                    'quantity': 10,  # Exceeds available 2!
+                    'price_at_time_of_order': 100,
+                    'total': 200
+                }
+            ]
+        }
+
+        res = self.client.post('/api/inventory/orders/', payload, format='json')
+        self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn('Insufficient stock', res.data['error'])
+
+        # Verify full transaction rollback: no new orders, no orphaned items, stock untouched
+        self.assertEqual(Order.objects.count(), initial_order_count)
+        self.assertEqual(OrderItem.objects.count(), initial_orderitem_count)
+        size_ok.refresh_from_db()
+        size_short.refresh_from_db()
+        self.assertEqual(size_ok.stock, 10)
+        self.assertEqual(size_short.stock, 2)
+
 
 
 

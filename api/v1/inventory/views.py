@@ -514,6 +514,24 @@ class PaymentViewSet(viewsets.ModelViewSet):
                 'net': inflow - outflow,
             })
 
+        # Settlement Breakdown & Percentages
+        sales_collected = max(0, total_sales_revenue - so_pending)
+        sales_settlement_pct = round((sales_collected / total_sales_revenue) * 100, 1) if total_sales_revenue > 0 else 100.0
+
+        purchase_disbursed = max(0, total_purchase_expense - po_pending)
+        purchase_settlement_pct = round((purchase_disbursed / total_purchase_expense) * 100, 1) if total_purchase_expense > 0 else 100.0
+
+        settlement_breakdown = {
+            'sales_total_billed': total_sales_revenue,
+            'sales_pending': so_pending,
+            'sales_collected': sales_collected,
+            'sales_settlement_pct': sales_settlement_pct,
+            'purchase_total_billed': total_purchase_expense,
+            'purchase_pending': po_pending,
+            'purchase_disbursed': purchase_disbursed,
+            'purchase_settlement_pct': purchase_settlement_pct,
+        }
+
         return Response({
             'total_revenue': total_sales_revenue,
             'total_purchase_expense': total_purchase_expense,
@@ -527,6 +545,9 @@ class PaymentViewSet(viewsets.ModelViewSet):
             'overdue_payables': overdue_payables,
             'today_collections': today_collections,
             'today_disbursements': today_disbursements,
+            'sales_settlement_pct': sales_settlement_pct,
+            'purchase_settlement_pct': purchase_settlement_pct,
+            'settlement_breakdown': settlement_breakdown,
             'order_status_breakdown': {
                 'paid_orders': paid_orders_count,
                 'partially_paid_orders': partially_paid_orders_count,
