@@ -28,7 +28,16 @@ import Tag from 'primevue/tag'
 import IconField from 'primevue/iconfield'
 import InputIcon from 'primevue/inputicon'
 import DatePicker from 'primevue/datepicker'
+import ConfirmationService from 'primevue/confirmationservice'
+import ConfirmDialog from 'primevue/confirmdialog'
+import RadioButton from 'primevue/radiobutton'
+import Checkbox from 'primevue/checkbox'
+import Textarea from 'primevue/textarea'
 import VueApexCharts from 'vue3-apexcharts'
+import { initTheme } from './utils/theme'
+
+// Synchronize dark/light theme on startup
+initTheme()
 
 const app = createApp(App)
 
@@ -36,10 +45,14 @@ app.use(createPinia())
 app.use(router)
 app.use(PrimeVue, {
   theme: {
-    preset: Aura
+    preset: Aura,
+    options: {
+      darkModeSelector: '.dark'
+    }
   }
 })
 app.use(ToastService)
+app.use(ConfirmationService)
 app.use(VueApexCharts)
 app.component('Button', Button)
 app.component('InputText', InputText)
@@ -55,5 +68,10 @@ app.component('Tag', Tag)
 app.component('IconField', IconField)
 app.component('InputIcon', InputIcon)
 app.component('DatePicker', DatePicker)
+app.component('ConfirmDialog', ConfirmDialog)
+app.component('RadioButton', RadioButton)
+app.component('Checkbox', Checkbox)
+app.component('Textarea', Textarea)
 
 app.mount('#app')
+

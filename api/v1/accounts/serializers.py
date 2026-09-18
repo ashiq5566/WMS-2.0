@@ -6,3 +6,6 @@ class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = ('id', 'username', 'first_name', 'last_name', 'email', 'phone', 'user_type')
+
+
+from api.v1.inventory.serializers import StakeHolderSerializer

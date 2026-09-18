@@ -1,6 +1,6 @@
 from django.urls import path
 from rest_framework import routers
-from .views import OrdersViewSet, OrderItemViewSet, ProductViewSet, ReturnViewSet, ReturnItemViewSet, PaymentViewSet, CartViewSet, CartItemViewSet  
+from .views import OrdersViewSet, OrderItemViewSet, ProductViewSet, ReturnViewSet, ReturnItemViewSet, PaymentViewSet, CartViewSet, CartItemViewSet, ProfitAnalyticsViewSet  
 
 
 router = routers.SimpleRouter()
@@ -13,6 +13,7 @@ router.register(r'return-items', ReturnItemViewSet)
 router.register(r'payments', PaymentViewSet)
 router.register(r'cart', CartViewSet, basename="cart")
 router.register(r'cart-items', CartItemViewSet, basename="cart-items")
+router.register(r'profit-analytics', ProfitAnalyticsViewSet, basename="profit-analytics")
 
 urlpatterns = router.urls
 

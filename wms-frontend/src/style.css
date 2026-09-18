@@ -2,6 +2,12 @@
 
 @layer tailwind-base {
   @tailwind base;
+
+  html,
+  body {
+    @apply bg-slate-50 text-slate-800 dark:bg-slate-950 dark:text-slate-100 transition-colors duration-200;
+    min-height: 100vh;
+  }
 }
 
 @layer tailwind-utilities {
@@ -9,6 +15,204 @@
   @tailwind utilities;
 }
 
-/* label {
-  font-size: 12px;
-} */
+/* ==========================================================================
+   PrimeVue & Table Dark Theme Overrides
+   ========================================================================== */
+
+/* Cards */
+.dark .p-card,
+html.dark .p-card {
+  background-color: rgb(15 23 42) !important; /* slate-900 */
+  color: rgb(241 245 249) !important;
+  border-color: rgb(30 41 59 / 0.8) !important;
+}
+
+.dark .p-card-body,
+.dark .p-card-content {
+  color: inherit !important;
+}
+
+/* PrimeVue DataTable */
+.dark .p-datatable,
+html.dark .p-datatable {
+  background-color: transparent !important;
+  color: rgb(241 245 249) !important;
+}
+
+.dark .p-datatable .p-datatable-header,
+.dark .p-datatable .p-datatable-footer,
+.dark .p-datatable-table-container,
+.dark .p-datatable-table {
+  background-color: transparent !important;
+  color: rgb(241 245 249) !important;
+}
+
+.dark .p-datatable .p-datatable-thead > tr > th,
+html.dark .p-datatable .p-datatable-thead > tr > th {
+  background-color: rgb(30 41 59 / 0.7) !important; /* slate-800/70 */
+  color: rgb(226 232 240) !important; /* slate-200 */
+  border-color: rgb(51 65 85 / 0.7) !important; /* slate-700/70 */
+}
+
+.dark .p-datatable .p-datatable-tbody > tr,
+html.dark .p-datatable .p-datatable-tbody > tr {
+  background-color: transparent !important;
+  color: rgb(241 245 249) !important;
+}
+
+.dark .p-datatable .p-datatable-tbody > tr > td,
+html.dark .p-datatable .p-datatable-tbody > tr > td {
+  background-color: transparent !important;
+  color: inherit !important;
+  border-color: rgb(51 65 85 / 0.5) !important;
+}
+
+.dark .p-datatable .p-datatable-tbody > tr:hover,
+html.dark .p-datatable .p-datatable-tbody > tr:hover {
+  background-color: rgb(30 41 59 / 0.5) !important; /* slate-800/50 */
+}
+
+.dark .p-datatable .p-datatable-tbody > tr.p-row-odd,
+html.dark .p-datatable .p-datatable-tbody > tr.p-row-odd {
+  background-color: rgb(30 41 59 / 0.25) !important;
+}
+
+/* Paginator */
+.dark .p-paginator,
+html.dark .p-paginator {
+  background-color: transparent !important;
+  border-color: rgb(51 65 85 / 0.7) !important;
+  color: rgb(203 213 225) !important;
+}
+
+.dark .p-paginator .p-paginator-pages .p-paginator-page,
+.dark .p-paginator .p-paginator-first,
+.dark .p-paginator .p-paginator-prev,
+.dark .p-paginator .p-paginator-next,
+.dark .p-paginator .p-paginator-last {
+  color: rgb(203 213 225) !important;
+  background-color: transparent !important;
+}
+
+.dark .p-paginator .p-paginator-pages .p-paginator-page:hover,
+.dark .p-paginator .p-paginator-first:hover,
+.dark .p-paginator .p-paginator-prev:hover,
+.dark .p-paginator .p-paginator-next:hover,
+.dark .p-paginator .p-paginator-last:hover {
+  background-color: rgb(30 41 59 / 0.6) !important;
+}
+
+.dark .p-paginator .p-paginator-pages .p-paginator-page.p-paginator-page-selected {
+  background-color: rgb(79 70 229 / 0.25) !important;
+  color: rgb(165 180 252) !important;
+}
+
+/* Dialog & Modals */
+.dark .p-dialog,
+html.dark .p-dialog {
+  background-color: rgb(15 23 42) !important;
+  color: rgb(241 245 249) !important;
+  border-color: rgb(51 65 85 / 0.8) !important;
+}
+
+.dark .p-dialog-header,
+.dark .p-dialog-content,
+.dark .p-dialog-footer {
+  background-color: rgb(15 23 42) !important;
+  color: inherit !important;
+}
+
+/* Native HTML Tables in Details pages */
+.dark table,
+html.dark table {
+  color: rgb(241 245 249) !important;
+}
+
+.dark table thead,
+html.dark table thead {
+  background-color: rgb(30 41 59 / 0.8) !important;
+  color: rgb(226 232 240) !important;
+}
+
+.dark table tbody tr,
+html.dark table tbody tr {
+  background-color: transparent;
+  border-color: rgb(51 65 85 / 0.5) !important;
+}
+
+.dark table tbody tr:hover,
+html.dark table tbody tr:hover {
+  background-color: rgb(30 41 59 / 0.4) !important;
+}
+
+/* Modern ApexCharts Global Styling */
+.apexcharts-canvas {
+  margin: 0 auto;
+}
+
+.apexcharts-tooltip {
+  border-radius: 12px !important;
+  box-shadow: 0 12px 28px -4px rgba(0, 0, 0, 0.12), 0 4px 10px -2px rgba(0, 0, 0, 0.05) !important;
+  backdrop-filter: blur(12px) !important;
+  -webkit-backdrop-filter: blur(12px) !important;
+  border: 1px solid #e2e8f0 !important;
+  background: rgba(255, 255, 255, 0.96) !important;
+  color: #0f172a !important;
+  font-family: inherit !important;
+  overflow: hidden !important;
+}
+
+.apexcharts-tooltip-title {
+  background: #f8fafc !important;
+  border-bottom: 1px solid #e2e8f0 !important;
+  color: #334155 !important;
+  font-weight: 600 !important;
+  font-size: 12px !important;
+  padding: 6px 12px !important;
+}
+
+.apexcharts-tooltip-text {
+  font-size: 12px !important;
+}
+
+.dark .apexcharts-canvas text {
+  fill: #94a3b8;
+}
+
+.dark .apexcharts-tooltip,
+.dark .apexcharts-tooltip.apexcharts-theme-dark,
+.dark .apexcharts-tooltip.apexcharts-theme-light {
+  background: rgba(15, 23, 42, 0.94) !important;
+  border: 1px solid #334155 !important;
+  color: #f1f5f9 !important;
+  box-shadow: 0 14px 28px -4px rgba(0, 0, 0, 0.6) !important;
+}
+
+.dark .apexcharts-tooltip-title {
+  background: rgba(30, 41, 59, 0.85) !important;
+  border-bottom: 1px solid #334155 !important;
+  color: #f8fafc !important;
+}
+
+.dark .apexcharts-tooltip-text-y-value,
+.dark .apexcharts-tooltip-text-goals-value,
+.dark .apexcharts-tooltip-text-z-value {
+  color: #f8fafc !important;
+  font-weight: 600 !important;
+}
+
+.dark .apexcharts-legend-text {
+  color: #cbd5e1 !important;
+}
+
+.dark .apexcharts-menu {
+  background: #0f172a !important;
+  border: 1px solid #334155 !important;
+  color: #f1f5f9 !important;
+  border-radius: 10px !important;
+}
+
+.dark .apexcharts-menu-item:hover {
+  background: #1e293b !important;
+}
+
