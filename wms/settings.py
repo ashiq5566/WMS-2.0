@@ -87,22 +87,27 @@ AUTH_USER_MODEL = 'accounts.User'
 # Database
 # https://docs.djangoproject.com/en/5.0/ref/settings/#databases
 
-DATABASE_URL = os.environ.get('DATABASE_URL')
+DATABASE_URL = os.environ.get('DATABASE_URL') or os.environ.get('POSTGRES_URL')
+# If POSTGRES_DB accidentally contains the full connection string
+postgres_db_env = os.environ.get('POSTGRES_DB', '')
+if postgres_db_env and ('://' in postgres_db_env):
+    DATABASE_URL = postgres_db_env
 
 if DATABASE_URL:
+    clean_url = DATABASE_URL.strip('\'" ')
     try:
         import dj_database_url
         DATABASES = {
-            'default': dj_database_url.parse(DATABASE_URL, conn_max_age=600, ssl_require=True)
+            'default': dj_database_url.parse(clean_url, conn_max_age=600, ssl_require=True)
         }
-    except ImportError:
+    except (ImportError, Exception):
         from urllib.parse import urlparse, parse_qs
-        parsed = urlparse(DATABASE_URL)
+        parsed = urlparse(clean_url)
         sslmode = parse_qs(parsed.query).get('sslmode', ['require'])[0]
         DATABASES = {
             'default': {
                 'ENGINE': 'django.db.backends.postgresql',
-                'NAME': parsed.path.lstrip('/'),
+                'NAME': parsed.path.lstrip('/').split('?')[0] or 'neondb',
                 'USER': parsed.username or '',
                 'PASSWORD': parsed.password or '',
                 'HOST': parsed.hostname or '',
