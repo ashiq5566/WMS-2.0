@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Order, Product, OrderItem, Return, ReturnItem, Payment, Cart, CartItem, ProductSize
+from .models import Order, Product, OrderItem, Return, ReturnItem, Payment, Cart, CartItem, ProductSize, StockBatch, StockBatchAllocation, StockMovement
 
 admin.site.register(Order)
 admin.site.register(Product)
@@ -10,3 +10,6 @@ admin.site.register(Payment)
 admin.site.register(Cart)
 admin.site.register(CartItem)
 admin.site.register(ProductSize)
+admin.site.register(StockBatch)
+admin.site.register(StockBatchAllocation)
+admin.site.register(StockMovement)

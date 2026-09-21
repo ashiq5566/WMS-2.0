@@ -2,7 +2,7 @@ from rest_framework import serializers
 from accounts.models import Stakeholder
 import json
 from django.db import transaction
-from inventory.models import Order, OrderItem, Product, Return, ReturnItem, Payment, Cart, CartItem, ProductSize, StockMovement
+from inventory.models import Order, OrderItem, Product, Return, ReturnItem, Payment, Cart, CartItem, ProductSize, StockMovement, StockBatch, StockBatchAllocation
         
         
 class StakeHolderSerializer(serializers.ModelSerializer):
@@ -192,10 +192,36 @@ class StockMovementSerializer(serializers.ModelSerializer):
     def get_product_name(self, obj):
         return f"{obj.product_size.product.name} - Size {obj.product_size.size}"
 
+class StockBatchSerializer(serializers.ModelSerializer):
+    product_name = serializers.CharField(source='product_size.product.name', read_only=True)
+    product_id = serializers.CharField(source='product_size.product.product_id', read_only=True)
+    size = serializers.IntegerField(source='product_size.size', read_only=True)
+    order_number = serializers.CharField(source='order.order_number', read_only=True)
+
+    class Meta:
+        model = StockBatch
+        fields = [
+            'id', 'product_size', 'product_name', 'product_id', 'size',
+            'order', 'order_number', 'batch_number', 'unit_cost',
+            'initial_quantity', 'remaining_quantity', 'is_exhausted', 'created_at'
+        ]
+
+
+class StockBatchAllocationSerializer(serializers.ModelSerializer):
+    batch_number = serializers.CharField(source='batch.batch_number', read_only=True)
+
+    class Meta:
+        model = StockBatchAllocation
+        fields = ['id', 'sales_item', 'batch', 'batch_number', 'quantity', 'unit_cost', 'total_cost', 'created_at']
+
+
 class OrderItemSerializer(serializers.ModelSerializer):
     product_obj = ProductSerializer(source='product', read_only=True)
     order_obj = OrderSerializer(source='order', read_only=True)
     product_size_obj = ProductSizeSerializer(source='product_size', read_only=True)
+    batch_allocations = StockBatchAllocationSerializer(many=True, read_only=True)
+    gross_profit = serializers.DecimalField(max_digits=12, decimal_places=2, read_only=True)
+
     class Meta:
         model = OrderItem
         fields = '__all__'

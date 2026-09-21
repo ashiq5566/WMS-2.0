@@ -3,9 +3,8 @@ import json
 from django.utils import timezone
 from rest_framework import status
 from rest_framework.test import APIClient
-
 from api.v1.inventory.serializers import ProductCreateSerializer
-from inventory.models import Order, OrderItem, Product, ProductSize, Return, ReturnItem, StockMovement, Payment
+from inventory.models import Order, OrderItem, Product, ProductSize, Return, ReturnItem, StockMovement, Payment, StockBatch, StockBatchAllocation
 
 
 
@@ -1282,6 +1281,206 @@ class ProfitAnalyticsTests(TestCase):
         res_date = self.client.get(f'/api/inventory/profit-analytics/?start_date={yesterday.date().isoformat()}&end_date={yesterday.date().isoformat()}')
         self.assertEqual(res_date.status_code, status.HTTP_200_OK)
         self.assertEqual(res_date.data['kpi']['total_revenue'], 500.0)
+
+
+class FIFOCostTrackingTests(TestCase):
+    """
+    Validates FIFO (First-In, First-Out) inventory cost tracking, valuation, and profit margins.
+    Scenario:
+    - Day 1: Purchase 10 units @ ₹100 each from Supplier A
+    - Day 20: Purchase 10 units @ ₹120 each from Supplier B
+    - Day 25: Sell 15 units @ ₹150 each to Customer
+      -> 10 units from Batch 1 (@ ₹100 = ₹1,000)
+      -> 5 units from Batch 2 (@ ₹120 = ₹600)
+      -> Total COGS = ₹1,600, Revenue = ₹2,250, Gross Profit = ₹650
+    - Day 26: Sell remaining 5 units @ ₹160
+      -> 5 units from Batch 2 (@ ₹120 = ₹600)
+      -> Total COGS = ₹600, Revenue = ₹800, Gross Profit = ₹200
+    - Cancel Sales Order reverses FIFO batch quantities
+    """
+    def setUp(self):
+        from accounts.models import Stakeholder, User
+        self.client = APIClient()
+        self.user = User.objects.create_user(username='fifo_tester', password='password123', user_type='admin')
+        self.client.force_authenticate(user=self.user)
+
+        self.supplier = Stakeholder.objects.create(name='Global Supplier Co', type='Supplier')
+        self.customer = Stakeholder.objects.create(name='Prime Retailer', type='Customer')
+
+        self.product = Product.objects.create(name='FIFO Wireless Mouse', unit='Pieces', selling_price=150)
+        self.product_size = ProductSize.objects.create(product=self.product, size=1, price=150, stock=0)
+
+    def test_fifo_multi_purchase_and_multi_batch_sale(self):
+        # 1. Purchase Order 1: 10 units @ ₹100
+        po1_payload = {
+            'order': {
+                'order_type': 'PO',
+                'order_number': 'PO-FIFO-001',
+                'stakeholder': self.supplier.id,
+                'gross_amount': 1000,
+                'net_amount': 1000,
+            },
+            'items': [
+                {
+                    'product': self.product.id,
+                    'product_size': self.product_size.id,
+                    'quantity': 10,
+                    'price_at_time_of_order': 100,
+                    'total': 1000,
+                }
+            ]
+        }
+        res_po1 = self.client.post('/api/inventory/orders/', po1_payload, format='json')
+        self.assertEqual(res_po1.status_code, status.HTTP_201_CREATED)
+
+        # 2. Purchase Order 2: 10 units @ ₹120
+        po2_payload = {
+            'order': {
+                'order_type': 'PO',
+                'order_number': 'PO-FIFO-002',
+                'stakeholder': self.supplier.id,
+                'gross_amount': 1200,
+                'net_amount': 1200,
+            },
+            'items': [
+                {
+                    'product': self.product.id,
+                    'product_size': self.product_size.id,
+                    'quantity': 10,
+                    'price_at_time_of_order': 120,
+                    'total': 1200,
+                }
+            ]
+        }
+        res_po2 = self.client.post('/api/inventory/orders/', po2_payload, format='json')
+        self.assertEqual(res_po2.status_code, status.HTTP_201_CREATED)
+
+        # Verify stock and batches
+        self.product_size.refresh_from_db()
+        self.assertEqual(self.product_size.stock, 20)
+
+        batches = list(StockBatch.objects.filter(product_size=self.product_size).order_by('created_at', 'id'))
+        self.assertEqual(len(batches), 2)
+        self.assertEqual(batches[0].initial_quantity, 10)
+        self.assertEqual(batches[0].remaining_quantity, 10)
+        self.assertEqual(batches[0].unit_cost, 100)
+        self.assertEqual(batches[1].initial_quantity, 10)
+        self.assertEqual(batches[1].remaining_quantity, 10)
+        self.assertEqual(batches[1].unit_cost, 120)
+
+        # 3. Sales Order 1: Sell 15 units @ ₹150
+        so1_payload = {
+            'order': {
+                'order_type': 'SO',
+                'order_number': 'SO-FIFO-001',
+                'stakeholder': self.customer.id,
+                'gross_amount': 2250,
+                'net_amount': 2250,
+            },
+            'items': [
+                {
+                    'product': self.product.id,
+                    'product_size': self.product_size.id,
+                    'quantity': 15,
+                    'price_at_time_of_order': 150,
+                    'total': 2250,
+                }
+            ]
+        }
+        res_so1 = self.client.post('/api/inventory/orders/', so1_payload, format='json')
+        self.assertEqual(res_so1.status_code, status.HTTP_201_CREATED)
+
+        # Verify stock decreased to 5
+        self.product_size.refresh_from_db()
+        self.assertEqual(self.product_size.stock, 5)
+
+        # Verify batch 1 is exhausted, batch 2 has 5 remaining
+        batches[0].refresh_from_db()
+        batches[1].refresh_from_db()
+        self.assertEqual(batches[0].remaining_quantity, 0)
+        self.assertTrue(batches[0].is_exhausted)
+        self.assertEqual(batches[1].remaining_quantity, 5)
+        self.assertFalse(batches[1].is_exhausted)
+
+        # Verify OrderItem COGS and Gross Profit
+        so1_item = OrderItem.objects.get(order__order_number='SO-FIFO-001')
+        self.assertEqual(float(so1_item.cogs), 1600.0)  # (10 * 100) + (5 * 120)
+        self.assertEqual(float(so1_item.gross_profit), 650.0)  # 2250 - 1600
+
+        # Verify batch allocations recorded
+        allocations = list(so1_item.batch_allocations.order_by('created_at'))
+        self.assertEqual(len(allocations), 2)
+        self.assertEqual(allocations[0].batch, batches[0])
+        self.assertEqual(allocations[0].quantity, 10)
+        self.assertEqual(float(allocations[0].total_cost), 1000.0)
+        self.assertEqual(allocations[1].batch, batches[1])
+        self.assertEqual(allocations[1].quantity, 5)
+        self.assertEqual(float(allocations[1].total_cost), 600.0)
+
+        # 4. Check Profit Analytics API
+        res_analytics = self.client.get('/api/inventory/profit-analytics/')
+        self.assertEqual(res_analytics.status_code, status.HTTP_200_OK)
+        kpi = res_analytics.data['kpi']
+        self.assertEqual(kpi['total_revenue'], 2250.0)
+        self.assertEqual(kpi['total_cogs'], 1600.0)
+        self.assertEqual(kpi['gross_profit'], 650.0)
+        self.assertEqual(kpi['profit_margin_pct'], round((650.0 / 2250.0) * 100, 1))
+
+        # Check Product Breakdown in Analytics
+        prod_row = res_analytics.data['by_product'][0]
+        self.assertEqual(prod_row['units_sold'], 15)
+        self.assertEqual(prod_row['total_revenue'], 2250.0)
+        self.assertEqual(prod_row['total_cogs'], 1600.0)
+        self.assertEqual(prod_row['gross_profit'], 650.0)
+        self.assertEqual(prod_row['cost_price'], round(1600.0 / 15, 2))  # 106.67
+
+        # 5. Sell remaining 5 units in SO 2
+        so2_payload = {
+            'order': {
+                'order_type': 'SO',
+                'order_number': 'SO-FIFO-002',
+                'stakeholder': self.customer.id,
+                'gross_amount': 800,
+                'net_amount': 800,
+            },
+            'items': [
+                {
+                    'product': self.product.id,
+                    'product_size': self.product_size.id,
+                    'quantity': 5,
+                    'price_at_time_of_order': 160,
+                    'total': 800,
+                }
+            ]
+        }
+        res_so2 = self.client.post('/api/inventory/orders/', so2_payload, format='json')
+        self.assertEqual(res_so2.status_code, status.HTTP_201_CREATED)
+
+        self.product_size.refresh_from_db()
+        self.assertEqual(self.product_size.stock, 0)
+        batches[1].refresh_from_db()
+        self.assertEqual(batches[1].remaining_quantity, 0)
+        self.assertTrue(batches[1].is_exhausted)
+
+        so2_item = OrderItem.objects.get(order__order_number='SO-FIFO-002')
+        self.assertEqual(float(so2_item.cogs), 600.0)  # 5 * 120
+        self.assertEqual(float(so2_item.gross_profit), 200.0)  # 800 - 600
+
+        # 6. Cancel SO 2 -> Should restore 5 units to Batch 2
+        so2_order_id = res_so2.data['order']['id']
+        res_cancel = self.client.post(f'/api/inventory/orders/{so2_order_id}/cancel/')
+        self.assertEqual(res_cancel.status_code, status.HTTP_200_OK)
+
+        self.product_size.refresh_from_db()
+        self.assertEqual(self.product_size.stock, 5)
+        batches[1].refresh_from_db()
+        self.assertEqual(batches[1].remaining_quantity, 5)
+        self.assertFalse(batches[1].is_exhausted)
+
+        # 7. Query Stock Batches API
+        res_batches = self.client.get('/api/inventory/stock-batches/')
+        self.assertEqual(res_batches.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(res_batches.data), 2)
 
 
 

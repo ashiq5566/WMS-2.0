@@ -80,6 +80,41 @@ class StockMovement(models.Model):
         ordering = ['-created_at']
 
 
+class StockBatch(models.Model):
+    """
+    Represents an inventory batch layer created upon Purchase Order receipt (or initial stock).
+    Supports FIFO (First-In, First-Out) inventory valuation and tracking.
+    """
+    product_size = models.ForeignKey(ProductSize, on_delete=models.CASCADE, related_name='batches')
+    order = models.ForeignKey('Order', on_delete=models.CASCADE, related_name='batches', null=True, blank=True)
+    batch_number = models.CharField(max_length=100, unique=True)
+    unit_cost = models.DecimalField(max_digits=12, decimal_places=2)
+    initial_quantity = models.PositiveIntegerField()
+    remaining_quantity = models.PositiveIntegerField()
+    is_exhausted = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.batch_number} ({self.product_size}) - Rem: {self.remaining_quantity}/{self.initial_quantity} @ ₹{self.unit_cost}"
+
+    class Meta:
+        ordering = ['created_at', 'id']
+
+
+class StockBatchAllocation(models.Model):
+    """
+    Records the allocation of inventory from a specific StockBatch to a Sales OrderItem (FIFO layer consumption).
+    """
+    sales_item = models.ForeignKey('OrderItem', on_delete=models.CASCADE, related_name='batch_allocations')
+    batch = models.ForeignKey(StockBatch, on_delete=models.CASCADE, related_name='allocations')
+    quantity = models.PositiveIntegerField()
+    unit_cost = models.DecimalField(max_digits=12, decimal_places=2)
+    total_cost = models.DecimalField(max_digits=12, decimal_places=2)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"Allocated {self.quantity} from {self.batch.batch_number} to {self.sales_item} (Cost: ₹{self.total_cost})"
+    
     
 class Order(WebBaseModel):
     ORDER_TYPE_CHOICES = [
@@ -133,26 +168,102 @@ class OrderItem(models.Model):
     quantity = models.PositiveIntegerField()
     price_at_time_of_order = models.DecimalField(max_digits=10, decimal_places=2)
     total = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    cogs = models.DecimalField(max_digits=12, decimal_places=2, default=0.00, null=True, blank=True)
+    unit_cost = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True)
 
     def __str__(self):
         return f"{self.quantity} of {self.product.name} (Size: {self.product_size.size if self.product_size else 'N/A'}) for {self.order}"
     
+    @property
+    def gross_profit(self):
+        from decimal import Decimal
+        rev = self.total if self.total is not None else (Decimal(str(self.quantity)) * Decimal(str(self.price_at_time_of_order)))
+        cogs_val = Decimal(str(self.cogs)) if self.cogs is not None else Decimal('0.00')
+        return Decimal(str(rev)) - cogs_val
+
     def save(self, *args, **kwargs):
         """
-        Update ProductSize stock when order is created/saved.
-        This follows ERP patterns like SAP/Odoo.
+        Update ProductSize stock and apply FIFO batch tracking when order item is created/saved.
         """
+        from decimal import Decimal
+        import uuid
         is_new = self.pk is None
+
+        if self.total is None and self.quantity and self.price_at_time_of_order is not None:
+            self.total = Decimal(str(self.quantity)) * Decimal(str(self.price_at_time_of_order))
+
+        super().save(*args, **kwargs)
         
         if is_new and self.order and self.product_size:
             if self.order.order_type == 'PO':
                 # Purchase Order: increase stock
                 self.product_size.stock += self.quantity
                 movement_type = 'PURCHASE'
+
+                # Create FIFO StockBatch layer
+                batch_number = f"BAT-{self.order.order_number or uuid.uuid4().hex[:6]}-{self.product_size.id}-{self.pk}"
+                StockBatch.objects.create(
+                    product_size=self.product_size,
+                    order=self.order,
+                    batch_number=batch_number,
+                    unit_cost=self.price_at_time_of_order,
+                    initial_quantity=self.quantity,
+                    remaining_quantity=self.quantity,
+                    is_exhausted=(self.quantity == 0)
+                )
+
             elif self.order.order_type == 'SO':
                 # Sales Order: decrease stock
                 self.product_size.stock -= self.quantity
                 movement_type = 'SALE'
+
+                # Perform FIFO batch allocation
+                remaining_needed = self.quantity
+                allocated_cogs = Decimal('0.00')
+
+                # Get available batches in FIFO order (oldest first)
+                batches = StockBatch.objects.select_for_update().filter(
+                    product_size=self.product_size,
+                    remaining_quantity__gt=0,
+                    is_exhausted=False
+                ).order_by('created_at', 'id')
+
+                for batch in batches:
+                    take_qty = min(remaining_needed, batch.remaining_quantity)
+                    slice_cost = Decimal(str(take_qty)) * batch.unit_cost
+                    allocated_cogs += slice_cost
+
+                    batch.remaining_quantity -= take_qty
+                    if batch.remaining_quantity == 0:
+                        batch.is_exhausted = True
+                    batch.save()
+
+                    StockBatchAllocation.objects.create(
+                        sales_item=self,
+                        batch=batch,
+                        quantity=take_qty,
+                        unit_cost=batch.unit_cost,
+                        total_cost=slice_cost
+                    )
+
+                    remaining_needed -= take_qty
+                    if remaining_needed == 0:
+                        break
+
+                # Fallback for unbatched quantities (e.g. pre-existing stock)
+                if remaining_needed > 0:
+                    fallback_cost = Decimal('0.00')
+                    if self.product_size.price_at_time_of_purchase is not None:
+                        fallback_cost = Decimal(str(self.product_size.price_at_time_of_purchase))
+                    elif self.product.price_at_time_of_purchase is not None:
+                        fallback_cost = Decimal(str(self.product.price_at_time_of_purchase))
+                    
+                    allocated_cogs += Decimal(str(remaining_needed)) * fallback_cost
+
+                self.cogs = allocated_cogs
+                if self.quantity > 0:
+                    self.unit_cost = round(allocated_cogs / Decimal(str(self.quantity)), 2)
+                OrderItem.objects.filter(pk=self.pk).update(cogs=self.cogs, unit_cost=self.unit_cost)
             
             self.product_size.save()
             
@@ -164,8 +275,6 @@ class OrderItem(models.Model):
                 quantity=self.quantity if self.order.order_type == 'PO' else -self.quantity,
                 reference=self.order.order_number,
             )
-            
-        super().save(*args, **kwargs)
     
 class Return(WebBaseModel):
     RETURN_TYPE_CHOICES = [
@@ -251,6 +360,41 @@ class ReturnItem(models.Model):
                     self.product_size.save()
                     movement_type = 'RETURN_SALE'
                     qty_delta = self.quantity
+
+                    # FIFO batch restocking
+                    orig_item = self.return_order.original_order.items.filter(
+                        product=self.product, product_size=self.product_size
+                    ).first()
+                    return_cost = self.price_at_return
+                    if orig_item and orig_item.unit_cost:
+                        return_cost = orig_item.unit_cost
+                    elif self.product_size.price_at_time_of_purchase is not None:
+                        return_cost = self.product_size.price_at_time_of_purchase
+                    elif self.product.price_at_time_of_purchase is not None:
+                        return_cost = self.product.price_at_time_of_purchase
+
+                    rem_restore = self.quantity
+                    if orig_item:
+                        for alloc in orig_item.batch_allocations.select_related('batch').order_by('-created_at'):
+                            can_restore = min(rem_restore, alloc.quantity)
+                            batch = alloc.batch
+                            batch.remaining_quantity += can_restore
+                            batch.is_exhausted = False
+                            batch.save()
+                            rem_restore -= can_restore
+                            if rem_restore == 0:
+                                break
+                    if rem_restore > 0 and return_cost is not None:
+                        import uuid
+                        StockBatch.objects.create(
+                            product_size=self.product_size,
+                            order=self.return_order.original_order,
+                            batch_number=f"BAT-RET-{self.return_order.id}-{self.product_size.id}-{uuid.uuid4().hex[:6]}",
+                            unit_cost=return_cost,
+                            initial_quantity=rem_restore,
+                            remaining_quantity=rem_restore,
+                            is_exhausted=False
+                        )
                 else:
                     movement_type = 'RETURN_SALE'
                     qty_delta = 0  # Quarantined / Written-off
@@ -260,6 +404,22 @@ class ReturnItem(models.Model):
                 self.product_size.save()
                 movement_type = 'RETURN_PURCHASE'
                 qty_delta = -self.quantity
+
+                # Deduct from corresponding PO batch if exists
+                rem_deduct = self.quantity
+                po_batches = StockBatch.objects.filter(
+                    order=self.return_order.original_order,
+                    product_size=self.product_size
+                ).order_by('-created_at')
+                for batch in po_batches:
+                    take = min(rem_deduct, batch.remaining_quantity)
+                    batch.remaining_quantity -= take
+                    if batch.remaining_quantity == 0:
+                        batch.is_exhausted = True
+                    batch.save()
+                    rem_deduct -= take
+                    if rem_deduct == 0:
+                        break
 
             # Create stock movement record for audit trail
             StockMovement.objects.create(
