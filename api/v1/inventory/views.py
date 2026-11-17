@@ -141,6 +141,19 @@ class OrdersViewSet(viewsets.ModelViewSet):
 							# SO had decreased stock, now restore it
 							ps.stock += item.quantity
 							ps.save()
+
+							# Reverse FIFO batch allocations
+							for alloc in item.batch_allocations.select_related('batch').all():
+								batch = alloc.batch
+								batch.remaining_quantity += alloc.quantity
+								batch.is_exhausted = False
+								batch.save()
+							from decimal import Decimal
+							item.batch_allocations.all().delete()
+							item.cogs = Decimal('0.00')
+							item.unit_cost = Decimal('0.00')
+							item.save()
+
 							StockMovement.objects.create(
 								product_size=ps,
 								order=order,
@@ -156,6 +169,15 @@ class OrdersViewSet(viewsets.ModelViewSet):
 									f"Cannot cancel PO: {ps.product.name} (Size {ps.size}) "
 									f"current stock ({ps.stock}) is less than order quantity ({item.quantity})."
 								)
+							for batch in StockBatch.objects.filter(order=order, product_size=ps):
+								if batch.remaining_quantity < batch.initial_quantity:
+									raise ValueError(
+										f"Cannot cancel PO: stock from batch {batch.batch_number} has already been consumed by sales orders."
+									)
+								batch.remaining_quantity = 0
+								batch.is_exhausted = True
+								batch.save()
+
 							ps.stock -= item.quantity
 							ps.save()
 							StockMovement.objects.create(
@@ -712,6 +734,16 @@ class ProfitAnalyticsViewSet(viewsets.ViewSet):
                 return float(prod.price_at_time_of_purchase)
             return 0.0
 
+        # Helper for FIFO COGS on OrderItem
+        def resolve_item_cogs(item):
+            qty = item.quantity or 0
+            if item.cogs is not None and item.cogs > 0:
+                c = float(item.cogs)
+                u = float(item.unit_cost) if item.unit_cost is not None else (c / qty if qty > 0 else 0.0)
+                return u, c
+            u = resolve_unit_cost(item.product, item.product_size)
+            return u, qty * u
+
         # Build returns map by (product_id, size_id) and by order_id
         returns_by_sku = {}
         returns_by_order = {}
@@ -728,7 +760,15 @@ class ProfitAnalyticsViewSet(viewsets.ViewSet):
             qty = r_item.quantity or 0
             price_ret = float(r_item.price_at_return or 0)
             ret_rev = float(r_item.total) if r_item.total is not None else (qty * price_ret)
-            unit_cost = resolve_unit_cost(r_item.product, r_item.product_size)
+
+            # Check if original order item has specific FIFO unit_cost
+            orig_item = r_item.return_order.original_order.items.filter(
+                product=r_item.product, product_size=r_item.product_size
+            ).first()
+            if orig_item and orig_item.unit_cost is not None and orig_item.unit_cost > 0:
+                unit_cost = float(orig_item.unit_cost)
+            else:
+                unit_cost = resolve_unit_cost(r_item.product, r_item.product_size)
             ret_cogs = qty * unit_cost
 
             total_returned_revenue += ret_rev
@@ -757,8 +797,7 @@ class ProfitAnalyticsViewSet(viewsets.ViewSet):
             qty = item.quantity or 0
             unit_sell_price = float(item.price_at_time_of_order or 0)
             rev = float(item.total) if item.total is not None else (qty * unit_sell_price)
-            unit_cost = resolve_unit_cost(item.product, item.product_size)
-            cogs = qty * unit_cost
+            unit_cost, cogs = resolve_item_cogs(item)
 
             if sku_key not in sku_map:
                 sku_map[sku_key] = {
@@ -788,6 +827,12 @@ class ProfitAnalyticsViewSet(viewsets.ViewSet):
             gross_profit = net_rev - net_cogs
             margin_pct = round((gross_profit / net_rev) * 100, 1) if net_rev > 0 else 0.0
 
+            effective_cost_price = (
+                round(sku_data['gross_cogs'] / sku_data['gross_quantity'], 2)
+                if sku_data['gross_quantity'] > 0
+                else round(sku_data['unit_cost'], 2)
+            )
+
             row = {
                 'product_id': sku_data['product_id'],
                 'raw_product_id': sku_data['raw_product_id'],
@@ -798,7 +843,7 @@ class ProfitAnalyticsViewSet(viewsets.ViewSet):
                 'units_sold': net_qty,
                 'units_returned': ret_data['qty'],
                 'avg_selling_price': round(sku_data['selling_price'], 2),
-                'cost_price': round(sku_data['unit_cost'], 2),
+                'cost_price': effective_cost_price,
                 'total_revenue': round(net_rev, 2),
                 'total_cogs': round(net_cogs, 2),
                 'gross_profit': round(gross_profit, 2),
@@ -830,8 +875,7 @@ class ProfitAnalyticsViewSet(viewsets.ViewSet):
             qty = item.quantity or 0
             unit_sell_price = float(item.price_at_time_of_order or 0)
             rev = float(item.total) if item.total is not None else (qty * unit_sell_price)
-            unit_cost = resolve_unit_cost(item.product, item.product_size)
-            cogs = qty * unit_cost
+            unit_cost, cogs = resolve_item_cogs(item)
 
             if ord_id not in order_map:
                 order_map[ord_id] = {
@@ -903,22 +947,23 @@ class ProfitAnalyticsViewSet(viewsets.ViewSet):
             target_year = now.year if (now.month - i) > 0 else now.year - 1
             label = f"{month_names[target_month - 1]} {str(target_year)[2:]}"
 
-            m_orders = Order.objects.filter(
-                order_type='SO'
-            ).filter(
+            m_orders = orders_qs.filter(
                 Q(order_date__year=target_year, order_date__month=target_month) |
                 Q(order_date__isnull=True, date_added__year=target_year, date_added__month=target_month)
-            ).exclude(order_status__in=['Cancelled', 'Draft'])
+            )
 
-            m_items = OrderItem.objects.filter(order__in=m_orders).select_related('product', 'product_size')
+            m_items = OrderItem.objects.filter(order__in=m_orders)
+            if product_id:
+                m_items = m_items.filter(product_id=product_id)
+
             m_rev = 0.0
             m_cogs = 0.0
             for it in m_items:
                 q = it.quantity or 0
                 pr = float(it.price_at_time_of_order or 0)
                 m_rev += float(it.total) if it.total is not None else (q * pr)
-                c = resolve_unit_cost(it.product, it.product_size)
-                m_cogs += q * c
+                _, c = resolve_item_cogs(it)
+                m_cogs += c
 
             # Deduct returns in this month
             m_returns = Return.objects.filter(
@@ -931,7 +976,14 @@ class ProfitAnalyticsViewSet(viewsets.ViewSet):
                 rq = r.quantity or 0
                 rp = float(r.price_at_return or 0)
                 m_rev = max(0.0, m_rev - (float(r.total) if r.total is not None else rq * rp))
-                m_cogs = max(0.0, m_cogs - (rq * resolve_unit_cost(r.product, r.product_size)))
+                orig_it = r.return_order.original_order.items.filter(
+                    product=r.product, product_size=r.product_size
+                ).first()
+                if orig_it and orig_it.unit_cost is not None and orig_it.unit_cost > 0:
+                    ret_u = float(orig_it.unit_cost)
+                else:
+                    ret_u = resolve_unit_cost(r.product, r.product_size)
+                m_cogs = max(0.0, m_cogs - (rq * ret_u))
 
             m_profit = m_rev - m_cogs
             m_margin = round((m_profit / m_rev) * 100, 1) if m_rev > 0 else 0.0
@@ -961,3 +1013,21 @@ class ProfitAnalyticsViewSet(viewsets.ViewSet):
             'by_order': by_order,
             'monthly_trends': monthly_trends,
         }, status=status.HTTP_200_OK)
+
+
+class StockBatchViewSet(viewsets.ReadOnlyModelViewSet):
+    """
+    API endpoint for viewing FIFO inventory batches and stock layers.
+    """
+    queryset = StockBatch.objects.select_related('product_size', 'product_size__product', 'order').all()
+    serializer_class = StockBatchSerializer
+    permission_classes = (IsAuthenticated,)
+    filter_backends = (DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter)
+    filterset_fields = {
+        'product_size': ['exact'],
+        'order': ['exact'],
+        'is_exhausted': ['exact'],
+    }
+    search_fields = ['batch_number', 'product_size__product__name', 'order__order_number']
+    ordering_fields = ['created_at', 'remaining_quantity', 'unit_cost']
+    ordering = ['created_at']

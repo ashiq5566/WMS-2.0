@@ -1,6 +1,6 @@
 from django.urls import path
 from rest_framework import routers
-from .views import OrdersViewSet, OrderItemViewSet, ProductViewSet, ReturnViewSet, ReturnItemViewSet, PaymentViewSet, CartViewSet, CartItemViewSet, ProfitAnalyticsViewSet  
+from .views import OrdersViewSet, OrderItemViewSet, ProductViewSet, ReturnViewSet, ReturnItemViewSet, PaymentViewSet, CartViewSet, CartItemViewSet, ProfitAnalyticsViewSet, StockBatchViewSet  
 
 
 router = routers.SimpleRouter()
@@ -14,6 +14,7 @@ router.register(r'payments', PaymentViewSet)
 router.register(r'cart', CartViewSet, basename="cart")
 router.register(r'cart-items', CartItemViewSet, basename="cart-items")
 router.register(r'profit-analytics', ProfitAnalyticsViewSet, basename="profit-analytics")
+router.register(r'stock-batches', StockBatchViewSet, basename="stock-batches")
 
 urlpatterns = router.urls
 
